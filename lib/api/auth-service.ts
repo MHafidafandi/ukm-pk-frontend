@@ -132,8 +132,6 @@ const extractErrorMessage = (error: unknown): string => {
  * Login service
  */
 export const loginService = async (payload: LoginRequest): Promise<string> => {
-  console.log("[AUTH API] POST /auth/login", { email: payload.email });
-  console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
   try {
     const response: AxiosResponse<LoginResponse> = await api.post(
       "/auth/login",
@@ -181,8 +179,6 @@ export const loginService = async (payload: LoginRequest): Promise<string> => {
  * Get current user profile
  */
 export const getMeService = async (): Promise<User> => {
-  console.log("[AUTH API] GET /auth/me");
-
   const token = getToken();
 
   if (!token) {
@@ -194,14 +190,10 @@ export const getMeService = async (): Promise<User> => {
 
     const userData = response.data.data;
 
-    // Cache user data in localStorage
     setCurrentUser(userData);
 
-    console.log("[AUTH API] User data retrieved successfully");
     return userData;
   } catch (error: unknown) {
-    console.error("[AUTH API] Failed to get user profile:", error);
-
     let errorMessage = "Failed to load user profile";
 
     if (axios.isAxiosError(error)) {
