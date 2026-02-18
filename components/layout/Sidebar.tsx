@@ -1,19 +1,6 @@
 "use client";
 
-import {
-  LayoutDashboard,
-  Users,
-  Calendar,
-  Heart,
-  Package,
-  FileText,
-  UserPlus,
-  Building2,
-  LogOut,
-} from "lucide-react";
-
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Heart, LucideIcon } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -21,105 +8,50 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { NavMainSub } from "./NavMainSub";
+import { NavUser } from "./NavUser";
+import { NavMain } from "./NavMain";
 
 // =======================
 // Menu Config
 // =======================
 
-const mainMenu = [
-  { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
-  {
-    title: "Company Profile",
-    icon: Building2,
-    url: "/dashboard/company-profile",
-  },
-];
-
-const managementMenu = [
-  { title: "Manajemen Anggota", icon: Users, url: "/dashboard/users" },
-  { title: "Rekrutmen", icon: UserPlus, url: "/dashboard/recruitment" },
-];
-
-const activityMenu = [
-  { title: "Kegiatan", icon: Calendar, url: "/dashboard/activities" },
-  { title: "Donasi", icon: Heart, url: "/dashboard/donations" },
-];
-
-const assetMenu = [
-  { title: "Inventaris", icon: Package, url: "/dashboard/inventory" },
-  { title: "Dokumentasi", icon: FileText, url: "/dashboard/documentation" },
-];
-
 // =======================
 // Types
 // =======================
-
 type MenuItem = {
   title: string;
-  icon: React.ElementType;
   url: string;
+  icon?: LucideIcon;
+  isActive?: boolean;
+  items?: {
+    title: string;
+    url: string;
+  }[];
 };
 
-// =======================
-// Sidebar Nav Group
-
-// =======================
-
-function SidebarNavGroup({
-  label,
-  items,
-}: Readonly<{ label: string; items: MenuItem[] }>) {
-  const pathname = usePathname();
-
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
-
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => {
-            const isActive = pathname === item.url;
-
-            return (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={isActive}>
-                  <Link href={item.url}>
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
-}
-
-// =======================
-// Main Sidebar Component
-// =======================
-
-export function AppSidebar() {
+export function AppSidebar({ menuItems }: { menuItems: MenuItem[] }) {
   const { user, logout } = useAuth();
-  const router = useRouter();
 
   const handleLogout = async () => {
-    await logout();
-    router.push("/login");
+    logout();
   };
+
+  let navSub: MenuItem[] | undefined;
+  let nav: MenuItem[] | undefined;
+  menuItems.forEach((menu) => {
+    if (menu.items && menu.items.length > 0) {
+      navSub = navSub || [];
+      navSub.push(menu);
+    } else {
+      nav = nav || [];
+      nav.push(menu);
+    }
+  });
 
   return (
     <Sidebar>
@@ -145,44 +77,14 @@ export function AppSidebar() {
 
       {/* Content */}
       <SidebarContent>
-        <SidebarNavGroup label="Utama" items={mainMenu} />
-        <SidebarNavGroup label="Manajemen" items={managementMenu} />
-        <SidebarNavGroup label="Kegiatan & Donasi" items={activityMenu} />
-        <SidebarNavGroup label="Aset & Dokumen" items={assetMenu} />
+        <NavMain items={nav || []} />
+        <NavMainSub items={navSub || []} />
       </SidebarContent>
 
       <SidebarSeparator />
 
-      {/* Footer */}
       <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-sidebar-accent text-xs text-sidebar-accent-foreground">
-              {user?.name
-                ?.split(" ")
-                .map((n: string) => n[0])
-                .join("")
-                .slice(0, 2)}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <span className="truncate text-sm font-medium text-sidebar-foreground">
-              {user?.name}
-            </span>
-            <span className="truncate text-xs text-sidebar-foreground/60">
-              {user?.role?.replace("_", " ")}
-            </span>
-          </div>
-
-          <SidebarMenuButton
-            onClick={handleLogout}
-            className="h-8 w-8 shrink-0 !p-0"
-            tooltip="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </SidebarMenuButton>
-        </div>
+        <NavUser user={user} logout={handleLogout} />
       </SidebarFooter>
     </Sidebar>
   );

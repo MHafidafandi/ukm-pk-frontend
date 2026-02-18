@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/AuthStore";
+import { access } from "fs";
 
 export type UserRole = "super_admin" | "administrator" | "member" | "guest";
 
@@ -23,16 +24,17 @@ export interface User {
   avatar?: string;
   alamat: string;
   division_id: string;
+  division_name?: string;
   angkatan?: string;
   created_at: string;
   updated_at: string;
-  status: "active" | "inactive" | "alumni";
+  status: "aktif" | "nonaktif" | "alumni";
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (userData: User, token: string) => void;
+  login: (userData: User, accessToken: string) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -49,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fungsi login
-  const login = useCallback((userData: User, token: string) => {
+  const login = useCallback((userData: User, accessToken: string) => {
     const fixedUser: User = {
       id: userData.id,
       name: userData.name,
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       nomor_telepon: userData.nomor_telepon,
       username: userData.username,
       alamat: userData.alamat,
+      division_name: userData.division_name,
       created_at: userData.created_at,
       updated_at: userData.updated_at,
       avatar: userData.avatar,
@@ -67,12 +70,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     const expiry = new Date().getTime() + SESSION_TIMEOUT_MINUTES * 60 * 1000;
     localStorage.setItem("user", JSON.stringify(fixedUser));
-    localStorage.setItem("token", token);
+    localStorage.setItem("access_token", accessToken);
     localStorage.setItem("expiry", expiry.toString());
 
     useAuthStore
       .getState()
-      .setUser({ email: userData.email, roles: userData.roles }, token);
+      .setUser({ email: userData.email, roles: userData.roles }, accessToken);
     useAuthStore.getState().setUserRole({
       isAdmin:
         userData.roles.includes("super_admin") ||
@@ -82,15 +85,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
     setIsAuthenticated(true);
 
-    if (
-      fixedUser.roles.includes("super_admin") ||
-      fixedUser.roles.includes("administrator")
-    ) {
-      router.replace("/admin/dashboard");
+    if (fixedUser.roles.includes("super_admin")) {
+      router.replace("/superadmin/dashboard");
+    } else if (fixedUser.roles.includes("administrator")) {
+      router.replace("/administrator/dashboard");
     } else if (fixedUser.roles.includes("member")) {
-      router.replace("/dashboard");
+      router.replace("/member/dashboard");
     } else {
-      router.replace("/dashboard");
+      router.replace("/member/dashboard");
     }
   }, []);
 
@@ -103,16 +105,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setIsAuthenticated(false);
+    const storedUser = localStorage.getItem("user");
+
     // Clear storage
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
     localStorage.removeItem("expiry");
 
     // Reset state
     setUser(null);
 
     // Redirect berdasarkan role sebelumnya
-    const storedUser = localStorage.getItem("user");
     let role: UserRole = "guest";
 
     if (storedUser) {
@@ -143,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const loadUserFromStorage = () => {
       try {
         const storedUser = localStorage.getItem("user");
-        const storedToken = localStorage.getItem("token");
+        const storedToken = localStorage.getItem("access_token");
         const storedExpiry = localStorage.getItem("expiry");
 
         if (storedUser && storedToken && storedExpiry) {

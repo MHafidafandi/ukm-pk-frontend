@@ -1,274 +1,180 @@
-// lib/api/client.ts
-import axios, {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
-import { refreshTokenService } from "@/lib/api/auth-service";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { env } from "@/configs/env";
 
-// Type definitions
-type FailedRequest = {
-  resolve: (token: string) => void;
-  reject: (error: AxiosError) => void;
+type RequestOptions = {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: any;
+  cookie?: string;
+  params?: Record<string, string | number | boolean | undefined | null>;
+  cache?: RequestCache;
+  next?: NextFetchRequestConfig;
 };
 
-interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
-  _retry?: boolean;
+function buildUrlWithParams(
+  url: string,
+  params?: RequestOptions["params"],
+): string {
+  if (!params) return url;
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null,
+    ),
+  );
+  if (Object.keys(filteredParams).length === 0) return url;
+  const queryString = new URLSearchParams(
+    filteredParams as Record<string, string>,
+  ).toString();
+  return `${url}?${queryString}`;
 }
 
-interface ApiResponse<T = unknown> {
-  data: T;
-  status: number;
-  statusText: string;
-  headers: unknown;
-  config: AxiosRequestConfig;
-}
+// Create a separate function for getting server-side cookies that can be imported where needed
+export function getServerCookies() {
+  if (typeof window !== "undefined") return "";
 
-interface RefreshTokenResponse {
-  token: string;
-  refreshToken?: string;
-  expiresIn?: number;
-}
-
-interface ErrorResponse {
-  message: string;
-  status?: number;
-  code?: string;
-  errors?: Record<string, string[]>;
-}
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-
-const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
-  timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Refresh token state
-let isRefreshing = false;
-let failedQueue: FailedRequest[] = [];
-
-const processQueue = (
-  error: AxiosError | null,
-  token: string | null = null,
-): void => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else if (token) {
-      prom.resolve(token);
+  // Dynamic import next/headers only on server-side
+  return import("next/headers").then(async ({ cookies }) => {
+    try {
+      const cookieStore = await cookies();
+      return cookieStore
+        .getAll()
+        .map((c) => `${c.name}=${c.value}`)
+        .join("; ");
+    } catch (error) {
+      console.error("Failed to access cookies:", error);
+      return "";
     }
   });
-  failedQueue = [];
-};
+}
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
 
-// Request interceptor
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    // Only access localStorage on client side
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
+async function refreshToken(): Promise<string> {
+  const res = await fetch(`${env.API_URL}/auth/refresh`, {
+    method: "POST",
+    credentials: "include", // kirim cookie refresh token
+  });
 
-    // Logging only in development
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
-        data: config.data,
-        params: config.params,
-      });
-    }
+  if (!res.ok) throw new Error("Refresh token failed");
 
-    return config;
-  },
-  (error: AxiosError): Promise<AxiosError> => {
-    console.error("[API] Request error:", error);
-    return Promise.reject(error);
-  },
-);
+  const data = await res.json();
 
-// Response interceptor
-api.interceptors.response.use(
-  (response: AxiosResponse): AxiosResponse => {
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `[API] ${response.config.method?.toUpperCase()} ${
-          response.config.url
-        } - ${response.status}`,
-      );
-    }
-    return response;
-  },
-  async (error: AxiosError): Promise<AxiosResponse | Promise<never>> => {
-    const originalRequest = error.config as CustomAxiosRequestConfig;
+  const newToken = data.data?.access_token;
 
-    // Log error
-    console.error(
-      `[API] ${originalRequest?.method?.toUpperCase()} ${
-        originalRequest?.url
-      } - ${error.response?.status}`,
-      error.response?.data,
-    );
+  if (!newToken) throw new Error("No access token from refresh");
 
-    // Handle 401 - Unauthorized
-    if (
-      error.response?.status === 401 &&
-      originalRequest &&
-      !originalRequest._retry
-    ) {
-      // Skip refresh for auth endpoints
-      const authEndpoints = ["/auth/login", "/auth/refresh", "/auth/register"];
-      const shouldSkipRefresh = authEndpoints.some((endpoint) =>
-        originalRequest.url?.includes(endpoint),
-      );
+  localStorage.setItem("access_token", newToken);
 
-      if (shouldSkipRefresh) {
-        console.log("[API] Skipping refresh for auth endpoint");
-        return Promise.reject(error);
-      }
+  return newToken;
+}
+async function fetchApi<T>(
+  url: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const {
+    method = "GET",
+    headers = {},
+    body,
+    cookie,
+    params,
+    cache = "no-store",
+    next,
+  } = options;
 
-      // Queue system for multiple requests
-      if (isRefreshing) {
-        console.log("[API] Adding request to queue");
-        return new Promise<string>((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err: AxiosError) => Promise.reject(err));
-      }
+  let authHeader: Record<string, string> = {};
 
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        console.log("[API] Token expired, refreshing...");
-        const newToken = await refreshTokenService();
-        console.log("[API] Token refreshed successfully");
-
-        // Update default header and original request
-        api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-        // Update localStorage
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", newToken);
-        }
-
-        // Process queued requests
-        processQueue(null, newToken);
-
-        // Retry original request
-        return api(originalRequest);
-      } catch (refreshError) {
-        console.error("[API] Token refresh failed:", refreshError);
-
-        // Clear auth data
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
-          localStorage.removeItem("currentUser");
-        }
-
-        // Process queued requests with error
-        processQueue(refreshError as AxiosError, null);
-
-        // Redirect to login (client-side only)
-        if (typeof window !== "undefined") {
-          const { pathname } = window.location;
-          if (!pathname.includes("/login")) {
-            window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
-          }
-        }
-
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    // Handle other errors
-    const errorResponse = error.response?.data as ErrorResponse;
-    const errorMessage =
-      errorResponse?.message || error.message || "An unknown error occurred";
-
-    // Create a typed error object
-    const typedError: AxiosError<ErrorResponse> = {
-      ...error,
-      message: errorMessage,
-      response: error.response
-        ? {
-            ...error.response,
-            data: {
-              ...errorResponse,
-              message: errorMessage,
-              status: error.response.status,
-            },
-          }
-        : undefined,
-    };
-
-    return Promise.reject(typedError);
-  },
-);
-
-// Utility functions
-export const setAuthToken = (token: string): void => {
   if (typeof window !== "undefined") {
-    localStorage.setItem("token", token);
+    const token = localStorage.getItem("access_token");
+
+    if (token) {
+      authHeader = {
+        Authorization: `Bearer ${token}`,
+      };
+    }
   }
-  api.defaults.headers.common.Authorization = `Bearer ${token}`;
-};
-
-export const clearAuthToken = (): void => {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("token");
-    localStorage.removeItem("currentUser");
+  // Get cookies from the request when running on server
+  let cookieHeader = cookie;
+  if (typeof window === "undefined" && !cookie) {
+    cookieHeader = await getServerCookies();
   }
-  delete api.defaults.headers.common.Authorization;
+
+  const fullUrl = buildUrlWithParams(`${env.API_URL}${url}`, params);
+
+  const response = await fetch(fullUrl, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...authHeader,
+      ...headers,
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: "include",
+    cache,
+    next,
+  });
+  // ===== AUTO REFRESH =====
+  if (
+    response.status === 401 &&
+    typeof window !== "undefined" &&
+    !url.includes("/auth/refresh")
+  ) {
+    try {
+      // kalau belum refresh → refresh
+      if (!isRefreshing) {
+        isRefreshing = true;
+
+        refreshPromise = refreshToken().finally(() => {
+          isRefreshing = false;
+        });
+      }
+
+      if (!refreshPromise) {
+        throw new Error("No refresh promise");
+      }
+
+      await refreshPromise;
+
+      // ulang request pakai token baru
+      return fetchApi<T>(url, options);
+    } catch (err) {
+      // refresh gagal → logout paksa
+      localStorage.clear();
+      window.location.href = "/login";
+
+      throw new Error("Session expired");
+    }
+  }
+  if (!response.ok) {
+    const errorData = await response.json();
+
+    const message =
+      errorData.message ||
+      errorData.error ||
+      response.statusText ||
+      "Terjadi kesalahan";
+
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+
+export const api = {
+  get<T>(url: string, options?: RequestOptions): Promise<T> {
+    return fetchApi<T>(url, { ...options, method: "GET" });
+  },
+  post<T>(url: string, body?: any, options?: RequestOptions): Promise<T> {
+    return fetchApi<T>(url, { ...options, method: "POST", body });
+  },
+  put<T>(url: string, body?: any, options?: RequestOptions): Promise<T> {
+    return fetchApi<T>(url, { ...options, method: "PUT", body });
+  },
+  patch<T>(url: string, body?: any, options?: RequestOptions): Promise<T> {
+    return fetchApi<T>(url, { ...options, method: "PATCH", body });
+  },
+  delete<T>(url: string, options?: RequestOptions): Promise<T> {
+    return fetchApi<T>(url, { ...options, method: "DELETE" });
+  },
 };
-
-// Generic API methods with proper typing
-export const apiGet = <T = unknown>(
-  url: string,
-  config?: AxiosRequestConfig,
-): Promise<T> =>
-  api.get<T>(url, config).then((res: AxiosResponse<T>) => res.data);
-
-export const apiPost = <T = unknown, D = unknown>(
-  url: string,
-  data?: D,
-  config?: AxiosRequestConfig,
-): Promise<T> =>
-  api.post<T>(url, data, config).then((res: AxiosResponse<T>) => res.data);
-
-export const apiPut = <T = unknown, D = unknown>(
-  url: string,
-  data?: D,
-  config?: AxiosRequestConfig,
-): Promise<T> =>
-  api.put<T>(url, data, config).then((res: AxiosResponse<T>) => res.data);
-
-export const apiPatch = <T = unknown, D = unknown>(
-  url: string,
-  data?: D,
-  config?: AxiosRequestConfig,
-): Promise<T> =>
-  api.patch<T>(url, data, config).then((res: AxiosResponse<T>) => res.data);
-
-export const apiDelete = <T = unknown>(
-  url: string,
-  config?: AxiosRequestConfig,
-): Promise<T> =>
-  api.delete<T>(url, config).then((res: AxiosResponse<T>) => res.data);
-
-// Export the axios instance with proper typing
-export default api;
