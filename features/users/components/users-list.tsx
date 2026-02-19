@@ -1,33 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Spinner } from "@/components/ui/spinner";
-import { useUsers } from "../api/get-user";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { User } from "@/contexts/AuthContext";
-import { useUsersStats } from "../api/get-users-stats";
-import { useCreateUser } from "../api/create-user";
 import {
+  useUsers,
+  useUsersStats,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
   useActivateUser,
   useDeactivateUser,
   useMarkAsAlumniUser,
-} from "../api/update-status";
-import { useUpdateUser } from "../api/update-user";
+} from "../hooks/useUsers";
 import {
   CreateUserInput,
   CreateUserSchema,
   updateUserRequestSchema,
 } from "@/lib/validations/users-schema";
-import { useDeleteUser } from "../api/delete-user";
 import { UsersStats } from "./user-stats";
 import { UsersFilters } from "./user-filters";
-import { useDivisions } from "@/features/divisions/api/get-divisions";
+import { useDivisions } from "@/features/divisions/hooks/useDivisions";
 import { UsersTable } from "./user-table";
 import { UserFormDialog } from "./user-form-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
+import { UserRoleDialog } from "./user-role-dialog";
+import { UserDivisionDialog } from "./user-division-dialog";
+import { PermissionGate } from "@/components/guard";
 
 const emptyForm: CreateUserInput = {
   nama: "",
@@ -48,26 +51,32 @@ export const UsersList = () => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterDivision, setFilterDivision] = useState<string>("");
+  const [filterAngkatan, setFilterAngkatan] = useState<number | undefined>(
+    undefined,
+  );
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
+  const [divisionOpen, setDivisionOpen] = useState(false);
 
   const [editing, setEditing] = useState<User | null>(null);
   const [deleting, setDeleting] = useState<User | null>(null);
+  const [managingRole, setManagingRole] = useState<User | null>(null);
+  const [assigningDivision, setAssigningDivision] = useState<User | null>(null);
 
   const [form, setForm] = useState(emptyForm);
 
   const usersQuery = useUsers({
-    params: {
-      Page: currentPage,
-      Limit: pageSize,
-      Search: search || "",
-      Status: filterStatus !== "" ? filterStatus : "",
-      DivisionID: filterDivision !== "" ? filterDivision : "",
-    },
+    page: currentPage,
+    limit: pageSize,
+    search: search || undefined,
+    status: filterStatus || undefined,
+    division_id: filterDivision || undefined,
+    angkatan: filterAngkatan,
   });
   const statsQuery = useUsersStats();
 
@@ -127,7 +136,7 @@ export const UsersList = () => {
             ? "nonaktif"
             : "alumni",
 
-      division_id: user.division_id,
+      division_id: user.division_id ?? "",
 
       role_ids: user.roles ?? [],
     });
@@ -138,6 +147,16 @@ export const UsersList = () => {
   const openDelete = (user: User) => {
     setDeleting(user);
     setDeleteOpen(true);
+  };
+
+  const openManageRoles = (user: User) => {
+    setManagingRole(user);
+    setRoleOpen(true);
+  };
+
+  const openAssignDivision = (user: User) => {
+    setAssigningDivision(user);
+    setDivisionOpen(true);
   };
 
   const handleSave = async () => {
@@ -161,9 +180,7 @@ export const UsersList = () => {
       } else {
         // CREATE
         const parsed = CreateUserSchema.parse(payload);
-        await createUser.mutateAsync({
-          data: parsed,
-        });
+        await createUser.mutateAsync(parsed);
 
         toast.success("User berhasil ditambahkan");
       }
@@ -187,7 +204,7 @@ export const UsersList = () => {
     if (!deleting) return;
 
     try {
-      await deleteUser.mutateAsync({ id: deleting.id });
+      await deleteUser.mutateAsync(deleting.id);
       toast.success("User dihapus");
 
       setDeleteOpen(false);
@@ -200,15 +217,15 @@ export const UsersList = () => {
   const handleStatusChange = async (user: User, status: User["status"]) => {
     try {
       if (status === "aktif") {
-        await activate.mutateAsync({ id: user.id });
+        await activate.mutateAsync(user.id);
       }
 
       if (status === "nonaktif") {
-        await deactivate.mutateAsync({ id: user.id });
+        await deactivate.mutateAsync(user.id);
       }
 
       if (status === "alumni") {
-        await alumni.mutateAsync({ id: user.id });
+        await alumni.mutateAsync(user.id);
       }
 
       toast.success("Status diperbarui");
@@ -237,9 +254,11 @@ export const UsersList = () => {
             Kelola data anggota UKM Peduli Kemanusiaan
           </p>
         </div>
-        <Button onClick={openAdd}>
-          <Plus className="mr-2 h-4 w-4" /> Tambah Anggota
-        </Button>
+        <PermissionGate permission="users:create">
+          <Button onClick={openAdd}>
+            <Plus className="mr-2 h-4 w-4" /> Tambah Anggota
+          </Button>
+        </PermissionGate>
       </div>
 
       {/* Stats */}
@@ -248,9 +267,11 @@ export const UsersList = () => {
       {/* Filters */}
       <UsersFilters
         division={filterDivision}
+        angkatan={filterAngkatan}
         search={search}
         status={filterStatus}
         onDivisionChange={setFilterDivision}
+        onAngkatanChange={setFilterAngkatan}
         onSearch={setSearch}
         onStatusChange={setFilterStatus}
       />
@@ -265,6 +286,8 @@ export const UsersList = () => {
         onDelete={openDelete}
         onStatusChange={handleStatusChange}
         onPageChange={setCurrentPage}
+        onAssignDivision={openAssignDivision}
+        onManageRoles={openManageRoles}
       />
 
       {/* Add/Edit Dialog */}
@@ -284,6 +307,18 @@ export const UsersList = () => {
         onOpenChange={setDeleteOpen}
         user={deleting}
         onConfirm={handleDelete}
+      />
+
+      <UserRoleDialog
+        open={roleOpen}
+        onOpenChange={setRoleOpen}
+        user={managingRole}
+      />
+
+      <UserDivisionDialog
+        open={divisionOpen}
+        onOpenChange={setDivisionOpen}
+        user={assigningDivision}
       />
     </div>
   );

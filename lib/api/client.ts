@@ -1,180 +1,160 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Axios instance dengan konfigurasi base URL dan interceptors.
+ * - Request interceptor: inject Authorization header dari localStorage
+ * - Response interceptor: auto-refresh token on 401, redirect ke login jika refresh gagal
+ *
+ * Menggunakan failed queue untuk menangani multiple concurrent request yang 401
+ * secara bersamaan — semua request akan di-retry setelah token berhasil di-refresh.
+ */
+import axios, { AxiosRequestConfig } from "axios";
 import { env } from "@/configs/env";
 
-type RequestOptions = {
-  method?: string;
-  headers?: Record<string, string>;
-  body?: any;
-  cookie?: string;
-  params?: Record<string, string | number | boolean | undefined | null>;
-  cache?: RequestCache;
-  next?: NextFetchRequestConfig;
-};
+export const api = axios.create({
+  baseURL: env.API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: true, // untuk httpOnly cookies (refresh_token)
+});
 
-function buildUrlWithParams(
-  url: string,
-  params?: RequestOptions["params"],
-): string {
-  if (!params) return url;
-  const filteredParams = Object.fromEntries(
-    Object.entries(params).filter(
-      ([, value]) => value !== undefined && value !== null,
-    ),
-  );
-  if (Object.keys(filteredParams).length === 0) return url;
-  const queryString = new URLSearchParams(
-    filteredParams as Record<string, string>,
-  ).toString();
-  return `${url}?${queryString}`;
+// ── Token helpers ──────────────────────────────────────────────────────────
+
+const TOKEN_KEY = "access_token";
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
 }
 
-// Create a separate function for getting server-side cookies that can be imported where needed
-export function getServerCookies() {
-  if (typeof window !== "undefined") return "";
-
-  // Dynamic import next/headers only on server-side
-  return import("next/headers").then(async ({ cookies }) => {
-    try {
-      const cookieStore = await cookies();
-      return cookieStore
-        .getAll()
-        .map((c) => `${c.name}=${c.value}`)
-        .join("; ");
-    } catch (error) {
-      console.error("Failed to access cookies:", error);
-      return "";
-    }
-  });
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
 }
+
+export function removeToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+// ── Refresh token state ────────────────────────────────────────────────────
+
+/** Apakah sedang dalam proses refresh token */
 let isRefreshing = false;
-let refreshPromise: Promise<string> | null = null;
 
-async function refreshToken(): Promise<string> {
-  const res = await fetch(`${env.API_URL}/auth/refresh`, {
-    method: "POST",
-    credentials: "include", // kirim cookie refresh token
-  });
+/**
+ * Antrian request yang gagal karena 401 saat refresh sedang berjalan.
+ * Setelah refresh selesai, semua request di antrian akan di-retry.
+ */
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+}> = [];
 
-  if (!res.ok) throw new Error("Refresh token failed");
-
-  const data = await res.json();
-
-  const newToken = data.data?.access_token;
-
-  if (!newToken) throw new Error("No access token from refresh");
-
-  localStorage.setItem("access_token", newToken);
-
-  return newToken;
-}
-async function fetchApi<T>(
-  url: string,
-  options: RequestOptions = {},
-): Promise<T> {
-  const {
-    method = "GET",
-    headers = {},
-    body,
-    cookie,
-    params,
-    cache = "no-store",
-    next,
-  } = options;
-
-  let authHeader: Record<string, string> = {};
-
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("access_token");
-
-    if (token) {
-      authHeader = {
-        Authorization: `Bearer ${token}`,
-      };
+function processQueue(error: unknown, token: string | null = null) {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(token!);
     }
-  }
-  // Get cookies from the request when running on server
-  let cookieHeader = cookie;
-  if (typeof window === "undefined" && !cookie) {
-    cookieHeader = await getServerCookies();
-  }
-
-  const fullUrl = buildUrlWithParams(`${env.API_URL}${url}`, params);
-
-  const response = await fetch(fullUrl, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...authHeader,
-      ...headers,
-      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include",
-    cache,
-    next,
   });
-  // ===== AUTO REFRESH =====
-  if (
-    response.status === 401 &&
-    typeof window !== "undefined" &&
-    !url.includes("/auth/refresh")
-  ) {
+  failedQueue = [];
+}
+
+// ── Request interceptor ────────────────────────────────────────────────────
+
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+// ── Response interceptor (auto-refresh) ───────────────────────────────────
+
+api.interceptors.response.use(
+  (response) => response.data,
+  async (error) => {
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    // Hanya handle 401, dan jangan retry request refresh itu sendiri
+    if (
+      error.response?.status !== 401 ||
+      originalRequest._retry ||
+      originalRequest.url === "/auth/refresh"
+    ) {
+      return Promise.reject(error);
+    }
+
+    // Jika sudah ada proses refresh berjalan, masukkan ke antrian
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((token) => {
+          originalRequest.headers = {
+            ...originalRequest.headers,
+            Authorization: `Bearer ${token}`,
+          };
+          return api(originalRequest);
+        })
+        .catch((err) => Promise.reject(err));
+    }
+
+    // Mulai proses refresh
+    originalRequest._retry = true;
+    isRefreshing = true;
+
     try {
-      // kalau belum refresh → refresh
-      if (!isRefreshing) {
-        isRefreshing = true;
+      const res = await api.post<{ data: { access_token: string } }>(
+        "/auth/refresh",
+      );
+      const newToken = res.data.data.access_token;
+      setToken(newToken);
 
-        refreshPromise = refreshToken().finally(() => {
-          isRefreshing = false;
-        });
+      // Update header untuk request yang di-retry
+      originalRequest.headers = {
+        ...originalRequest.headers,
+        Authorization: `Bearer ${newToken}`,
+      };
+
+      // Selesaikan semua request yang antri
+      processQueue(null, newToken);
+
+      return api(originalRequest);
+    } catch (refreshError) {
+      // Refresh gagal → logout paksa
+      processQueue(refreshError, null);
+      removeToken();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
-
-      if (!refreshPromise) {
-        throw new Error("No refresh promise");
-      }
-
-      await refreshPromise;
-
-      // ulang request pakai token baru
-      return fetchApi<T>(url, options);
-    } catch (err) {
-      // refresh gagal → logout paksa
-      localStorage.clear();
-      window.location.href = "/login";
-
-      throw new Error("Session expired");
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
     }
+  },
+);
+
+export default api;
+
+export const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.message ||
+      "Terjadi kesalahan pada server"
+    );
   }
-  if (!response.ok) {
-    const errorData = await response.json();
-
-    const message =
-      errorData.message ||
-      errorData.error ||
-      response.statusText ||
-      "Terjadi kesalahan";
-
-    throw new Error(message);
+  if (error instanceof Error) {
+    return error.message;
   }
-
-  return response.json();
-}
-
-export const api = {
-  get<T>(url: string, options?: RequestOptions): Promise<T> {
-    return fetchApi<T>(url, { ...options, method: "GET" });
-  },
-  post<T>(url: string, body?: any, options?: RequestOptions): Promise<T> {
-    return fetchApi<T>(url, { ...options, method: "POST", body });
-  },
-  put<T>(url: string, body?: any, options?: RequestOptions): Promise<T> {
-    return fetchApi<T>(url, { ...options, method: "PUT", body });
-  },
-  patch<T>(url: string, body?: any, options?: RequestOptions): Promise<T> {
-    return fetchApi<T>(url, { ...options, method: "PATCH", body });
-  },
-  delete<T>(url: string, options?: RequestOptions): Promise<T> {
-    return fetchApi<T>(url, { ...options, method: "DELETE" });
-  },
+  return "Terjadi kesalahan tidak dikenal";
 };

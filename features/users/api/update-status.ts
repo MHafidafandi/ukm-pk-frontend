@@ -72,3 +72,33 @@ export const useMarkAsAlumniUser = ({
     },
   });
 };
+export const bulkUserStatus = ({
+  data,
+}: {
+  data: {
+    user_ids: string[];
+    status: "aktif" | "nonaktif" | "alumni";
+  };
+}) => {
+  return api.post("/users/bulk/status", data);
+};
+
+export type BulkUserStatusOptions = {
+  mutationConfig?: MutationConfig<typeof bulkUserStatus>;
+};
+
+export const useBulkUserStatus = ({
+  mutationConfig,
+}: BulkUserStatusOptions = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkUserStatus,
+    ...mutationConfig,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["users-stats"] });
+      mutationConfig?.onSuccess?.(...args);
+    },
+  });
+};

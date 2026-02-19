@@ -1,27 +1,14 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/provider/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
+import { queryClient } from "@/lib/api/react-query";
 
 export default function ClientProviders({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000,
-            gcTime: 5 * 60 * 1000,
-            refetchOnWindowFocus: false,
-            retry: 1,
-          },
-        },
-      }),
-  );
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

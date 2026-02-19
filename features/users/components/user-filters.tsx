@@ -14,33 +14,35 @@ type Props = {
   search: string;
   status: string;
   division: string;
+  angkatan?: number;
 
   onSearch: (v: string) => void;
   onStatusChange: (v: string) => void;
   onDivisionChange: (v: string) => void;
+  onAngkatanChange: (v?: number) => void;
 };
 
 export const UsersFilters = ({
   search,
   status,
   division,
+  angkatan,
   onSearch,
   onStatusChange,
   onDivisionChange,
+  onAngkatanChange,
 }: Props) => {
   const divisionsQuery = useDivisions();
-  const divisions = divisionsQuery.data?.data.map((d) => d.nama_divisi) || [];
+  // ... (rest of logic)
+
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Filter & Pencarian</CardTitle>
-      </CardHeader>
-
+      {/* ... header ... */}
       <CardContent>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
+            {/* ... search input ... */}
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
             <Input
               value={search}
               placeholder="Cari..."
@@ -49,7 +51,20 @@ export const UsersFilters = ({
             />
           </div>
 
+          <Input
+            type="number"
+            placeholder="Angkatan"
+            value={angkatan ?? ""}
+            onChange={(e) =>
+              onAngkatanChange(
+                e.target.value ? Number(e.target.value) : undefined,
+              )
+            }
+            className="w-full sm:w-32"
+          />
+
           <Select value={status} onValueChange={onStatusChange}>
+            {/* ... status select ... */}
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -62,12 +77,13 @@ export const UsersFilters = ({
           </Select>
 
           <Select value={division} onValueChange={onDivisionChange}>
+            {/* ... division select ... */}
             <SelectTrigger className="w-full sm:w-45">
               <SelectValue placeholder="Divisi" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua</SelectItem>
-              {divisions.map((d) => (
+              {divisions?.map((d: any) => (
                 <SelectItem key={d} value={d}>
                   {d}
                 </SelectItem>

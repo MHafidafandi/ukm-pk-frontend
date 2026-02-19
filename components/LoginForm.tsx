@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useRef, useState } from "react";
-import { useLogin } from "@/lib/api/auth-service";
+import { useLogin } from "@/features/auth/hooks";
 import { loginSchema } from "@/lib/validations/auth-schema";
 import {
   LucideAlertCircle,

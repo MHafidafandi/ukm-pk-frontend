@@ -1,4 +1,5 @@
 import { User } from "@/contexts/AuthContext";
+import { usePermission } from "@/hooks/usePermission";
 
 import {
   Table,
@@ -68,6 +69,9 @@ type Props = {
   onDelete: (user: User) => void;
 
   onStatusChange: (user: User, status: User["status"]) => void;
+
+  onAssignDivision?: (user: User) => void;
+  onManageRoles?: (user: User) => void;
 };
 
 /* ================= COMPONENT ================= */
@@ -82,7 +86,11 @@ export const UsersTable = ({
   onEdit,
   onDelete,
   onStatusChange,
+
+  onAssignDivision,
+  onManageRoles,
 }: Props) => {
+  const { can } = usePermission();
   const totalPages = pagination?.total_pages ?? 1;
   const totalData = pagination?.total ?? 0;
 
@@ -181,54 +189,82 @@ export const UsersTable = ({
 
                     <DropdownMenuContent align="end">
                       {/* Edit */}
-
-                      <DropdownMenuItem onClick={() => onEdit(user)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
+                      {can("users:update") && (
+                        <DropdownMenuItem onClick={() => onEdit(user)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                      )}
 
                       <DropdownMenuSeparator />
 
                       {/* Status */}
+                      {can("users:manage_status") && (
+                        <>
+                          {user.status !== "aktif" && (
+                            <DropdownMenuItem
+                              onClick={() => onStatusChange(user, "aktif")}
+                            >
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              Aktifkan
+                            </DropdownMenuItem>
+                          )}
 
-                      {user.status !== "aktif" && (
+                          {user.status !== "nonaktif" && (
+                            <DropdownMenuItem
+                              onClick={() => onStatusChange(user, "nonaktif")}
+                            >
+                              <UserX className="mr-2 h-4 w-4" />
+                              Nonaktifkan
+                            </DropdownMenuItem>
+                          )}
+
+                          {user.status !== "alumni" && (
+                            <DropdownMenuItem
+                              onClick={() => onStatusChange(user, "alumni")}
+                            >
+                              <GraduationCap className="mr-2 h-4 w-4" />
+                              Tandai Alumni
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      )}
+
+                      <DropdownMenuSeparator />
+
+                      {/* Division & Roles */}
+                      {can("divisions:assign_user") && (
                         <DropdownMenuItem
-                          onClick={() => onStatusChange(user, "aktif")}
+                          onClick={() =>
+                            onAssignDivision && onAssignDivision(user)
+                          }
                         >
-                          <UserCheck className="mr-2 h-4 w-4" />
-                          Aktifkan
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Pindah Divisi
                         </DropdownMenuItem>
                       )}
 
-                      {user.status !== "nonaktif" && (
+                      {can("roles:assign") && (
                         <DropdownMenuItem
-                          onClick={() => onStatusChange(user, "nonaktif")}
+                          onClick={() => onManageRoles && onManageRoles(user)}
                         >
-                          <UserX className="mr-2 h-4 w-4" />
-                          Nonaktifkan
-                        </DropdownMenuItem>
-                      )}
-
-                      {user.status !== "alumni" && (
-                        <DropdownMenuItem
-                          onClick={() => onStatusChange(user, "alumni")}
-                        >
-                          <GraduationCap className="mr-2 h-4 w-4" />
-                          Tandai Alumni
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Kelola Role
                         </DropdownMenuItem>
                       )}
 
                       <DropdownMenuSeparator />
 
                       {/* Delete */}
-
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => onDelete(user)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Hapus
-                      </DropdownMenuItem>
+                      {can("users:delete") && (
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => onDelete(user)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Hapus
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

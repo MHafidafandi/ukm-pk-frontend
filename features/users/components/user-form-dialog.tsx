@@ -140,8 +140,14 @@ export const UserFormDialog = ({
 
             <div className="grid gap-2">
               <Label>Divisi</Label>
+              {isEdit && (
+                <p className="text-xs text-muted-foreground">
+                  Gunakan menu "Pindah Divisi" di tabel untuk mengubah divisi.
+                </p>
+              )}
 
               <Select
+                disabled={isEdit}
                 value={form.division_id}
                 onValueChange={(v) =>
                   setForm({
@@ -168,8 +174,14 @@ export const UserFormDialog = ({
 
             <div className="grid gap-2">
               <Label>Role</Label>
+              {isEdit && (
+                <p className="text-xs text-muted-foreground">
+                  Gunakan menu "Kelola Role" di tabel untuk mengubah role.
+                </p>
+              )}
 
               <Select
+                disabled={isEdit}
                 value={form.role_ids[0]}
                 onValueChange={(v) =>
                   setForm({

@@ -5,7 +5,13 @@ import { AppSidebar } from "@/components/layout/Sidebar";
 import { TopNavbar } from "@/components/layout/TopNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, Users } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  HeartHandshake,
+  Package,
+  FileText,
+} from "lucide-react";
 import { useEffect } from "react";
 import { Guard } from "@/components/guard";
 
@@ -35,6 +41,21 @@ const navMain = [
       },
     ],
   },
+  {
+    title: "Donasi",
+    url: "/donation",
+    icon: HeartHandshake,
+  },
+  {
+    title: "Inventaris",
+    url: "/inventory",
+    icon: Package,
+  },
+  {
+    title: "Dokumentasi",
+    url: "/documentation",
+    icon: FileText,
+  },
 ];
 
 export default function DashboardLayout({
@@ -59,9 +80,9 @@ export default function DashboardLayout({
       <AppSidebar menuItems={navMain} />
       <SidebarInset>
         <TopNavbar />
-        {/* <Guard role="super_admin"> */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
-        {/* </Guard> */}
+        <Guard role="super_admin">
+          <main className="flex-1 overflow-auto p-6">{children}</main>
+        </Guard>
       </SidebarInset>
     </SidebarProvider>
   );

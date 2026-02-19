@@ -50,64 +50,26 @@ const navMain = [
 
   {
     title: "Manage Activity",
-    url: "#",
+    url: "/administrator/activities",
     icon: Activity,
-    items: [
-      {
-        title: "Manage Activity",
-        url: "/activities",
-      },
-      {
-        title: "Manage Progress",
-        url: "/activities/progress",
-      },
-      {
-        title: "Manage Document",
-        url: "/activities/documents",
-      },
-      {
-        title: "Manage LPJ",
-        url: "/activities/lpj",
-      },
-    ],
   },
 
   {
     title: "Manage Inventory",
-    url: "#",
+    url: "/inventory",
     icon: Package,
-    items: [
-      {
-        title: "Manage Assets",
-        url: "/inventory/assets",
-      },
-      {
-        title: "Manage Loans",
-        url: "/inventory/loans",
-      },
-    ],
   },
 
   {
     title: "Manage Donation",
-    url: "/donations",
+    url: "/donation",
     icon: HeartHandshake,
   },
 
   {
     title: "Manage Recruitment",
-    url: "#",
+    url: "/administrator/recruitments",
     icon: ClipboardList,
-    items: [
-      {
-        title: "Recruitment List",
-        url: "/recruitments",
-      },
-      {
-        title: "Registrant",
-        url: "/recruitments/registrants",
-      },
-    ],
   },
 
   {
