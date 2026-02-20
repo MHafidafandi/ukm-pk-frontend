@@ -22,6 +22,8 @@ import {
 import { ActivityTable } from "./activity-table";
 import { ActivityFormDialog } from "./activity-form-dialog";
 import { ActivityDeleteDialog } from "./activity-delete-dialog";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const emptyForm: CreateActivityInput = {
   judul: "",
@@ -130,9 +132,11 @@ export const ActivityList = () => {
             Kelola program kerja, progres, dan dokumentasi
           </p>
         </div>
-        <Button onClick={openAdd}>
-          <Plus className="mr-2 h-4 w-4" /> Tambah Kegiatan
-        </Button>
+        <PermissionGate permission={PERMISSIONS.CREATE_ACTIVITIES}>
+          <Button onClick={openAdd}>
+            <Plus className="mr-2 h-4 w-4" /> Tambah Kegiatan
+          </Button>
+        </PermissionGate>
       </div>
 
       <ActivityTable

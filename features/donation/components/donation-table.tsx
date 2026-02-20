@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Donation, DonationStatus } from "../types";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 import { Badge } from "@/components/ui/badge";
 
 type Props = {
@@ -112,19 +113,13 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <PermissionGate
-                        permission="donations:update"
-                        role={["administrator", "super_admin"]}
-                      >
+                      <PermissionGate permission={PERMISSIONS.EDIT_DONATIONS}>
                         <DropdownMenuItem onClick={() => onEdit(donation)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
                       </PermissionGate>
-                      <PermissionGate
-                        permission="donations:delete"
-                        role={["administrator", "super_admin"]}
-                      >
+                      <PermissionGate permission={PERMISSIONS.DELETE_DONATIONS}>
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => onDelete(donation)}

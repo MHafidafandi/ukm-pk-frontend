@@ -37,7 +37,7 @@ export const UserDeleteDialog = ({
           <DialogTitle>Hapus Anggota</DialogTitle>
 
           <DialogDescription>
-            Apakah yakin ingin menghapus <strong>{user?.name}</strong>?
+            Apakah yakin ingin menghapus <strong>{user?.nama}</strong>?
             <br />
             Tindakan ini tidak bisa dibatalkan.
           </DialogDescription>

@@ -18,7 +18,8 @@ import { RecruitmentTable } from "./recruitment-table";
 import { RecruitmentFormDialog } from "./recruitment-form-dialog";
 import { RecruitmentDeleteDialog } from "./recruitment-delete-dialog";
 import { useRouter } from "next/navigation";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const emptyForm: CreateRecruitmentInput = {
   title: "",
@@ -134,7 +135,7 @@ export const RecruitmentList = () => {
             Kelola kegiatan open recruitment dan pendaftar
           </p>
         </div>
-        <PermissionGate permission="recruitment:create">
+        <PermissionGate permission={PERMISSIONS.CREATE_RECRUITMENTS}>
           <Button onClick={openAdd}>
             <Plus className="mr-2 h-4 w-4" /> Buat Rekrutmen
           </Button>

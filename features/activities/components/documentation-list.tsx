@@ -41,6 +41,8 @@ import {
   CreateDocumentationInput,
   CreateDocumentationSchema,
 } from "@/lib/validations/activity-schema";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 type Props = {
   activityId: string;
@@ -129,9 +131,11 @@ export const DocumentationList = ({ activityId }: Props) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Dokumentasi</h3>
-        <Button size="sm" onClick={openAdd}>
-          <Plus className="mr-2 h-4 w-4" /> Tambah Dokumentasi
-        </Button>
+        <PermissionGate permission={PERMISSIONS.CREATE_DOCUMENTATIONS}>
+          <Button size="sm" onClick={openAdd}>
+            <Plus className="mr-2 h-4 w-4" /> Tambah Dokumentasi
+          </Button>
+        </PermissionGate>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -169,14 +173,16 @@ export const DocumentationList = ({ activityId }: Props) => {
                 )}
               </CardContent>
               <CardFooter className="justify-end pt-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive"
-                  onClick={() => openDelete(item)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <PermissionGate permission={PERMISSIONS.DELETE_DOCUMENTATIONS}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => openDelete(item)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </PermissionGate>
               </CardFooter>
             </Card>
           ))

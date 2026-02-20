@@ -16,7 +16,8 @@ import { Donation } from "../types";
 import { DonationTable } from "./donation-table";
 import { DonationFormDialog } from "./donation-form-dialog";
 import { DonationDeleteDialog } from "./donation-delete-dialog";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export const DonationList = () => {
   const [formOpen, setFormOpen] = useState(false);
@@ -90,10 +91,7 @@ export const DonationList = () => {
             Kelola data donasi masuk dan status pembayaran
           </p>
         </div>
-        <PermissionGate
-          permission="donations:create"
-          role={["administrator", "super_admin"]}
-        >
+        <PermissionGate permission={PERMISSIONS.CREATE_DONATIONS}>
           <Button onClick={openAdd}>
             <Plus className="mr-2 h-4 w-4" /> Catat Donasi
           </Button>

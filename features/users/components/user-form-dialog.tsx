@@ -186,7 +186,7 @@ export const UserFormDialog = ({
                 onValueChange={(v) =>
                   setForm({
                     ...form,
-                    role_ids: [v as User["roles"][number]],
+                    role_ids: [v],
                   })
                 }
               >

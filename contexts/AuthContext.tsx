@@ -20,21 +20,34 @@ import { ROUTES } from "@/configs/routes";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export type UserRole = "super_admin" | "administrator" | "member";
+export interface Role {
+  id: string;
+  name: string;
+}
+
+export interface Division {
+  id: string;
+  nama_divisi: string;
+}
 
 export interface User {
   id: string;
-  name: string;
+  nama: string;
   username: string;
   email: string;
-  roles: UserRole[];
+
   nomor_telepon: string;
-  avatar?: string;
   alamat: string;
-  division_id: string | null;
-  division_name?: string;
-  angkatan?: number;
+  angkatan: number;
   status: "aktif" | "nonaktif" | "alumni";
+  avatar_url?: string;
+
+  // Relations
+  division: Division;
+  roles: Role[];
+
+  permissions?: string[];
+
   created_at: string;
   updated_at: string;
 }
@@ -110,13 +123,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saveToStorage(userData, accessToken);
       setUser(userData);
 
-      // Redirect berdasarkan role tertinggi
-      if (userData.roles.includes("super_admin")) {
-        router.replace(ROUTES.dashboard.superadmin);
-      } else if (userData.roles.includes("administrator")) {
-        router.replace(ROUTES.dashboard.administrator);
+      // Redirect based on permissions
+      // Prioritas: Dashboard -> Users -> Profile
+      const permissions = userData.permissions || [];
+      if (permissions.includes("view-dashboard")) {
+        router.replace("/dashboard");
+      } else if (permissions.includes("view-users")) {
+        router.replace("/users");
       } else {
-        router.replace(ROUTES.dashboard.member);
+        // Fallback untuk user tanpa permission dashboard/users
+        router.replace("/profile");
       }
     },
     [router],
@@ -131,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     clearStorage();
     setUser(null);
-    router.replace(ROUTES.auth.login);
+    router.replace("/login");
   }, [router]);
 
   const value: AuthContextType = {

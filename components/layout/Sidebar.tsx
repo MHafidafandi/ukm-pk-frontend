@@ -3,6 +3,7 @@
 import { Heart, LucideIcon } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermission } from "@/hooks/usePermission";
 
 import {
   Sidebar,
@@ -15,6 +16,7 @@ import {
 import { NavMainSub } from "./NavMainSub";
 import { NavUser } from "./NavUser";
 import { NavMain } from "./NavMain";
+import { MENU_ITEMS } from "@/configs/menu";
 
 // =======================
 // Menu Config
@@ -31,19 +33,55 @@ type MenuItem = {
   items?: {
     title: string;
     url: string;
+    permission?: string;
   }[];
+  permission?: string;
 };
 
-export function AppSidebar({ menuItems }: { menuItems: MenuItem[] }) {
+export function AppSidebar() {
+  const menuItems = MENU_ITEMS;
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     logout();
   };
 
+  // Filter menu items based on permissions
+  const { userPermissions } = usePermission();
+
+  const filteredMenuItems = menuItems
+    .filter((item) => {
+      // If no permission required, show it (or default to show)
+      if (!item.permission) return true;
+      return userPermissions.includes(item.permission);
+    })
+    .map((item) => {
+      // Filter sub-items if they exist
+      if (item.items) {
+        return {
+          ...item,
+          items: item.items.filter((subItem) => {
+            // @ts-ignore - subItem might have permission
+            return (
+              !subItem.permission ||
+              userPermissions.includes(subItem.permission)
+            );
+          }),
+        };
+      }
+      return item;
+    })
+    .filter((item) => {
+      // Remove groups that became empty after filtering sub-items
+      if (item.items && item.items.length === 0) return false;
+      return true;
+    });
+
   let navSub: MenuItem[] | undefined;
   let nav: MenuItem[] | undefined;
-  menuItems.forEach((menu) => {
+
+  // Use filtered items
+  filteredMenuItems.forEach((menu) => {
     if (menu.items && menu.items.length > 0) {
       navSub = navSub || [];
       navSub.push(menu);

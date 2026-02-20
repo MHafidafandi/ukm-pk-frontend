@@ -23,7 +23,8 @@ const createRoleSchema = z.object({
 import { RolesTable } from "./role-table";
 import { RoleFormDialog } from "./role-form-dialog";
 import { RoleDeleteDialog } from "./role-delete-dialog";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const emptyForm: CreateRoleInput = {
   name: "",
@@ -117,7 +118,7 @@ export const RolesList = () => {
             Kelola role dan hak akses pengguna
           </p>
         </div>
-        <PermissionGate permission="roles:manage">
+        <PermissionGate permission={PERMISSIONS.CREATE_ROLES}>
           <Button onClick={openAdd}>
             <Plus className="mr-2 h-4 w-4" /> Tambah Role
           </Button>

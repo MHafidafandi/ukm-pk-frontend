@@ -22,7 +22,8 @@ const createDivisionSchema = z.object({
 import { DivisionsTable } from "./division-table";
 import { DivisionFormDialog } from "./division-form-dialog";
 import { DivisionDeleteDialog } from "./division-delete-dialog";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const emptyForm: CreateDivisionInput = {
   nama_divisi: "",
@@ -120,7 +121,7 @@ export const DivisionsList = () => {
             Kelola data divisi dan departemen
           </p>
         </div>
-        <PermissionGate permission="divisions:create">
+        <PermissionGate permission={PERMISSIONS.CREATE_DIVISIONS}>
           <Button onClick={openAdd}>
             <Plus className="mr-2 h-4 w-4" /> Tambah Divisi
           </Button>

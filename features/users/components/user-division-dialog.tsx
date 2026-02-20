@@ -70,7 +70,7 @@ export const UserDivisionDialog = ({ open, onOpenChange, user }: Props) => {
         <DialogHeader>
           <DialogTitle>Pindah Divisi</DialogTitle>
           <DialogDescription>
-            Pindahkan pengguna <strong>{user?.name}</strong> ke divisi lain.
+            Pindahkan pengguna <strong>{user?.nama}</strong> ke divisi lain.
           </DialogDescription>
         </DialogHeader>
 

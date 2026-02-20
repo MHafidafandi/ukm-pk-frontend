@@ -85,7 +85,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
         <DialogHeader>
           <DialogTitle>Kelola Role</DialogTitle>
           <DialogDescription>
-            Atur role untuk pengguna <strong>{user?.name}</strong>.
+            Atur role untuk pengguna <strong>{user?.nama}</strong>.
           </DialogDescription>
         </DialogHeader>
 

@@ -81,7 +81,7 @@ export const RegistrantsTable = ({
               <TableRow key={item.id}>
                 <TableCell className="font-medium">
                   <div>
-                    <p>{item.user.name}</p>
+                    <p>{item.user.nama}</p>
                     <p className="text-xs text-muted-foreground">
                       {item.user.username}
                     </p>

@@ -24,7 +24,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 type Props = {
   documents: Document[];
@@ -98,10 +99,7 @@ export const DocumentTable = ({ documents }: Props) => {
                           <Download className="h-4 w-4" />
                         </a>
                       </Button>
-                      <PermissionGate
-                        permission="activities:manage_reports"
-                        role={["administrator", "super_admin"]}
-                      >
+                      <PermissionGate permission={PERMISSIONS.DELETE_DOCUMENTS}>
                         <Button
                           variant="ghost"
                           size="icon"

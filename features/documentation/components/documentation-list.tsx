@@ -7,7 +7,8 @@ import { useDocuments } from "../hooks";
 import { DocumentTable } from "./document-table";
 import { DocumentUploadDialog } from "./document-upload-dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export const DocumentationList = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -35,10 +36,7 @@ export const DocumentationList = () => {
             Penyimpanan dokumen digital, laporan, dan surat
           </p>
         </div>
-        <PermissionGate
-          permission="activities:manage_reports"
-          role={["administrator", "super_admin"]}
-        >
+        <PermissionGate permission={PERMISSIONS.CREATE_DOCUMENTS}>
           {/* Reusing existing permission for now */}
           <Button onClick={() => setUploadOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Unggah Dokumen

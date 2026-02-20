@@ -83,9 +83,9 @@ export const UsersFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua</SelectItem>
-              {divisions?.map((d: any) => (
-                <SelectItem key={d} value={d}>
-                  {d}
+              {divisionsQuery.data?.data.map((d: any) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.nama_divisi}
                 </SelectItem>
               ))}
             </SelectContent>

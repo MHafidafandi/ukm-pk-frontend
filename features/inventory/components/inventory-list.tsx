@@ -10,7 +10,8 @@ import { LoanTable } from "./loan-table";
 import { AssetFormDialog } from "./asset-form-dialog";
 import { LoanFormDialog } from "./loan-form-dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export const InventoryList = () => {
   const [activeTab, setActiveTab] = useState("assets");
@@ -44,10 +45,7 @@ export const InventoryList = () => {
         </div>
         <div className="flex gap-2">
           {activeTab === "assets" && (
-            <PermissionGate
-              permission="donations:create"
-              role={["administrator", "super_admin"]}
-            >
+            <PermissionGate permission={PERMISSIONS.CREATE_ASSETS}>
               {/* Note: Permission for inventory creation not explicitly defined, using role or maybe generic permission */}
               {/* Actually I should check permissions. Let's assume roles:create / manage for now or add new permissions later */}
               <Button onClick={() => setAssetFormOpen(true)}>
@@ -56,10 +54,7 @@ export const InventoryList = () => {
             </PermissionGate>
           )}
           {activeTab === "loans" && (
-            <PermissionGate
-              permission="donations:create"
-              role={["administrator", "super_admin"]}
-            >
+            <PermissionGate permission={PERMISSIONS.CREATE_LOANS}>
               <Button onClick={() => setLoanFormOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Catat Peminjaman
               </Button>

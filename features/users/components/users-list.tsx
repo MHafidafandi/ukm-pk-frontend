@@ -30,7 +30,8 @@ import { UserFormDialog } from "./user-form-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
 import { UserRoleDialog } from "./user-role-dialog";
 import { UserDivisionDialog } from "./user-division-dialog";
-import { PermissionGate } from "@/components/guard";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 
 const emptyForm: CreateUserInput = {
   nama: "",
@@ -118,7 +119,7 @@ export const UsersList = () => {
     setEditing(user);
 
     setForm({
-      nama: user.name, // mapping
+      nama: user.nama, // mapping
       username: user.username,
       email: user.email,
 
@@ -136,9 +137,9 @@ export const UsersList = () => {
             ? "nonaktif"
             : "alumni",
 
-      division_id: user.division_id ?? "",
+      division_id: user.division?.id ?? "",
 
-      role_ids: user.roles ?? [],
+      role_ids: user.roles?.map((r) => r.id) ?? [],
     });
 
     setFormOpen(true);
@@ -254,7 +255,7 @@ export const UsersList = () => {
             Kelola data anggota UKM Peduli Kemanusiaan
           </p>
         </div>
-        <PermissionGate permission="users:create">
+        <PermissionGate permission={PERMISSIONS.CREATE_USERS}>
           <Button onClick={openAdd}>
             <Plus className="mr-2 h-4 w-4" /> Tambah Anggota
           </Button>

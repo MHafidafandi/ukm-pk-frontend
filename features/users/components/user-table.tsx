@@ -1,5 +1,6 @@
 import { User } from "@/contexts/AuthContext";
 import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/lib/permissions";
 
 import {
   Table,
@@ -132,7 +133,7 @@ export const UsersTable = ({
 
                 <TableCell>
                   <div>
-                    <p className="font-medium">{user.name}</p>
+                    <p className="font-medium">{user.nama}</p>
                     <p className="text-xs text-muted-foreground">
                       {user.email}
                     </p>
@@ -148,7 +149,7 @@ export const UsersTable = ({
                 {/* ================= DIVISION ================= */}
 
                 <TableCell className="hidden sm:table-cell">
-                  {user.division_name || "-"}
+                  {user.division?.nama_divisi || "-"}
                 </TableCell>
 
                 {/* ================= STATUS ================= */}
@@ -163,9 +164,7 @@ export const UsersTable = ({
 
                 <TableCell className="hidden lg:table-cell">
                   <span className="text-sm text-muted-foreground">
-                    {roleLabels[user.roles?.[0] ?? ""] ??
-                      user.roles?.[0] ??
-                      "-"}
+                    {user.roles?.[0]?.name || "-"}
                   </span>
                 </TableCell>
 
@@ -189,7 +188,7 @@ export const UsersTable = ({
 
                     <DropdownMenuContent align="end">
                       {/* Edit */}
-                      {can("users:update") && (
+                      {can(PERMISSIONS.EDIT_USERS) && (
                         <DropdownMenuItem onClick={() => onEdit(user)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
@@ -199,7 +198,7 @@ export const UsersTable = ({
                       <DropdownMenuSeparator />
 
                       {/* Status */}
-                      {can("users:manage_status") && (
+                      {can(PERMISSIONS.EDIT_USERS) && (
                         <>
                           {user.status !== "aktif" && (
                             <DropdownMenuItem
@@ -233,7 +232,7 @@ export const UsersTable = ({
                       <DropdownMenuSeparator />
 
                       {/* Division & Roles */}
-                      {can("divisions:assign_user") && (
+                      {can(PERMISSIONS.ASSIGN_ROLES) && (
                         <DropdownMenuItem
                           onClick={() =>
                             onAssignDivision && onAssignDivision(user)
@@ -244,7 +243,7 @@ export const UsersTable = ({
                         </DropdownMenuItem>
                       )}
 
-                      {can("roles:assign") && (
+                      {can(PERMISSIONS.ASSIGN_ROLES) && (
                         <DropdownMenuItem
                           onClick={() => onManageRoles && onManageRoles(user)}
                         >
@@ -256,7 +255,7 @@ export const UsersTable = ({
                       <DropdownMenuSeparator />
 
                       {/* Delete */}
-                      {can("users:delete") && (
+                      {can(PERMISSIONS.DELETE_USERS) && (
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => onDelete(user)}
