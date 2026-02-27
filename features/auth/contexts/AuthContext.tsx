@@ -144,6 +144,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     onMutate: () => console.log("🔄 [LOGIN] Starting..."),
     onSuccess: async (data) => {
       console.log("✅ [LOGIN] Success");
+      console.log(data);
       setToken(data.access_token);
       setIsTokenPresent(true);
 

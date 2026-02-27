@@ -105,16 +105,21 @@ export const RolesList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Manajemen Role</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Manajemen Role
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Kelola role dan hak akses pengguna
           </p>
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_ROLES}>
-          <Button onClick={openAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Tambah Role
+          <Button
+            onClick={openAdd}
+            className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+          >
+            <Plus className="h-5 w-5" /> Tambah Role
           </Button>
         </PermissionGate>
       </div>

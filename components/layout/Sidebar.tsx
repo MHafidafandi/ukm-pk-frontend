@@ -94,24 +94,22 @@ export function AppSidebar() {
   return (
     <Sidebar>
       {/* Header */}
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Heart className="h-4 w-4 text-sidebar-primary-foreground" />
+      <SidebarHeader className="p-4 pb-6 border-b border-sidebar-border/50 mb-1">
+        <div className="flex items-center gap-3 px-1">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm ring-1 ring-white/20 shadow-sm">
+            <Heart className="h-5 w-5 text-white" />
           </div>
 
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-sidebar-foreground">
-              SI-PEDULI
+          <div className="flex flex-col truncate">
+            <span className="text-xl font-bold tracking-wider text-sidebar-foreground">
+              SIPEDULI
             </span>
-            <span className="text-xs text-sidebar-foreground/60">
-              UKM Peduli Kemanusiaan
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/70">
+              Admin Portal
             </span>
           </div>
         </div>
       </SidebarHeader>
-
-      <SidebarSeparator />
 
       {/* Content */}
       <SidebarContent>

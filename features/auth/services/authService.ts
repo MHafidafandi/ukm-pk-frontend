@@ -3,17 +3,17 @@ import { LoginInput } from "@/lib/validations/auth-schema";
 
 export const login = async (body: LoginInput) => {
   const { data } = await api.post("/auth/login", body);
-  return data.data; // { access_token, expires_in }
+  return data; // { access_token, expires_in }
 };
 
 export const getMe = async () => {
   const { data } = await api.get("/auth/me");
-  return data.data;
+  return data;
 };
 
 export const refreshToken = async (refresh_token?: string) => {
   const { data } = await api.post("/auth/refresh", { refresh_token });
-  return data.data; // { access_token, expires_in }
+  return data; // { access_token, expires_in }
 };
 
 export const logout = async () => {

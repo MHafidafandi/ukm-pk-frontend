@@ -79,27 +79,70 @@ export const DonationList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Manajemen Donasi
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Donation Management
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Kelola data donasi masuk dan status pembayaran
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage incoming donations and payment statuses.
           </p>
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_DONATIONS}>
-          <Button onClick={openAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Catat Donasi
+          <Button
+            onClick={openAdd}
+            className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+          >
+            <Plus className="h-5 w-5" /> Add Donation
           </Button>
         </PermissionGate>
       </div>
 
-      <DonationTable
-        donations={donations}
-        onEdit={openEdit}
-        onDelete={openDelete}
-      />
+      {/* Filters & Search */}
+      <div className="mb-8 flex flex-col gap-4 rounded-xl bg-card border border-border p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-md">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </div>
+          <input
+            className="block w-full rounded-lg border-0 bg-muted/50 py-2.5 pl-10 pr-4 text-foreground ring-1 ring-inset ring-border placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 transition-all"
+            placeholder="Search donations by donor name..."
+            type="text"
+          />
+        </div>
+        <div className="flex w-full flex-wrap gap-2 lg:w-auto">
+          <button className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm">
+            All Status
+          </button>
+          <button className="inline-flex items-center justify-center rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80">
+            Terverifikasi
+          </button>
+          <button className="inline-flex items-center justify-center rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80">
+            Menunggu
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden p-1">
+        <DonationTable
+          donations={donations}
+          onEdit={openEdit}
+          onDelete={openDelete}
+        />
+      </div>
 
       <DonationFormDialog
         open={formOpen}

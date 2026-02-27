@@ -9,10 +9,12 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <TopNavbar />
-      <main className="w-full flex-1 overflow-hidden bg-sidebar-accent/10">
-        <div className="h-full w-full overflow-auto">{children}</div>
-      </main>
+      <div className="flex flex-col flex-1 overflow-hidden w-full relative">
+        <TopNavbar />
+        <main className="w-full flex-1 overflow-y-auto overflow-x-hidden bg-background">
+          <div className="mx-auto w-full p-6 lg:p-8 min-h-full">{children}</div>
+        </main>
+      </div>
     </SidebarProvider>
   );
 }

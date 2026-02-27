@@ -111,18 +111,21 @@ export const DivisionsList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Manajemen Divisi
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Kelola data divisi dan departemen
           </p>
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_DIVISIONS}>
-          <Button onClick={openAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Tambah Divisi
+          <Button
+            onClick={openAdd}
+            className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+          >
+            <Plus className="h-5 w-5" /> Tambah Divisi
           </Button>
         </PermissionGate>
       </div>
