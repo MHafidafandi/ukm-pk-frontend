@@ -2,7 +2,7 @@
 
 import { Heart, LucideIcon } from "lucide-react";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { usePermission } from "@/hooks/usePermission";
 
 import {
@@ -40,7 +40,7 @@ type MenuItem = {
 
 export function AppSidebar() {
   const menuItems = MENU_ITEMS;
-  const { user, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
 
   const handleLogout = async () => {
     logout();
@@ -122,7 +122,7 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarFooter className="p-4">
-        <NavUser user={user} logout={handleLogout} />
+        <NavUser user={currentUser} logout={handleLogout} />
       </SidebarFooter>
     </Sidebar>
   );

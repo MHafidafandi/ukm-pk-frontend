@@ -17,13 +17,13 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
-import { User } from "@/contexts/AuthContext";
+import { User } from "@/features/auth/contexts/AuthContext";
 import { useState } from "react";
-import { useRoles } from "@/features/roles/api/get-roles";
-import { useAssignUserRole, useRemoveUserRole } from "../api/role-assignment";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
-import { useUserRoles } from "../api/role-assignment";
+import { useUserContext } from "@/features/users/contexts/UserContext";
+import { useRoleContext } from "@/features/roles/contexts/RoleContext";
+import { Role } from "@/features/roles/services/roleService";
 
 type Props = {
   open: boolean;
@@ -34,32 +34,32 @@ type Props = {
 export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
   const [selectedRole, setSelectedRole] = useState("");
 
-  const rolesQuery = useRoles();
-  const userRolesQuery = useUserRoles({ id: user?.id ?? "" });
+  const { roles, isFetchingRoles } = useRoleContext();
 
-  const assignRole = useAssignUserRole();
-  const removeRole = useRemoveUserRole();
+  const {
+    assignUserRole: assignRole,
+    removeUserRole: removeRole,
+    isAssigningRole,
+    isRemovingRole,
+  } = useUserContext();
 
-  const roles = rolesQuery.data?.data ?? [];
   // Ensure userRoles is always an array
-  const userRolesData = userRolesQuery.data?.data ?? [];
-  const currentRoles = Array.isArray(userRolesData) ? userRolesData : [];
+  const currentRoles: any[] = Array.isArray(user?.roles) ? user!.roles : [];
 
   // Filter out roles user already has
   const availableRoles = roles.filter(
-    (role) => !currentRoles.some((ur: any) => ur.id === role.id),
+    (role: Role) => !currentRoles.some((ur: any) => ur.id === role.id),
   );
 
   const handleAssign = async () => {
     if (!user || !selectedRole) return;
     try {
-      await assignRole.mutateAsync({
+      await assignRole({
         id: user.id,
         roleIds: [selectedRole],
       });
       toast.success("Role berhasil ditambahkan");
       setSelectedRole("");
-      userRolesQuery.refetch();
     } catch (error) {
       toast.error("Gagal menambahkan role");
     }
@@ -68,12 +68,11 @@ export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
   const handleRemove = async (roleId: string) => {
     if (!user) return;
     try {
-      await removeRole.mutateAsync({
+      await removeRole({
         id: user.id,
         roleIds: [roleId],
       });
       toast.success("Role berhasil dihapus");
-      userRolesQuery.refetch();
     } catch (error) {
       toast.error("Gagal menghapus role");
     }
@@ -94,9 +93,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
           <div className="space-y-2">
             <Label>Role Saat Ini</Label>
             <div className="flex flex-wrap gap-2">
-              {userRolesQuery.isLoading ? (
-                <Spinner className="h-4 w-4" />
-              ) : currentRoles.length === 0 ? (
+              {currentRoles.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   User belum memiliki role.
                 </p>
@@ -131,7 +128,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
                       Tidak ada role tersedia
                     </SelectItem>
                   ) : (
-                    availableRoles.map((role) => (
+                    availableRoles.map((role: Role) => (
                       <SelectItem key={role.id} value={role.id}>
                         {role.name}
                       </SelectItem>
@@ -142,7 +139,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
             </div>
             <Button
               onClick={handleAssign}
-              disabled={!selectedRole || assignRole.isPending}
+              disabled={!selectedRole || isAssigningRole || isFetchingRoles}
             >
               Tambah
             </Button>

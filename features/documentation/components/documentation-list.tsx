@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useDocuments } from "../hooks";
+import { useDocumentationContext } from "../contexts/DocumentationContext";
 import { DocumentTable } from "./document-table";
 import { DocumentUploadDialog } from "./document-upload-dialog";
 import { Spinner } from "@/components/ui/spinner";
@@ -11,11 +11,9 @@ import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
 
 export const DocumentationList = () => {
-  const [activeTab, setActiveTab] = useState("all");
   const [uploadOpen, setUploadOpen] = useState(false);
-  const { data, isLoading } = useDocuments();
-
-  const documents = data?.data ?? [];
+  const { documents, isFetchingDocuments: isLoading } =
+    useDocumentationContext();
 
   if (isLoading) {
     return (

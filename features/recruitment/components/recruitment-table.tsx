@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
-import { Recruitment } from "../api/get-recruitments";
+import { Recruitment } from "@/features/recruitment/services/recruitmentService";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 

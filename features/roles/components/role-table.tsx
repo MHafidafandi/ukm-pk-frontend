@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { Role } from "../api/get-roles";
+import { Role } from "@/features/roles/services/roleService";
 
 type Props = {
   roles: Role[];

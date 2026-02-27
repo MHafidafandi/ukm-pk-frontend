@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useAssets, useLoans } from "../hooks";
+import { useAssetContext } from "../contexts/AssetContext";
 import { AssetTable } from "./asset-table";
 import { LoanTable } from "./loan-table";
 import { AssetFormDialog } from "./asset-form-dialog";
@@ -18,13 +18,10 @@ export const InventoryList = () => {
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const [loanFormOpen, setLoanFormOpen] = useState(false);
 
-  const assetsQuery = useAssets();
-  const loansQuery = useLoans();
+  const { assets, loans, isFetchingAssets, isFetchingLoans } =
+    useAssetContext();
 
-  const assets = assetsQuery.data?.data ?? [];
-  const loans = loansQuery.data?.data ?? [];
-
-  if (assetsQuery.isLoading || loansQuery.isLoading) {
+  if (isFetchingAssets || isFetchingLoans) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />

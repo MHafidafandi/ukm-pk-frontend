@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loan, LoanStatus } from "../types";
+import { Loan } from "../services/assetService";
 import { Button } from "@/components/ui/button";
 
 type Props = {

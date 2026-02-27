@@ -4,7 +4,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useActivity } from "../api/get-activities";
+import { useEffect } from "react";
+import { useActivityContext } from "../contexts/ActivityContext";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -20,7 +21,16 @@ type Props = {
 
 export const ActivityDetail = ({ id }: Props) => {
   const router = useRouter();
-  const { data: activity, isLoading } = useActivity({ id });
+  const {
+    activeActivityDetails: activity,
+    isFetchingActivityDetails: isLoading,
+    setActiveActivityId,
+  } = useActivityContext();
+
+  useEffect(() => {
+    setActiveActivityId(id);
+    return () => setActiveActivityId(null);
+  }, [id, setActiveActivityId]);
 
   if (isLoading) {
     return (

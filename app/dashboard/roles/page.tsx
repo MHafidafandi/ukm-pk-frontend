@@ -3,6 +3,7 @@
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { RolesList } from "@/features/roles/components/roles-list";
+import { RoleProvider } from "@/features/roles/contexts/RoleContext";
 
 export default function RolesPage() {
   return (
@@ -12,7 +13,9 @@ export default function RolesPage() {
           <h2 className="text-3xl font-bold tracking-tight">Role Management</h2>
         </div>
         <div className="hidden h-full flex-1 flex-col space-y-8 md:flex">
-          <RolesList />
+          <RoleProvider>
+            <RolesList />
+          </RoleProvider>
         </div>
       </div>
     </PermissionGuard>

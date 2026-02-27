@@ -1,4 +1,8 @@
-import { User } from "@/contexts/AuthContext";
+import {
+  User,
+  isDivisionUser,
+  isDivisionMe,
+} from "@/features/auth/contexts/AuthContext";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@/lib/permissions";
 
@@ -149,7 +153,11 @@ export const UsersTable = ({
                 {/* ================= DIVISION ================= */}
 
                 <TableCell className="hidden sm:table-cell">
-                  {user.division?.nama_divisi || "-"}
+                  {isDivisionUser(user.division)
+                    ? user.division.nama_divisi
+                    : isDivisionMe(user.division)
+                      ? user.division.name
+                      : "-"}
                 </TableCell>
 
                 {/* ================= STATUS ================= */}

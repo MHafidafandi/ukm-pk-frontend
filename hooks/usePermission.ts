@@ -1,11 +1,11 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { Permission } from "@/lib/permissions";
 
 export function usePermission() {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
 
   // Ambil permission langsung dari user object, bukan dari role mapping
-  const userPermissions = user?.permissions || [];
+  const userPermissions = currentUser?.permissions || [];
 
   /**
    * Cek apakah user punya permission tertentu.

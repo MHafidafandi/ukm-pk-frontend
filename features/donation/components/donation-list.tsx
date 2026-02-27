@@ -2,17 +2,11 @@
 
 import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import {
-  useDonations,
-  useCreateDonation,
-  useUpdateDonation,
-  useDeleteDonation,
-} from "../hooks";
-import { Donation } from "../types";
+import { useDonationContext } from "../contexts/DonationContext";
+import { Donation } from "../services/donationService";
 import { DonationTable } from "./donation-table";
 import { DonationFormDialog } from "./donation-form-dialog";
 import { DonationDeleteDialog } from "./donation-delete-dialog";
@@ -26,12 +20,15 @@ export const DonationList = () => {
   const [editing, setEditing] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState<Donation | null>(null);
 
-  const donationsQuery = useDonations();
-  const createDonation = useCreateDonation();
-  const updateDonation = useUpdateDonation();
-  const deleteDonation = useDeleteDonation();
+  const {
+    donations: donationsResponse,
+    createDonation,
+    updateDonation,
+    deleteDonation,
+    isLoadingDonations,
+  } = useDonationContext();
 
-  const donations = donationsQuery.data?.data ?? [];
+  const donations = donationsResponse?.data ?? [];
 
   const openAdd = () => {
     setEditing(null);
@@ -51,9 +48,9 @@ export const DonationList = () => {
   const handleSave = async (values: any) => {
     try {
       if (editing) {
-        await updateDonation.mutateAsync({ id: editing.id, data: values });
+        await updateDonation({ id: editing.id, data: values });
       } else {
-        await createDonation.mutateAsync(values);
+        await createDonation(values);
       }
       setFormOpen(false);
     } catch (error) {
@@ -65,14 +62,14 @@ export const DonationList = () => {
   const handleDelete = async () => {
     if (!deleting) return;
     try {
-      await deleteDonation.mutateAsync(deleting.id);
+      await deleteDonation(deleting.id);
       setDeleteOpen(false);
     } catch (error) {
       console.error(error);
     }
   };
 
-  if (donationsQuery.isLoading) {
+  if (isLoadingDonations) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />

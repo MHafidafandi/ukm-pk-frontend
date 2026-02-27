@@ -21,7 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useLpjByActivity, useCreateLpj, useDeleteLpj, LPJ } from "../api/lpj";
+import { useActivityContext } from "../contexts/ActivityContext";
+import { LPJ } from "../services/activityService";
 import { useState } from "react";
 
 type Props = {
@@ -29,23 +30,22 @@ type Props = {
 };
 
 export const LpjViewer = ({ activityId }: Props) => {
-  const { data: response, isLoading } = useLpjByActivity(activityId);
-  const lpjList = response?.lpj ?? [];
+  const {
+    lpjList,
+    createLpj,
+    deleteLpj,
+    isFetchingLpj: isLoading,
+  } = useActivityContext();
   const lpj = lpjList.length > 0 ? lpjList[0] : null; // Assuming one LPJ per activity for now
-
-  const createLpj = useCreateLpj();
-  const deleteLpj = useDeleteLpj();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Since LPJ creation seems to be just tagging the activity as having LPJ and maybe a date?
   // The API spec: ActivityID, Tanggal.
   const handleCreate = async () => {
     try {
-      await createLpj.mutateAsync({
-        data: {
-          activity_id: activityId,
-          tanggal: new Date(),
-        },
+      await createLpj({
+        activity_id: activityId,
+        tanggal: new Date(),
       });
       toast.success("LPJ berhasil dibuat/ditandai");
     } catch {
@@ -56,7 +56,7 @@ export const LpjViewer = ({ activityId }: Props) => {
   const handleDelete = async () => {
     if (!lpj) return;
     try {
-      await deleteLpj.mutateAsync({ id: lpj.id });
+      await deleteLpj(lpj.id);
       toast.success("LPJ dihapus");
       setDeleteOpen(false);
     } catch {

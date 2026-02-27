@@ -6,19 +6,17 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import {
-  useDivisions,
-  useCreateDivision,
-  useUpdateDivision,
-  useDeleteDivision,
-} from "../hooks/useDivisions";
-import { Division, CreateDivisionInput } from "../api";
+import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
+import { Division } from "@/features/divisions/services/divisionService";
 import { z } from "zod";
 
 const createDivisionSchema = z.object({
   nama_divisi: z.string().min(1, "Nama divisi wajib diisi"),
   deskripsi: z.string().optional(),
 });
+
+type CreateDivisionInput = z.infer<typeof createDivisionSchema>;
+
 import { DivisionsTable } from "./division-table";
 import { DivisionFormDialog } from "./division-form-dialog";
 import { DivisionDeleteDialog } from "./division-delete-dialog";
@@ -38,12 +36,13 @@ export const DivisionsList = () => {
   const [deleting, setDeleting] = useState<Division | null>(null);
   const [form, setForm] = useState<CreateDivisionInput>(emptyForm);
 
-  const divisionsQuery = useDivisions();
-  const createDivision = useCreateDivision();
-  const updateDivision = useUpdateDivision();
-  const deleteDivision = useDeleteDivision();
-
-  const divisions = divisionsQuery.data?.data ?? [];
+  const {
+    divisions,
+    createDivision,
+    updateDivision,
+    deleteDivision,
+    isFetchingDivisions,
+  } = useDivisionContext();
 
   const openAdd = () => {
     setEditing(null);
@@ -70,12 +69,12 @@ export const DivisionsList = () => {
       const parsed = createDivisionSchema.parse(form);
 
       if (editing) {
-        await updateDivision.mutateAsync({
+        await updateDivision({
           id: editing.id,
           data: parsed,
         });
       } else {
-        await createDivision.mutateAsync(parsed);
+        await createDivision(parsed);
       }
 
       setFormOpen(false);
@@ -94,7 +93,7 @@ export const DivisionsList = () => {
     if (!deleting) return;
 
     try {
-      await deleteDivision.mutateAsync(deleting.id);
+      await deleteDivision(deleting.id);
       toast.success("Divisi dihapus");
       setDeleteOpen(false);
     } catch (err: any) {
@@ -102,7 +101,7 @@ export const DivisionsList = () => {
     }
   };
 
-  if (divisionsQuery.isLoading) {
+  if (isFetchingDivisions) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />

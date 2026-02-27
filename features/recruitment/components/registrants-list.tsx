@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { useRegistrants, Registrant } from "../api/get-registrants";
-import { useRecruitment } from "../api/get-recruitment";
-import { useUpdateRegistrantStatus } from "../api/update-registrant-status";
+import { useEffect } from "react";
+import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
+import { Registrant } from "@/features/recruitment/services/recruitmentService";
 import { RegistrantsTable } from "./registrants-table";
 
 type Props = {
@@ -17,22 +17,31 @@ type Props = {
 
 export const RegistrantsList = ({ recruitmentId }: Props) => {
   const router = useRouter();
-  const registrantsQuery = useRegistrants(recruitmentId);
-  const recruitmentQuery = useRecruitment({ id: recruitmentId });
-  const updateStatus = useUpdateRegistrantStatus();
+  const {
+    setActiveRecruitmentId,
+    registrants,
+    activeRecruitmentDetails,
+    updateRegistrantStatus,
+    isFetchingRegistrants,
+    isFetchingRecruitmentDetails,
+  } = useRecruitmentContext();
 
-  const registrants = registrantsQuery.data?.data ?? [];
-  const recruitment = recruitmentQuery.data;
+  useEffect(() => {
+    setActiveRecruitmentId(recruitmentId);
+    return () => setActiveRecruitmentId(null);
+  }, [recruitmentId, setActiveRecruitmentId]);
+
+  const recruitment = activeRecruitmentDetails;
 
   const handleUpdateStatus = async (
     registrant: Registrant,
     status: Registrant["status"],
   ) => {
     try {
-      await updateStatus.mutateAsync({
+      await updateRegistrantStatus({
         recruitmentId,
         registrantId: registrant.id,
-        data: { status },
+        status,
       });
       toast.success(`Status pendaftar diubah menjadi ${status}`);
     } catch {
@@ -40,7 +49,7 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     }
   };
 
-  if (registrantsQuery.isLoading || recruitmentQuery.isLoading) {
+  if (isFetchingRegistrants || isFetchingRecruitmentDetails) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />

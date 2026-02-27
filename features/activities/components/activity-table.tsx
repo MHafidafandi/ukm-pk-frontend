@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
-import { Activity } from "../api/get-activities";
+import { Activity } from "../services/activityService";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 

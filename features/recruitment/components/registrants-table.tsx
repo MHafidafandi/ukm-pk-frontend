@@ -13,17 +13,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  FileText,
-  CheckCircle,
-  XCircle,
-  Clock,
-} from "lucide-react";
-import { Registrant } from "../api/get-registrants";
+import { MoreHorizontal, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Registrant } from "@/features/recruitment/services/recruitmentService";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
@@ -81,24 +74,28 @@ export const RegistrantsTable = ({
               <TableRow key={item.id}>
                 <TableCell className="font-medium">
                   <div>
-                    <p>{item.user.nama}</p>
+                    <p>{item.user?.nama}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.user.username}
+                      {item.user?.username}
                     </p>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    <p>{item.user.email}</p>
+                    <p>{item.user?.email}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.user.nomor_telepon || "-"}
+                      {item.user?.nomor_telepon || "-"}
                     </p>
                   </div>
                 </TableCell>
                 <TableCell className="text-sm">
-                  {format(new Date(item.created_at), "dd MMM yyyy HH:mm", {
-                    locale: idLocale,
-                  })}
+                  {format(
+                    new Date(item.created_at || new Date()),
+                    "dd MMM yyyy HH:mm",
+                    {
+                      locale: idLocale,
+                    },
+                  )}
                 </TableCell>
                 <TableCell>
                   <Badge

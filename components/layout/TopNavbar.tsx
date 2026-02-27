@@ -1,13 +1,15 @@
+"use client";
+
 import { Search, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { ModeToggle } from "@/components/ui/ThemeToggle";
 
 export function TopNavbar() {
-  const { user } = useAuth();
+  const { logout } = useAuth(); // or just leave it empty if not needed
 
   return (
     <header className="flex h-14 items-center gap-4 border-b border-border bg-card px-4">

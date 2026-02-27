@@ -6,13 +6,8 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import {
-  useRoles,
-  useCreateRole,
-  useUpdateRole,
-  useDeleteRole,
-} from "../hooks/useRoles";
-import { Role, CreateRoleInput } from "../api";
+import { useRoleContext } from "@/features/roles/contexts/RoleContext";
+import { Role } from "@/features/roles/services/roleService";
 import { z } from "zod";
 
 const createRoleSchema = z.object({
@@ -20,6 +15,9 @@ const createRoleSchema = z.object({
   description: z.string().optional(),
   permissions: z.array(z.string()).optional(),
 });
+
+type CreateRoleInput = z.infer<typeof createRoleSchema>;
+
 import { RolesTable } from "./role-table";
 import { RoleFormDialog } from "./role-form-dialog";
 import { RoleDeleteDialog } from "./role-delete-dialog";
@@ -38,12 +36,8 @@ export const RolesList = () => {
   const [deleting, setDeleting] = useState<Role | null>(null);
   const [form, setForm] = useState<CreateRoleInput>(emptyForm);
 
-  const rolesQuery = useRoles();
-  const createRole = useCreateRole();
-  const updateRole = useUpdateRole();
-  const deleteRole = useDeleteRole();
-
-  const roles = rolesQuery.data?.data ?? [];
+  const { roles, createRole, updateRole, deleteRole, isFetchingRoles } =
+    useRoleContext();
 
   const openAdd = () => {
     setEditing(null);
@@ -69,12 +63,12 @@ export const RolesList = () => {
       const parsed = createRoleSchema.parse(form);
 
       if (editing) {
-        await updateRole.mutateAsync({
+        await updateRole({
           id: editing.id,
           data: parsed,
         });
       } else {
-        await createRole.mutateAsync(parsed);
+        await createRole(parsed);
       }
 
       setFormOpen(false);
@@ -93,7 +87,7 @@ export const RolesList = () => {
     if (!deleting) return;
 
     try {
-      await deleteRole.mutateAsync(deleting.id);
+      await deleteRole(deleting.id);
       toast.success("Role dihapus");
       setDeleteOpen(false);
     } catch (err: any) {
@@ -101,7 +95,7 @@ export const RolesList = () => {
     }
   };
 
-  if (rolesQuery.isLoading) {
+  if (isFetchingRoles) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />

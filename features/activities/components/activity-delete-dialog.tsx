@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Activity } from "../api/get-activities";
+import { Activity } from "../services/activityService";
 
 type Props = {
   open: boolean;

@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Asset, AssetCondition } from "../types";
+import { Asset } from "../services/assetService";
 import {
   DropdownMenu,
   DropdownMenuContent,

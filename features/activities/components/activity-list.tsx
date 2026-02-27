@@ -7,13 +7,8 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
-import {
-  useActivities,
-  useCreateActivity,
-  useUpdateActivity,
-  useDeleteActivity,
-} from "../hooks/useActivities";
-import { Activity } from "../api";
+import { useActivityContext } from "../contexts/ActivityContext";
+import { Activity } from "../services/activityService";
 import {
   CreateActivityInput,
   CreateActivitySchema,
@@ -41,13 +36,13 @@ export const ActivityList = () => {
   const [deleting, setDeleting] = useState<Activity | null>(null);
   const [form, setForm] = useState<CreateActivityInput>(emptyForm);
 
-  // Pagination states could be added here
-  const activitiesQuery = useActivities();
-  const createActivity = useCreateActivity();
-  const updateActivity = useUpdateActivity();
-  const deleteActivity = useDeleteActivity();
-
-  const activities = activitiesQuery.data?.data ?? [];
+  const {
+    activities,
+    createActivity,
+    updateActivity,
+    deleteActivity,
+    isFetchingActivities,
+  } = useActivityContext();
 
   const openAdd = () => {
     setEditing(null);
@@ -72,7 +67,7 @@ export const ActivityList = () => {
   };
 
   const handleViewDetail = (item: Activity) => {
-    router.push(`/administrator/activities/${item.id}`);
+    router.push(`/dashboard/activities/${item.id}`);
   };
 
   const handleSave = async () => {
@@ -80,12 +75,12 @@ export const ActivityList = () => {
       const parsed = CreateActivitySchema.parse(form);
 
       if (editing) {
-        await updateActivity.mutateAsync({
+        await updateActivity({
           id: editing.id,
           data: parsed,
         });
       } else {
-        await createActivity.mutateAsync(parsed);
+        await createActivity(parsed);
       }
 
       setFormOpen(false);
@@ -105,7 +100,7 @@ export const ActivityList = () => {
     if (!deleting) return;
 
     try {
-      await deleteActivity.mutateAsync(deleting.id);
+      await deleteActivity(deleting.id);
       toast.success("Kegiatan dihapus");
       setDeleteOpen(false);
     } catch (err: any) {
@@ -113,7 +108,7 @@ export const ActivityList = () => {
     }
   };
 
-  if (activitiesQuery.isLoading) {
+  if (isFetchingActivities) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />

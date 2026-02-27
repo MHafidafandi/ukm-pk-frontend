@@ -6,14 +6,12 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import {
-  useRecruitments,
-  useCreateRecruitment,
-  useUpdateRecruitment,
-  useDeleteRecruitment,
-} from "../hooks/useRecruitments";
-import { Recruitment, CreateRecruitmentInput } from "../api";
+import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
+import { Recruitment } from "@/features/recruitment/services/recruitmentService";
 import { CreateRecruitmentSchema } from "@/lib/validations/recruitment-schema";
+import { z } from "zod";
+
+type CreateRecruitmentInput = z.infer<typeof CreateRecruitmentSchema>;
 import { RecruitmentTable } from "./recruitment-table";
 import { RecruitmentFormDialog } from "./recruitment-form-dialog";
 import { RecruitmentDeleteDialog } from "./recruitment-delete-dialog";
@@ -39,12 +37,13 @@ export const RecruitmentList = () => {
   const [deleting, setDeleting] = useState<Recruitment | null>(null);
   const [form, setForm] = useState<CreateRecruitmentInput>(emptyForm);
 
-  const recruitmentsQuery = useRecruitments();
-  const createRecruitment = useCreateRecruitment();
-  const updateRecruitment = useUpdateRecruitment();
-  const deleteRecruitment = useDeleteRecruitment();
-
-  const recruitments = recruitmentsQuery.data?.data ?? [];
+  const {
+    recruitments,
+    createRecruitment,
+    updateRecruitment,
+    deleteRecruitment,
+    isFetchingRecruitments,
+  } = useRecruitmentContext();
 
   const openAdd = () => {
     setEditing(null);
@@ -84,12 +83,12 @@ export const RecruitmentList = () => {
       // parsed.end_date = new Date(parsed.end_date).toISOString();
 
       if (editing) {
-        await updateRecruitment.mutateAsync({
+        await updateRecruitment({
           id: editing.id,
           data: parsed,
         });
       } else {
-        await createRecruitment.mutateAsync(parsed);
+        await createRecruitment(parsed);
       }
 
       setFormOpen(false);
@@ -108,7 +107,7 @@ export const RecruitmentList = () => {
     if (!deleting) return;
 
     try {
-      await deleteRecruitment.mutateAsync(deleting.id);
+      await deleteRecruitment(deleting.id);
       toast.success("Rekrutmen dihapus");
       setDeleteOpen(false);
     } catch (err: any) {
@@ -116,7 +115,7 @@ export const RecruitmentList = () => {
     }
   };
 
-  if (recruitmentsQuery.isLoading) {
+  if (isFetchingRecruitments) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />

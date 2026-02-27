@@ -3,6 +3,7 @@
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { DivisionsList } from "@/features/divisions/components/divisions-list";
+import { DivisionProvider } from "@/features/divisions/contexts/DivisionContext";
 
 export default function DivisionsPage() {
   return (
@@ -14,7 +15,9 @@ export default function DivisionsPage() {
           </h2>
         </div>
         <div className="hidden h-full flex-1 flex-col space-y-8 md:flex">
-          <DivisionsList />
+          <DivisionProvider>
+            <DivisionsList />
+          </DivisionProvider>
         </div>
       </div>
     </PermissionGuard>

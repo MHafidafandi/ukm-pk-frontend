@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { Division } from "../api";
+import { Division } from "@/features/divisions/services/divisionService";
 import { PermissionGate } from "@/components/guard";
 
 type Props = {
@@ -63,13 +63,13 @@ export const DivisionsTable = ({ divisions, onEdit, onDelete }: Props) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <PermissionGate permission="divisions:update">
+                      <PermissionGate permission={"divisions:update" as any}>
                         <DropdownMenuItem onClick={() => onEdit(division)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
                       </PermissionGate>
-                      <PermissionGate permission="divisions:delete">
+                      <PermissionGate permission={"divisions:delete" as any}>
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => onDelete(division)}

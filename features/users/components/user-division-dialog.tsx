@@ -15,11 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User } from "@/contexts/AuthContext";
+import { User } from "@/features/auth/contexts/AuthContext";
 import { useState, useEffect } from "react";
-import { useDivisions } from "@/features/divisions/api/get-divisions";
-import { useAssignUserDivision } from "../api/division-assignment";
+import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
 import { toast } from "sonner";
+import { useUserContext } from "@/features/users/contexts/UserContext";
 
 type Props = {
   open: boolean;
@@ -30,14 +30,13 @@ type Props = {
 export const UserDivisionDialog = ({ open, onOpenChange, user }: Props) => {
   const [selectedDivision, setSelectedDivision] = useState("");
 
-  const divisionsQuery = useDivisions();
-  const assignDivision = useAssignUserDivision();
-
-  const divisions = divisionsQuery.data?.data ?? [];
+  const { divisions } = useDivisionContext();
+  const { assignUserDivision: assignDivision, isAssigningDivision } =
+    useUserContext();
 
   useEffect(() => {
-    if (user?.division_id) {
-      setSelectedDivision(user.division_id);
+    if (user?.division?.id) {
+      setSelectedDivision(user.division.id);
     } else {
       setSelectedDivision("");
     }
@@ -47,13 +46,13 @@ export const UserDivisionDialog = ({ open, onOpenChange, user }: Props) => {
     if (!user || !selectedDivision) return;
 
     // If no change, just close
-    if (selectedDivision === user.division_id) {
+    if (selectedDivision === user.division?.id) {
       onOpenChange(false);
       return;
     }
 
     try {
-      await assignDivision.mutateAsync({
+      await assignDivision({
         id: user.id,
         divisionId: selectedDivision,
       });
@@ -99,7 +98,7 @@ export const UserDivisionDialog = ({ open, onOpenChange, user }: Props) => {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Batal
           </Button>
-          <Button onClick={handleSave} disabled={assignDivision.isPending}>
+          <Button onClick={handleSave} disabled={isAssigningDivision}>
             Simpan
           </Button>
         </DialogFooter>

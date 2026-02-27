@@ -1,16 +1,16 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
-import { useUserQuery } from "@/features/auth/hooks";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { UserRole } from "@/contexts/AuthContext";
-import { usePermission, Permission } from "@/hooks/usePermission";
+import { usePermission } from "@/hooks/usePermission";
+import { Permission } from "@/lib/permissions";
 
 type GuardProps = {
   children: React.ReactNode;
   /** Cek role langsung (salah satu role harus cocok) */
-  role?: UserRole | UserRole[];
+  role?: string | string[];
   /** Cek permission spesifik */
   permission?: Permission;
   /** Redirect ke path ini jika akses ditolak (default: redirect ke login) */
@@ -26,7 +26,7 @@ export const Guard = ({
   redirectTo,
   fallback,
 }: GuardProps) => {
-  const { data, isLoading, isError } = useUserQuery();
+  const { currentUser: data, loading: isLoading, isError } = useAuth();
   const { can } = usePermission();
   const router = useRouter();
 
@@ -47,7 +47,8 @@ export const Guard = ({
   // Cek role
   if (role) {
     const allowedRoles = Array.isArray(role) ? role : [role];
-    const hasRole = allowedRoles.some((r) => data.roles.includes(r));
+    const userRoleNames = data.roles?.map((r) => r.name) || [];
+    const hasRole = allowedRoles.some((r) => userRoleNames.includes(r));
     if (!hasRole) {
       return (
         <>
@@ -94,10 +95,10 @@ export const PermissionGate = ({
 }: {
   children: React.ReactNode;
   permission?: Permission;
-  role?: UserRole | UserRole[];
+  role?: string | string[];
   fallback?: React.ReactNode;
 }) => {
-  const { can, roles } = usePermission();
+  const { can, userPermissions: roles } = usePermission(); // Note: Roles in usePermission might meant permissions. Kept as roles logic below based on permissions if needed. Or we fallback to auth.
 
   if (permission && !can(permission)) {
     return <>{fallback}</>;

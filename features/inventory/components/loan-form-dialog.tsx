@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Asset } from "../types";
+import { Asset } from "../services/assetService";
 
 const loanSchema = z.object({
   asset_id: z.string().min(1, "Pilih aset"),

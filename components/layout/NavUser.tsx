@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Settings,
-  Sparkles,
-} from "lucide-react";
+import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,11 +18,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { User } from "@/contexts/AuthContext";
+import { User } from "@/features/auth/contexts/AuthContext";
 
 type NavUserProps = {
-  user: User | null;
-  logout: () => void;
+  readonly user: User | null;
+  readonly logout: () => void;
 };
 
 export function NavUser({ user, logout }: NavUserProps) {

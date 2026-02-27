@@ -32,7 +32,7 @@ import {
   createDonationSchema,
   DonationSchema,
 } from "@/lib/validations/donation-schema";
-import { Donation } from "../types";
+import { Donation } from "../services/donationService";
 
 type Props = {
   open: boolean;
