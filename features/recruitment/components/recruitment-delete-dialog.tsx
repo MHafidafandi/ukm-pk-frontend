@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Recruitment } from "../api/get-recruitments";
+import { Recruitment } from "@/features/recruitment/services/recruitmentService";
 
 type Props = {
   open: boolean;

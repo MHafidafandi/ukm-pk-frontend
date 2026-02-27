@@ -22,16 +22,18 @@ export const api = axios.create({
 const TOKEN_KEY = "access_token";
 
 export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
+  if (typeof globalThis.window === "undefined") return null;
   return localStorage.getItem(TOKEN_KEY);
 }
 
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
+  document.cookie = `has_token=1; path=/; max-age=86400; SameSite=Lax`;
 }
 
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
+  document.cookie = `has_token=; path=/; max-age=0; SameSite=Lax`;
 }
 
 // ── Refresh token state ────────────────────────────────────────────────────
@@ -63,7 +65,7 @@ function processQueue(error: unknown, token: string | null = null) {
 
 api.interceptors.request.use(
   (config) => {
-    if (typeof window !== "undefined") {
+    if (typeof globalThis.window !== "undefined") {
       const token = getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -71,7 +73,9 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    throw error;
+  },
 );
 
 // ── Response interceptor (auto-refresh) ───────────────────────────────────
@@ -89,7 +93,7 @@ api.interceptors.response.use(
       originalRequest._retry ||
       originalRequest.url === "/auth/refresh"
     ) {
-      return Promise.reject(error);
+      throw error;
     }
 
     // Jika sudah ada proses refresh berjalan, masukkan ke antrian
@@ -104,7 +108,9 @@ api.interceptors.response.use(
           };
           return api(originalRequest);
         })
-        .catch((err) => Promise.reject(err));
+        .catch((err) => {
+          throw err;
+        });
     }
 
     // Mulai proses refresh
@@ -132,10 +138,10 @@ api.interceptors.response.use(
       // Refresh gagal → logout paksa
       processQueue(refreshError, null);
       removeToken();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
+      if (typeof globalThis.window !== "undefined") {
+        globalThis.window.location.href = "/login";
       }
-      return Promise.reject(refreshError);
+      throw refreshError;
     } finally {
       isRefreshing = false;
     }

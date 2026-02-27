@@ -1,4 +1,4 @@
-import { User } from "@/contexts/AuthContext";
+import { User } from "@/features/auth/contexts/AuthContext";
 
 import {
   Dialog,

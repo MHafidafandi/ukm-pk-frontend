@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useRef, useState } from "react";
-import { useLogin } from "@/features/auth/hooks";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { loginSchema } from "@/lib/validations/auth-schema";
 import {
   LucideAlertCircle,
@@ -57,15 +57,9 @@ export function LoginForm({
     if (serverError) setServerError(null);
   };
 
-  const login = useLogin({
-    onSuccess,
-    onError: (msg) => {
-      setServerError(msg);
-      triggerShake();
-    },
-  });
+  const { login, isLoggingIn } = useAuth();
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     setServerError(null);
@@ -91,8 +85,19 @@ export function LoginForm({
 
     setIsLoading(true);
 
-    login.mutate(formData);
-    setIsLoading(false);
+    try {
+      await login(formData);
+      onSuccess?.();
+    } catch (error: any) {
+      setServerError(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Gagal masuk",
+      );
+      triggerShake();
+    } finally {
+      setIsLoading(false);
+    }
   };
   const isEmailValid =
     formData.email && !errors.email && /\S+@\S+\.\S+/.test(formData.email);
@@ -245,8 +250,8 @@ export function LoginForm({
         </Field>
 
         <Field>
-          <Button type="submit" disabled={login.isPending}>
-            {login.isPending ? "Logging in..." : "Login"}
+          <Button type="submit" disabled={isLoggingIn || isLoading}>
+            {isLoggingIn || isLoading ? "Logging in..." : "Login"}
           </Button>
         </Field>
       </FieldGroup>

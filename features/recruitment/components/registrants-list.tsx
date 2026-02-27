@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { useRegistrants, Registrant } from "../api/get-registrants";
-import { useRecruitment } from "../api/get-recruitment";
-import { useUpdateRegistrantStatus } from "../api/update-registrant-status";
+import { useEffect } from "react";
+import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
+import { Registrant } from "@/features/recruitment/services/recruitmentService";
 import { RegistrantsTable } from "./registrants-table";
 
 type Props = {
@@ -17,22 +17,31 @@ type Props = {
 
 export const RegistrantsList = ({ recruitmentId }: Props) => {
   const router = useRouter();
-  const registrantsQuery = useRegistrants(recruitmentId);
-  const recruitmentQuery = useRecruitment({ id: recruitmentId });
-  const updateStatus = useUpdateRegistrantStatus();
+  const {
+    setActiveRecruitmentId,
+    registrants,
+    activeRecruitmentDetails,
+    updateRegistrantStatus,
+    isFetchingRegistrants,
+    isFetchingRecruitmentDetails,
+  } = useRecruitmentContext();
 
-  const registrants = registrantsQuery.data?.data ?? [];
-  const recruitment = recruitmentQuery.data;
+  useEffect(() => {
+    setActiveRecruitmentId(recruitmentId);
+    return () => setActiveRecruitmentId(null);
+  }, [recruitmentId, setActiveRecruitmentId]);
+
+  const recruitment = activeRecruitmentDetails;
 
   const handleUpdateStatus = async (
     registrant: Registrant,
     status: Registrant["status"],
   ) => {
     try {
-      await updateStatus.mutateAsync({
+      await updateRegistrantStatus({
         recruitmentId,
         registrantId: registrant.id,
-        data: { status },
+        status,
       });
       toast.success(`Status pendaftar diubah menjadi ${status}`);
     } catch {
@@ -40,7 +49,7 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     }
   };
 
-  if (registrantsQuery.isLoading || recruitmentQuery.isLoading) {
+  if (isFetchingRegistrants || isFetchingRecruitmentDetails) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -50,21 +59,24 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/administrator/recruitments")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Pendaftar: {recruitment?.title}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Kelola pendaftar untuk kegiatan rekrutmen ini
-          </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/administrator/recruitments")}
+            className="hover:bg-muted transition-colors rounded-full h-10 w-10"
+          >
+            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Pendaftar: {recruitment?.title}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Kelola pendaftar untuk kegiatan rekrutmen ini
+            </p>
+          </div>
         </div>
       </div>
 

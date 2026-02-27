@@ -25,13 +25,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import {
-  useProgressReports,
-  useCreateProgressReport,
-  useUpdateProgressReport,
-  useDeleteProgressReport,
-  ProgressReport,
-} from "../api/progress-reports";
+import { useActivityContext } from "../contexts/ActivityContext";
+import { ProgressReport } from "../services/activityService";
 import { ProgressReportFormDialog } from "./progress-report-form-dialog";
 import {
   CreateProgressReportInput,
@@ -58,12 +53,12 @@ export const ProgressReportList = ({ activityId }: Props) => {
     emptyForm(activityId),
   );
 
-  const { data: response } = useProgressReports({ activity_id: activityId });
-  const reports = response?.data ?? [];
-
-  const createReport = useCreateProgressReport();
-  const updateReport = useUpdateProgressReport();
-  const deleteReport = useDeleteProgressReport();
+  const {
+    progressReports: reports,
+    createProgressReport: createReport,
+    updateProgressReport: updateReport,
+    deleteProgressReport: deleteReport,
+  } = useActivityContext();
 
   const openAdd = () => {
     setEditing(null);
@@ -92,15 +87,13 @@ export const ProgressReportList = ({ activityId }: Props) => {
       const parsed = CreateProgressReportSchema.parse(form);
 
       if (editing) {
-        await updateReport.mutateAsync({
+        await updateReport({
           id: editing.id,
           data: parsed,
         });
         toast.success("Laporan progres diperbarui");
       } else {
-        await createReport.mutateAsync({
-          data: parsed,
-        });
+        await createReport(parsed);
         toast.success("Laporan progres dibuat");
       }
       setFormOpen(false);
@@ -116,7 +109,7 @@ export const ProgressReportList = ({ activityId }: Props) => {
   const handleDelete = async () => {
     if (!deleting) return;
     try {
-      await deleteReport.mutateAsync({ id: deleting.id });
+      await deleteReport(deleting.id);
       toast.success("Laporan dihapus");
       setDeleteOpen(false);
     } catch {

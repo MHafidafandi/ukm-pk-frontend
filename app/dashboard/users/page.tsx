@@ -3,6 +3,9 @@
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { UsersList } from "@/features/users/components/users-list";
+import { UserProvider } from "@/features/users/contexts/UserContext";
+import { RoleProvider } from "@/features/roles/contexts/RoleContext";
+import { DivisionProvider } from "@/features/divisions/contexts/DivisionContext";
 
 export default function UsersPage() {
   return (
@@ -12,7 +15,13 @@ export default function UsersPage() {
           <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
         </div>
         <div className="hidden h-full flex-1 flex-col space-y-8 md:flex">
-          <UsersList />
+          <UserProvider>
+            <RoleProvider>
+              <DivisionProvider>
+                <UsersList />
+              </DivisionProvider>
+            </RoleProvider>
+          </UserProvider>
         </div>
       </div>
     </PermissionGuard>

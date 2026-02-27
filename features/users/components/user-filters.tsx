@@ -7,8 +7,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDivisions } from "@/features/divisions/api/get-divisions";
+import { Card, CardContent } from "@/components/ui/card";
+import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
 
 type Props = {
   search: string;
@@ -32,7 +32,7 @@ export const UsersFilters = ({
   onDivisionChange,
   onAngkatanChange,
 }: Props) => {
-  const divisionsQuery = useDivisions();
+  const { divisions } = useDivisionContext();
   // ... (rest of logic)
 
   return (
@@ -83,7 +83,7 @@ export const UsersFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua</SelectItem>
-              {divisionsQuery.data?.data.map((d: any) => (
+              {divisions.map((d: any) => (
                 <SelectItem key={d.id} value={d.id}>
                   {d.nama_divisi}
                 </SelectItem>

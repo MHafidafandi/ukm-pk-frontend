@@ -30,12 +30,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import {
-  useDocumentations,
-  useCreateDocumentation,
-  useDeleteDocumentation,
-  Documentation,
-} from "../api/documentations";
+import { useActivityContext } from "../contexts/ActivityContext";
+import { Documentation } from "../services/activityService";
 import { DocumentationFormDialog } from "./documentation-form-dialog";
 import {
   CreateDocumentationInput,
@@ -64,14 +60,11 @@ export const DocumentationList = ({ activityId }: Props) => {
     emptyForm(activityId),
   );
 
-  // The API might return { data: [...] } or just [...] depending on implementation.
-  // Based on my api file it returns { data: ... }
-  const { data: response } = useDocumentations(activityId);
-  // Ensure we handle both cases if API structure is ambiguous, but strictly following my API file:
-  const docs = response?.data ?? [];
-
-  const createDoc = useCreateDocumentation();
-  const deleteDoc = useDeleteDocumentation();
+  const {
+    documentations: docs,
+    createDocumentation: createDoc,
+    deleteDocumentation: deleteDoc,
+  } = useActivityContext();
 
   const openAdd = () => {
     setForm(emptyForm(activityId));
@@ -89,9 +82,7 @@ export const DocumentationList = ({ activityId }: Props) => {
       // Note: link_gdrive optional check
       const parsed = CreateDocumentationSchema.parse(form);
 
-      await createDoc.mutateAsync({
-        data: parsed,
-      });
+      await createDoc(parsed);
       toast.success("Dokumentasi ditambahkan");
       setFormOpen(false);
     } catch (err: any) {
@@ -106,7 +97,7 @@ export const DocumentationList = ({ activityId }: Props) => {
   const handleDelete = async () => {
     if (!deleting) return;
     try {
-      await deleteDoc.mutateAsync({ id: deleting.id });
+      await deleteDoc(deleting.id);
       toast.success("Dokumentasi dihapus");
       setDeleteOpen(false);
     } catch {

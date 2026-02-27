@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Donation } from "../types";
+import { Donation } from "../services/donationService";
 
 type Props = {
   open: boolean;

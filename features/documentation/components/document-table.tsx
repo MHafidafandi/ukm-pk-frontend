@@ -9,10 +9,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Document } from "../types";
+import { Document } from "../services/documentationService";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Trash2 } from "lucide-react";
-import { useDeleteDocument } from "../hooks";
+import { useDocumentationContext } from "../contexts/DocumentationContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,12 +32,12 @@ type Props = {
 };
 
 export const DocumentTable = ({ documents }: Props) => {
-  const deleteMutation = useDeleteDocument();
+  const { deleteDocument } = useDocumentationContext();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleDelete = () => {
     if (deleteId) {
-      deleteMutation.mutate(deleteId);
+      deleteDocument(deleteId);
       setDeleteId(null);
     }
   };

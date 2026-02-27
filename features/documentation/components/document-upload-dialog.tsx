@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateDocument } from "../hooks";
+import { useDocumentationContext } from "../contexts/DocumentationContext";
 
 const documentSchema = z.object({
   judul: z.string().min(1, "Judul dokumen wajib diisi"),
@@ -51,7 +51,7 @@ export const DocumentUploadDialog = ({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) => {
-  const createMutation = useCreateDocument();
+  const { createDocument: createMutation } = useDocumentationContext();
   const form = useForm<DocumentSchema>({
     resolver: zodResolver(documentSchema as any),
     defaultValues: {
@@ -72,15 +72,12 @@ export const DocumentUploadDialog = ({
       return;
     }
 
-    createMutation.mutate(
-      { data, file },
-      {
-        onSuccess: () => {
-          form.reset();
-          onOpenChange(false);
-        },
-      },
-    );
+    createMutation({ data, file })
+      .then(() => {
+        form.reset();
+        onOpenChange(false);
+      })
+      .catch(() => {});
   };
 
   return (
@@ -183,9 +180,7 @@ export const DocumentUploadDialog = ({
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Mengunggah..." : "Unggah"}
-              </Button>
+              <Button type="submit">Unggah</Button>
             </div>
           </form>
         </Form>

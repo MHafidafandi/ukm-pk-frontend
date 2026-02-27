@@ -1,4 +1,8 @@
-import { User } from "@/contexts/AuthContext";
+import {
+  User,
+  isDivisionUser,
+  isDivisionMe,
+} from "@/features/auth/contexts/AuthContext";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@/lib/permissions";
 
@@ -37,11 +41,23 @@ import {
 
 const statusConfig: Record<
   User["status"],
-  { label: string; variant: "default" | "secondary" | "outline" }
+  { label: string; colorClass: string }
 > = {
-  aktif: { label: "Aktif", variant: "default" },
-  nonaktif: { label: "Nonaktif", variant: "secondary" },
-  alumni: { label: "Alumni", variant: "outline" },
+  aktif: {
+    label: "Aktif",
+    colorClass:
+      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  },
+  nonaktif: {
+    label: "Nonaktif",
+    colorClass:
+      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  },
+  alumni: {
+    label: "Alumni",
+    colorClass:
+      "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  },
 };
 
 const roleLabels: Record<string, string> = {
@@ -100,19 +116,31 @@ export const UsersTable = ({
   const end = Math.min(currentPage * pageSize, totalData);
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-background">
+    <div className="w-full rounded-xl border border-border bg-card shadow-sm overflow-hidden mt-6">
       {/* ================= TABLE ================= */}
 
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nama</TableHead>
-            <TableHead className="hidden md:table-cell">Angkatan</TableHead>
-            <TableHead className="hidden sm:table-cell">Divisi</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden lg:table-cell">Role</TableHead>
-            <TableHead className="hidden lg:table-cell">Kontak</TableHead>
-            <TableHead className="w-[50px]" />
+        <TableHeader className="bg-muted/50 border-b-0">
+          <TableRow className="border-b-0 hover:bg-transparent">
+            <TableHead className="font-semibold text-foreground h-11 pl-4">
+              Nama
+            </TableHead>
+            <TableHead className="hidden md:table-cell font-semibold text-foreground h-11">
+              Angkatan
+            </TableHead>
+            <TableHead className="hidden sm:table-cell font-semibold text-foreground h-11">
+              Divisi
+            </TableHead>
+            <TableHead className="font-semibold text-foreground h-11">
+              Status
+            </TableHead>
+            <TableHead className="hidden lg:table-cell font-semibold text-foreground h-11">
+              Role
+            </TableHead>
+            <TableHead className="hidden lg:table-cell font-semibold text-foreground h-11">
+              Kontak
+            </TableHead>
+            <TableHead className="w-[70px] h-11 pr-4"></TableHead>
           </TableRow>
         </TableHeader>
 
@@ -121,154 +149,169 @@ export const UsersTable = ({
             <TableRow>
               <TableCell
                 colSpan={7}
-                className="h-24 text-center text-muted-foreground"
+                className="h-32 text-center text-muted-foreground font-medium"
               >
                 Tidak ada data anggota.
               </TableCell>
             </TableRow>
           ) : (
-            users.map((user) => (
-              <TableRow key={user.id}>
-                {/* ================= NAME ================= */}
+            users.map((user) => {
+              const status = statusConfig[user.status] || {
+                label: user.status,
+                colorClass: "bg-gray-100 text-gray-800 border-gray-200",
+              };
+              return (
+                <TableRow
+                  key={user.id}
+                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                >
+                  {/* ================= NAME ================= */}
 
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{user.nama}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </TableCell>
+                  <TableCell className="pl-4">
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {user.nama}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                        {user.email}
+                      </p>
+                    </div>
+                  </TableCell>
 
-                {/* ================= ANGKATAN ================= */}
+                  {/* ================= ANGKATAN ================= */}
 
-                <TableCell className="hidden md:table-cell">
-                  {user.angkatan || "-"}
-                </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {user.angkatan || "-"}
+                  </TableCell>
 
-                {/* ================= DIVISION ================= */}
+                  {/* ================= DIVISION ================= */}
 
-                <TableCell className="hidden sm:table-cell">
-                  {user.division?.nama_divisi || "-"}
-                </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {isDivisionUser(user.division)
+                      ? user.division.nama_divisi
+                      : isDivisionMe(user.division)
+                        ? user.division.name
+                        : "-"}
+                  </TableCell>
 
-                {/* ================= STATUS ================= */}
+                  {/* ================= STATUS ================= */}
 
-                <TableCell>
-                  <Badge variant={statusConfig[user.status].variant}>
-                    {statusConfig[user.status].label}
-                  </Badge>
-                </TableCell>
+                  <TableCell>
+                    <Badge className={statusConfig[user.status].colorClass}>
+                      {statusConfig[user.status].label}
+                    </Badge>
+                  </TableCell>
 
-                {/* ================= ROLE ================= */}
+                  {/* ================= ROLE ================= */}
 
-                <TableCell className="hidden lg:table-cell">
-                  <span className="text-sm text-muted-foreground">
-                    {user.roles?.[0]?.name || "-"}
-                  </span>
-                </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <span className="text-sm text-muted-foreground">
+                      {user.roles?.[0]?.name || "-"}
+                    </span>
+                  </TableCell>
 
-                {/* ================= CONTACT ================= */}
+                  {/* ================= CONTACT ================= */}
 
-                <TableCell className="hidden lg:table-cell">
-                  <span className="text-sm text-muted-foreground">
-                    {user.nomor_telepon || "-"}
-                  </span>
-                </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <span className="text-sm text-muted-foreground">
+                      {user.nomor_telepon || "-"}
+                    </span>
+                  </TableCell>
 
-                {/* ================= ACTION ================= */}
+                  {/* ================= ACTION ================= */}
 
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
 
-                    <DropdownMenuContent align="end">
-                      {/* Edit */}
-                      {can(PERMISSIONS.EDIT_USERS) && (
-                        <DropdownMenuItem onClick={() => onEdit(user)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                      )}
+                      <DropdownMenuContent align="end">
+                        {/* Edit */}
+                        {can(PERMISSIONS.EDIT_USERS) && (
+                          <DropdownMenuItem onClick={() => onEdit(user)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        )}
 
-                      <DropdownMenuSeparator />
+                        <DropdownMenuSeparator />
 
-                      {/* Status */}
-                      {can(PERMISSIONS.EDIT_USERS) && (
-                        <>
-                          {user.status !== "aktif" && (
-                            <DropdownMenuItem
-                              onClick={() => onStatusChange(user, "aktif")}
-                            >
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              Aktifkan
-                            </DropdownMenuItem>
-                          )}
+                        {/* Status */}
+                        {can(PERMISSIONS.EDIT_USERS) && (
+                          <>
+                            {user.status !== "aktif" && (
+                              <DropdownMenuItem
+                                onClick={() => onStatusChange(user, "aktif")}
+                              >
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                Aktifkan
+                              </DropdownMenuItem>
+                            )}
 
-                          {user.status !== "nonaktif" && (
-                            <DropdownMenuItem
-                              onClick={() => onStatusChange(user, "nonaktif")}
-                            >
-                              <UserX className="mr-2 h-4 w-4" />
-                              Nonaktifkan
-                            </DropdownMenuItem>
-                          )}
+                            {user.status !== "nonaktif" && (
+                              <DropdownMenuItem
+                                onClick={() => onStatusChange(user, "nonaktif")}
+                              >
+                                <UserX className="mr-2 h-4 w-4" />
+                                Nonaktifkan
+                              </DropdownMenuItem>
+                            )}
 
-                          {user.status !== "alumni" && (
-                            <DropdownMenuItem
-                              onClick={() => onStatusChange(user, "alumni")}
-                            >
-                              <GraduationCap className="mr-2 h-4 w-4" />
-                              Tandai Alumni
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      )}
+                            {user.status !== "alumni" && (
+                              <DropdownMenuItem
+                                onClick={() => onStatusChange(user, "alumni")}
+                              >
+                                <GraduationCap className="mr-2 h-4 w-4" />
+                                Tandai Alumni
+                              </DropdownMenuItem>
+                            )}
+                          </>
+                        )}
 
-                      <DropdownMenuSeparator />
+                        <DropdownMenuSeparator />
 
-                      {/* Division & Roles */}
-                      {can(PERMISSIONS.ASSIGN_ROLES) && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            onAssignDivision && onAssignDivision(user)
-                          }
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Pindah Divisi
-                        </DropdownMenuItem>
-                      )}
+                        {/* Division & Roles */}
+                        {can(PERMISSIONS.ASSIGN_ROLES) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onAssignDivision && onAssignDivision(user)
+                            }
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Pindah Divisi
+                          </DropdownMenuItem>
+                        )}
 
-                      {can(PERMISSIONS.ASSIGN_ROLES) && (
-                        <DropdownMenuItem
-                          onClick={() => onManageRoles && onManageRoles(user)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Kelola Role
-                        </DropdownMenuItem>
-                      )}
+                        {can(PERMISSIONS.ASSIGN_ROLES) && (
+                          <DropdownMenuItem
+                            onClick={() => onManageRoles && onManageRoles(user)}
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Kelola Role
+                          </DropdownMenuItem>
+                        )}
 
-                      <DropdownMenuSeparator />
+                        <DropdownMenuSeparator />
 
-                      {/* Delete */}
-                      {can(PERMISSIONS.DELETE_USERS) && (
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => onDelete(user)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Hapus
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
+                        {/* Delete */}
+                        {can(PERMISSIONS.DELETE_USERS) && (
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => onDelete(user)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

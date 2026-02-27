@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Role } from "../api/get-roles";
+import { Role } from "@/features/roles/services/roleService";
 
 type Props = {
   open: boolean;

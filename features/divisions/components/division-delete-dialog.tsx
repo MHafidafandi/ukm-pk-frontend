@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Division } from "../api";
+import { Division } from "@/features/divisions/services/divisionService";
 
 type Props = {
   open: boolean;

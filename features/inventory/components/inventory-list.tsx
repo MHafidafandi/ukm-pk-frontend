@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useAssets, useLoans } from "../hooks";
+import { useAssetContext } from "../contexts/AssetContext";
 import { AssetTable } from "./asset-table";
 import { LoanTable } from "./loan-table";
 import { AssetFormDialog } from "./asset-form-dialog";
@@ -18,13 +18,10 @@ export const InventoryList = () => {
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const [loanFormOpen, setLoanFormOpen] = useState(false);
 
-  const assetsQuery = useAssets();
-  const loansQuery = useLoans();
+  const { assets, loans, isFetchingAssets, isFetchingLoans } =
+    useAssetContext();
 
-  const assets = assetsQuery.data?.data ?? [];
-  const loans = loansQuery.data?.data ?? [];
-
-  if (assetsQuery.isLoading || loansQuery.isLoading) {
+  if (isFetchingAssets || isFetchingLoans) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -34,47 +31,98 @@ export const InventoryList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Manajemen Inventaris
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Asset Inventory
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Kelola aset barang dan pencatatan peminjaman
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage organization assets, equipment, and track loans.
           </p>
         </div>
         <div className="flex gap-2">
           {activeTab === "assets" && (
             <PermissionGate permission={PERMISSIONS.CREATE_ASSETS}>
-              {/* Note: Permission for inventory creation not explicitly defined, using role or maybe generic permission */}
-              {/* Actually I should check permissions. Let's assume roles:create / manage for now or add new permissions later */}
-              <Button onClick={() => setAssetFormOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Tambah Aset
+              <Button
+                onClick={() => setAssetFormOpen(true)}
+                className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+              >
+                <Plus className="h-5 w-5" /> Add Asset
               </Button>
             </PermissionGate>
           )}
           {activeTab === "loans" && (
             <PermissionGate permission={PERMISSIONS.CREATE_LOANS}>
-              <Button onClick={() => setLoanFormOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Catat Peminjaman
+              <Button
+                onClick={() => setLoanFormOpen(true)}
+                className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+              >
+                <Plus className="h-5 w-5" /> Record Loan
               </Button>
             </PermissionGate>
           )}
         </div>
       </div>
 
-      <Tabs defaultValue="assets" onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="assets">Daftar Aset</TabsTrigger>
-          <TabsTrigger value="loans">Peminjaman</TabsTrigger>
-        </TabsList>
-        <TabsContent value="assets" className="mt-6">
-          <AssetTable assets={assets} />
-        </TabsContent>
-        <TabsContent value="loans" className="mt-6">
-          <LoanTable loans={loans} />
-        </TabsContent>
-      </Tabs>
+      {/* Filters & Search */}
+      <div className="mb-8 flex flex-col gap-4 rounded-xl bg-card border border-border p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-md">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </div>
+          <input
+            className="block w-full rounded-lg border-0 bg-muted/50 py-2.5 pl-10 pr-4 text-foreground ring-1 ring-inset ring-border placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 transition-all"
+            placeholder="Search assets or loans..."
+            type="text"
+          />
+        </div>
+
+        <Tabs
+          defaultValue="assets"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full lg:w-auto"
+        >
+          <TabsList className="grid w-full grid-cols-2 lg:w-[300px] h-11 p-1 bg-muted/50 rounded-lg">
+            <TabsTrigger
+              value="assets"
+              className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Asset List
+            </TabsTrigger>
+            <TabsTrigger
+              value="loans"
+              className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Loans
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden p-1">
+        <Tabs value={activeTab} className="w-full">
+          <TabsContent value="assets" className="mt-0 outline-none">
+            <AssetTable assets={assets} />
+          </TabsContent>
+          <TabsContent value="loans" className="mt-0 outline-none">
+            <LoanTable loans={loans} />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <AssetFormDialog open={assetFormOpen} onOpenChange={setAssetFormOpen} />
       <LoanFormDialog

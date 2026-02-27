@@ -6,17 +6,8 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import { User } from "@/contexts/AuthContext";
-import {
-  useUsers,
-  useUsersStats,
-  useCreateUser,
-  useUpdateUser,
-  useDeleteUser,
-  useActivateUser,
-  useDeactivateUser,
-  useMarkAsAlumniUser,
-} from "../hooks/useUsers";
+import { User } from "@/features/auth/contexts/AuthContext";
+import { useUserContext } from "@/features/users/contexts/UserContext";
 import {
   CreateUserInput,
   CreateUserSchema,
@@ -24,7 +15,7 @@ import {
 } from "@/lib/validations/users-schema";
 import { UsersStats } from "./user-stats";
 import { UsersFilters } from "./user-filters";
-import { useDivisions } from "@/features/divisions/hooks/useDivisions";
+import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
 import { UsersTable } from "./user-table";
 import { UserFormDialog } from "./user-form-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
@@ -49,15 +40,31 @@ const emptyForm: CreateUserInput = {
 };
 
 export const UsersList = () => {
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("");
-  const [filterDivision, setFilterDivision] = useState<string>("");
-  const [filterAngkatan, setFilterAngkatan] = useState<number | undefined>(
-    undefined,
-  );
+  const {
+    users,
+    pagination,
+    stats: statsData,
+    search,
+    setSearch,
+    page: currentPage,
+    setPage: setCurrentPage,
+    limit: pageSize,
+    statusFilter: filterStatus,
+    setStatusFilter: setFilterStatus,
+    divisionFilter: filterDivision,
+    setDivisionFilter: setFilterDivision,
+    angkatanFilter: filterAngkatan,
+    setAngkatanFilter: setFilterAngkatan,
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+    createUser,
+    updateUser,
+    deleteUser,
+    activateUser: activate,
+    deactivateUser: deactivate,
+    markAsAlumniUser: alumni,
+    isFetchingUsers,
+    isFetchingStats,
+  } = useUserContext();
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -71,35 +78,14 @@ export const UsersList = () => {
 
   const [form, setForm] = useState(emptyForm);
 
-  const usersQuery = useUsers({
-    page: currentPage,
-    limit: pageSize,
-    search: search || undefined,
-    status: filterStatus || undefined,
-    division_id: filterDivision || undefined,
-    angkatan: filterAngkatan,
-  });
-  const statsQuery = useUsersStats();
-
-  const createUser = useCreateUser();
-  const updateUser = useUpdateUser();
-  const deleteUser = useDeleteUser();
-  const activate = useActivateUser();
-  const deactivate = useDeactivateUser();
-  const alumni = useMarkAsAlumniUser();
-  const divisionsQuery = useDivisions();
-  const divisions = divisionsQuery.data?.data.map((d) => ({
+  const { divisions: rawDivisions } = useDivisionContext();
+  const divisions = rawDivisions.map((d: any) => ({
     id: d.id,
     nama: d.nama_divisi,
   }));
 
-  const users = usersQuery.data?.data.users ?? [];
-  const pagination = usersQuery.data?.data.pagination;
-  const totalPages = pagination?.total_pages ?? 1;
-  const totalData = pagination?.total ?? 0;
-
   const stats = useMemo(() => {
-    const s = statsQuery.data?.data;
+    const s = statsData;
 
     return {
       total: s?.total_users ?? 0,
@@ -107,7 +93,7 @@ export const UsersList = () => {
       inactive: s?.inactive_users ?? 0,
       alumni: s?.alumni_users ?? 0,
     };
-  }, [statsQuery.data]);
+  }, [statsData]);
 
   const openAdd = () => {
     setEditing(null);
@@ -125,8 +111,8 @@ export const UsersList = () => {
 
       password: "", // kosong pas edit
 
-      nomor_telepon: user.nomor_telepon,
-      alamat: user.alamat,
+      nomor_telepon: user.nomor_telepon ?? "+62",
+      alamat: user.alamat ?? "",
 
       angkatan: Number(user.angkatan),
 
@@ -172,7 +158,7 @@ export const UsersList = () => {
       if (editing) {
         // UPDATE
         const parsed = updateUserRequestSchema.parse(payload);
-        await updateUser.mutateAsync({
+        await updateUser({
           id: editing.id,
           data: parsed,
         });
@@ -181,16 +167,13 @@ export const UsersList = () => {
       } else {
         // CREATE
         const parsed = CreateUserSchema.parse(payload);
-        await createUser.mutateAsync(parsed);
+        await createUser(parsed);
 
         toast.success("User berhasil ditambahkan");
       }
 
-      setFormOpen(false);
       setEditing(null);
       setForm(emptyForm);
-
-      usersQuery.refetch();
     } catch (err: any) {
       if (err.name === "ZodError") {
         toast.error(err.errors[0].message);
@@ -205,11 +188,10 @@ export const UsersList = () => {
     if (!deleting) return;
 
     try {
-      await deleteUser.mutateAsync(deleting.id);
+      await deleteUser(deleting.id);
       toast.success("User dihapus");
 
       setDeleteOpen(false);
-      usersQuery.refetch();
     } catch (err: any) {
       toast.error(err.response?.error || "Gagal menghapus user");
     }
@@ -218,25 +200,23 @@ export const UsersList = () => {
   const handleStatusChange = async (user: User, status: User["status"]) => {
     try {
       if (status === "aktif") {
-        await activate.mutateAsync(user.id);
+        await activate(user.id);
       }
 
       if (status === "nonaktif") {
-        await deactivate.mutateAsync(user.id);
+        await deactivate(user.id);
       }
 
       if (status === "alumni") {
-        await alumni.mutateAsync(user.id);
+        await alumni(user.id);
       }
 
       toast.success("Status diperbarui");
-
-      usersQuery.refetch();
     } catch {
       toast.error("Gagal update status");
     }
   };
-  if (usersQuery.isLoading || statsQuery.isLoading) {
+  if (isFetchingUsers || isFetchingStats) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -246,18 +226,21 @@ export const UsersList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Manajemen Anggota
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Kelola data anggota UKM Peduli Kemanusiaan
           </p>
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_USERS}>
-          <Button onClick={openAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Tambah Anggota
+          <Button
+            onClick={openAdd}
+            className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+          >
+            <Plus className="h-5 w-5" /> Tambah Anggota
           </Button>
         </PermissionGate>
       </div>
@@ -282,7 +265,7 @@ export const UsersList = () => {
         users={users}
         currentPage={currentPage}
         pageSize={pageSize}
-        pagination={pagination}
+        pagination={pagination || undefined}
         onEdit={openEdit}
         onDelete={openDelete}
         onStatusChange={handleStatusChange}

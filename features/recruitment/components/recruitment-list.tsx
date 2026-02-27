@@ -6,14 +6,12 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import {
-  useRecruitments,
-  useCreateRecruitment,
-  useUpdateRecruitment,
-  useDeleteRecruitment,
-} from "../hooks/useRecruitments";
-import { Recruitment, CreateRecruitmentInput } from "../api";
+import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
+import { Recruitment } from "@/features/recruitment/services/recruitmentService";
 import { CreateRecruitmentSchema } from "@/lib/validations/recruitment-schema";
+import { z } from "zod";
+
+type CreateRecruitmentInput = z.infer<typeof CreateRecruitmentSchema>;
 import { RecruitmentTable } from "./recruitment-table";
 import { RecruitmentFormDialog } from "./recruitment-form-dialog";
 import { RecruitmentDeleteDialog } from "./recruitment-delete-dialog";
@@ -39,12 +37,13 @@ export const RecruitmentList = () => {
   const [deleting, setDeleting] = useState<Recruitment | null>(null);
   const [form, setForm] = useState<CreateRecruitmentInput>(emptyForm);
 
-  const recruitmentsQuery = useRecruitments();
-  const createRecruitment = useCreateRecruitment();
-  const updateRecruitment = useUpdateRecruitment();
-  const deleteRecruitment = useDeleteRecruitment();
-
-  const recruitments = recruitmentsQuery.data?.data ?? [];
+  const {
+    recruitments,
+    createRecruitment,
+    updateRecruitment,
+    deleteRecruitment,
+    isFetchingRecruitments,
+  } = useRecruitmentContext();
 
   const openAdd = () => {
     setEditing(null);
@@ -84,12 +83,12 @@ export const RecruitmentList = () => {
       // parsed.end_date = new Date(parsed.end_date).toISOString();
 
       if (editing) {
-        await updateRecruitment.mutateAsync({
+        await updateRecruitment({
           id: editing.id,
           data: parsed,
         });
       } else {
-        await createRecruitment.mutateAsync(parsed);
+        await createRecruitment(parsed);
       }
 
       setFormOpen(false);
@@ -108,7 +107,7 @@ export const RecruitmentList = () => {
     if (!deleting) return;
 
     try {
-      await deleteRecruitment.mutateAsync(deleting.id);
+      await deleteRecruitment(deleting.id);
       toast.success("Rekrutmen dihapus");
       setDeleteOpen(false);
     } catch (err: any) {
@@ -116,7 +115,7 @@ export const RecruitmentList = () => {
     }
   };
 
-  if (recruitmentsQuery.isLoading) {
+  if (isFetchingRecruitments) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -126,18 +125,21 @@ export const RecruitmentList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Manajemen Rekrutmen
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Kelola kegiatan open recruitment dan pendaftar
           </p>
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_RECRUITMENTS}>
-          <Button onClick={openAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Buat Rekrutmen
+          <Button
+            onClick={openAdd}
+            className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+          >
+            <Plus className="h-5 w-5" /> Buat Rekrutmen
           </Button>
         </PermissionGate>
       </div>

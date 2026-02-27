@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { usePermission } from "@/hooks/usePermission";
 import { Permission } from "@/lib/permissions";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 
 interface PermissionGuardProps {
-  children: ReactNode;
-  permission: Permission;
-  fallbackPath?: string;
-  showLoading?: boolean;
+  readonly children: ReactNode;
+  readonly permission: Permission;
+  readonly fallbackPath?: string;
+  readonly showLoading?: boolean;
 }
 
 export function PermissionGuard({
@@ -21,16 +21,16 @@ export function PermissionGuard({
   showLoading = true,
 }: PermissionGuardProps) {
   const { can } = usePermission();
-  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isLoggedIn } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated && !can(permission)) {
+    if (!authLoading && isLoggedIn && !can(permission)) {
       router.replace(fallbackPath);
     }
-  }, [authLoading, isAuthenticated, can, permission, router, fallbackPath]);
+  }, [authLoading, isLoggedIn, can, permission, router, fallbackPath]);
 
-  if (authLoading || (isAuthenticated && !can(permission))) {
+  if (authLoading || (isLoggedIn && !can(permission))) {
     return showLoading ? (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
