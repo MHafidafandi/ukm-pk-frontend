@@ -41,90 +41,114 @@ export const ActivityGrid = ({
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-      {activities.map((item) => {
-        const status = statusConfig[item.status] || {
+      {activities.map((item, idx) => {
+        const isOngoing =
+          item.status.toLowerCase() === "ongoing" ||
+          item.status.toLowerCase() === "berjalan";
+        const isCompleted =
+          item.status.toLowerCase() === "selesai" ||
+          item.status.toLowerCase() === "completed";
+        const isPending =
+          item.status.toLowerCase() === "perencanaan" ||
+          item.status.toLowerCase() === "pending";
+
+        let statusConfig: { label: string; colorClass: string } = {
           label: item.status,
           colorClass: "bg-gray-500/90",
         };
+        if (isOngoing)
+          statusConfig = { label: "Berjalan", colorClass: "bg-blue-500/90" };
+        else if (isCompleted)
+          statusConfig = { label: "Selesai", colorClass: "bg-emerald-500/90" };
+        else if (isPending)
+          statusConfig = {
+            label: "Perencanaan",
+            colorClass: "bg-amber-500/90",
+          };
+        else
+          statusConfig = { label: "Dibatalkan", colorClass: "bg-rose-500/90" };
+
+        // Basic avatar placeholder map based on index to give it the mockup feel
+        const placeholders = [
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuAO8GEaq_Vag4jtDnbHAvZbXpUsvJD0qcB47SmV6hYWdxQDCTQVZl3-WJDfSj-ucb20bbl0_MMWjKK1_i81GTQ-aGP5wr57x5-pnB1De0uq0kyCHkewYNYdjv3D_0vSW4n6f0eI9PE4zbeLr2htMi4sd2niN8i11RZYDuBBimgmEGKydB9gCTRVfx7xXIAUPSS1A0kdXELcNmrWVKWg_ioiZcRjrs0jwLd3fbptMBQGgIqzc5s1skqRRgc2wDsED_bKlalBhi5R-Yip",
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuBNPmD8Jaq-s0QtD26NPe4qp7WX8EEG0-pGj0I4k7eP1rQFgKdGL_f1b480tdtlskzZ56qXxJMTgK6H9a7_ygquqFJfAV3IfB4A3MSJe5UkMq8HmSuDtVnEAKeCETcBe7r7lNYg9Nom7gUV-YiFZsyh7HlMPSYqewi808wvJt9VoGSmmzA1_J5hcpwCR3tn6GBfj9_mx-uQlIGxmIRBwSnyyhY-dKVBecJ-wEPKvktqTyY-NvC81b-EZZoe4ehAkCjCAFx6V7oP16Es",
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuDwuiDTEat7Oay3nLmz1WytSng9grFFxilTb_SCdpQ2cA9eFgJICq91TcJGaRhWEIhgi8VF6q8kF5ntLCNYj0hYWbK0IBc-2ciTcHeq2PLNRLAowqCIDEVy2hBKSQwAG3qSnKCNK8P-b8g6rQrKGmjen5lD15iGJXe8AmDN5rl6Qo8EGCvl6tBv8ETMekqGDvOQ69bbGQHkH9PjpHYvexDFcN3mxOUWh6qTtZabqEPi1cK2WyijNb0QlsOY6kyZdjioU-_GQk4oSlZ9",
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuDgPKLlrVT45MltACdHNQceh3-11WKaTEZaAed3NfJmDEa9U8azpo15gIkeiJphulnTNkbkul-uLb2bdyGChU725DxQcRz7nmLxxyfVFQJTfeye_OfmCvbYLcH08OUZn51VKE7Zgs2YMNh-bDJ0v4h8QbP6fNRebCawn7jqgSUcUGIOlmxNrN5zzh6ihJHdI_1L8OX77eP9mOy0JuD3nGBfASBveQra-UmVRWfBvpM-kE5IpozN7QM95FyUkfQnMliTgiHLqYIDwAfl",
+        ];
+        const imgUrl =
+          (item as any).image_url || placeholders[idx % placeholders.length];
 
         return (
           <div
             key={item.id}
-            className="group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-sm border border-border transition-shadow hover:shadow-md"
+            className="group relative flex flex-col overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md dark:bg-[#1e1429]"
           >
-            {/* Image Section */}
-            <div className="relative aspect-video w-full overflow-hidden bg-muted flex items-center justify-center">
-              {/* Fallback image if activity doesn't have cover image prop */}
-              {/* @ts-ignore */}
-              {item.image_url ? (
+            <div className="relative aspect-video w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+              {imgUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  // @ts-ignore
-                  src={item.image_url}
+                  src={imgUrl}
                   alt={item.judul}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
-                  <ImageIcon className="h-10 w-10 text-muted-foreground/50 transition-transform duration-300 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-linear-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-4xl text-slate-400">
+                    image
+                  </span>
                 </div>
               )}
-
               <div
-                className={`absolute right-3 top-3 rounded-full ${status.colorClass} px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm z-10 shadow-sm border border-white/10`}
+                className={`absolute right-3 top-3 rounded-full ${statusConfig.colorClass} px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm`}
               >
-                {status.label}
+                {statusConfig.label}
               </div>
             </div>
 
-            {/* Content Section */}
             <div className="flex flex-1 flex-col p-5">
               <div className="mb-4 flex-1">
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5" />
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <span className="material-symbols-outlined text-[16px]">
+                    calendar_today
+                  </span>
                   <span>
                     {format(new Date(item.tanggal), "dd MMM yyyy", {
                       locale: idLocale,
                     })}
                   </span>
                   <span className="mx-1">•</span>
-                  <MapPin className="h-3.5 w-3.5 min-w-[14px]" />
-                  <span className="truncate">{item.lokasi}</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    location_on
+                  </span>
+                  <span className="truncate max-w-[120px]">{item.lokasi}</span>
                 </div>
-                <h3 className="line-clamp-2 text-lg font-bold text-foreground">
+                <h3 className="line-clamp-2 text-lg font-bold text-slate-900 dark:text-white">
                   {item.judul}
                 </h3>
-                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                <p className="mt-2 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
                   {item.deskripsi}
                 </p>
               </div>
 
-              {/* Actions Section */}
-              <div className="flex items-center gap-3 pt-4 border-t border-border">
-                <Button
-                  variant="outline"
-                  className="flex-1 rounded-lg hover:bg-muted font-medium"
+              <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
                   onClick={() => onEdit(item)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-transparent dark:text-slate-300 dark:hover:bg-white/5 transition-colors"
                 >
-                  <Edit className="mr-2 h-4 w-4" />
+                  <span className="material-symbols-outlined text-[18px]">
+                    edit
+                  </span>
                   Edit
-                </Button>
-                <Button
-                  variant="default"
-                  className="flex-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium transition-colors border-0"
+                </button>
+                <button
                   onClick={() => onViewDetail(item)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-sm font-medium text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary/30 transition-colors"
                 >
-                  <Eye className="mr-2 h-4 w-4" />
+                  <span className="material-symbols-outlined text-[18px]">
+                    visibility
+                  </span>
                   Details
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg shrink-0"
-                  onClick={() => onDelete(item)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
             </div>
           </div>

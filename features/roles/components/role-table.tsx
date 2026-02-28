@@ -57,7 +57,7 @@ export const RolesTable = ({ roles, onEdit, onDelete }: Props) => {
                   {role.name}
                 </TableCell>
                 <TableCell className="text-muted-foreground font-medium">
-                  - {/* TODO: Add user count if needed */}
+                  {role._count?.users ?? 0} Pengguna
                 </TableCell>
                 <TableCell className="pr-4">
                   <DropdownMenu>

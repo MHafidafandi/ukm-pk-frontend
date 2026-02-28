@@ -225,54 +225,73 @@ export const UsersList = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+    <>
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
             Manajemen Anggota
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Kelola data anggota UKM Peduli Kemanusiaan
+          <p className="text-sm text-subtext-light dark:text-subtext-dark mt-1">
+            Kelola data anggota, peran, dan divisi UKM Peduli Kemanusiaan.
           </p>
         </div>
-        <PermissionGate permission={PERMISSIONS.CREATE_USERS}>
-          <Button
-            onClick={openAdd}
-            className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
-          >
-            <Plus className="h-5 w-5" /> Tambah Anggota
-          </Button>
-        </PermissionGate>
-      </div>
+        <div className="flex items-center gap-4">
+          <PermissionGate permission={PERMISSIONS.CREATE_USERS}>
+            <button
+              onClick={openAdd}
+              className="bg-primary hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95"
+            >
+              <Plus className="h-5 w-5" />
+              Tambah Anggota
+            </button>
+          </PermissionGate>
+        </div>
+      </header>
 
       {/* Stats */}
-      <UsersStats stats={stats} />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <UsersStats stats={stats} />
+      </div>
 
-      {/* Filters */}
-      <UsersFilters
-        division={filterDivision}
-        angkatan={filterAngkatan}
-        search={search}
-        status={filterStatus}
-        onDivisionChange={setFilterDivision}
-        onAngkatanChange={setFilterAngkatan}
-        onSearch={setSearch}
-        onStatusChange={setFilterStatus}
-      />
+      {/* Filters & Table */}
+      <div className="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border-light dark:border-border-dark overflow-hidden mb-8">
+        <UsersFilters
+          division={filterDivision}
+          angkatan={filterAngkatan}
+          search={search}
+          status={filterStatus}
+          onDivisionChange={setFilterDivision}
+          onAngkatanChange={setFilterAngkatan}
+          onSearch={setSearch}
+          onStatusChange={setFilterStatus}
+        />
+        <div className="overflow-x-auto">
+          <UsersTable
+            users={users}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            pagination={pagination || undefined}
+            onEdit={openEdit}
+            onDelete={openDelete}
+            onStatusChange={handleStatusChange}
+            onPageChange={setCurrentPage}
+            onAssignDivision={openAssignDivision}
+            onManageRoles={openManageRoles}
+          />
+        </div>
+      </div>
 
-      {/* Table */}
-      <UsersTable
-        users={users}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        pagination={pagination || undefined}
-        onEdit={openEdit}
-        onDelete={openDelete}
-        onStatusChange={handleStatusChange}
-        onPageChange={setCurrentPage}
-        onAssignDivision={openAssignDivision}
-        onManageRoles={openManageRoles}
-      />
+      {/* Mobile FAB */}
+      <div className="sm:hidden fixed bottom-6 right-6 z-40">
+        <PermissionGate permission={PERMISSIONS.CREATE_USERS}>
+          <button
+            onClick={openAdd}
+            className="bg-primary hover:bg-purple-700 text-white rounded-full p-4 shadow-lg shadow-purple-500/40 flex items-center justify-center transition-all active:scale-95"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        </PermissionGate>
+      </div>
 
       {/* Add/Edit Dialog */}
       <UserFormDialog
@@ -304,6 +323,6 @@ export const UsersList = () => {
         onOpenChange={setDivisionOpen}
         user={assigningDivision}
       />
-    </div>
+    </>
   );
 };

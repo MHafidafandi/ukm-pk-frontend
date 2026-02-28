@@ -1,21 +1,3 @@
-"use client";
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Donation, DonationStatus } from "../services/donationService";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -26,40 +8,174 @@ type Props = {
   onDelete: (donation: Donation) => void;
 };
 
-const statusColorMap: Record<
-  DonationStatus,
-  { label: string; colorClass: string }
-> = {
-  pending: {
-    label: "Menunggu",
-    colorClass:
-      "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+const statusMap: Record<DonationStatus, { label: string; colorClass: string }> =
+  {
+    pending: {
+      label: "Pending",
+      colorClass:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
+    },
+    verified: {
+      label: "Verified",
+      colorClass:
+        "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
+    },
+    rejected: {
+      label: "Rejected",
+      colorClass:
+        "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+    },
+    canceled: {
+      label: "Canceled",
+      colorClass:
+        "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+    },
+  };
+
+const methodMap: Record<string, { label: string; icon: React.ReactNode }> = {
+  bank_transfer: {
+    label: "Bank Transfer",
+    icon: (
+      <svg
+        className="w-5 h-5 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect width="20" height="14" x="2" y="5" rx="2" />
+        <line x1="2" x2="22" y1="10" y2="10" />
+      </svg>
+    ),
   },
-  verified: {
-    label: "Terverifikasi",
-    colorClass:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  qris: {
+    label: "QRIS",
+    icon: (
+      <svg
+        className="w-5 h-5 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect width="5" height="5" x="3" y="3" rx="1" />
+        <rect width="5" height="5" x="16" y="3" rx="1" />
+        <rect width="5" height="5" x="3" y="16" rx="1" />
+        <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+        <path d="M21 21v.01" />
+        <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+        <path d="M3 12h.01" />
+        <path d="M12 3h.01" />
+        <path d="M12 16v.01" />
+        <path d="M16 12h1" />
+        <path d="M21 12v.01" />
+        <path d="M12 21v-1" />
+      </svg>
+    ),
   },
-  rejected: {
-    label: "Ditolak",
-    colorClass:
-      "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  e_wallet: {
+    label: "E-Wallet",
+    icon: (
+      <svg
+        className="w-5 h-5 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect width="20" height="16" x="2" y="4" rx="2" />
+        <path d="M22 10h-4c-1.1 0-2-.9-2-2V4" />
+        <path d="M12 11h.01" />
+      </svg>
+    ),
   },
-  canceled: {
-    label: "Dibatalkan",
-    colorClass:
-      "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
+  cash: {
+    label: "Cash",
+    icon: (
+      <svg
+        className="w-5 h-5 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="8" />
+        <line x1="12" x2="12" y1="8" y2="16" />
+        <line x1="9" x2="15" y1="12" y2="12" />
+      </svg>
+    ),
+  },
+  other: {
+    label: "Other",
+    icon: (
+      <svg
+        className="w-5 h-5 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4" />
+        <path d="M12 8h.01" />
+      </svg>
+    ),
   },
 };
 
+const getAvatarGradient = (name: string) => {
+  const gradients = [
+    "from-purple-400 to-blue-500",
+    "from-pink-400 to-red-500",
+    "from-green-400 to-teal-500",
+    "from-orange-400 to-yellow-500",
+    "from-indigo-400 to-cyan-500",
+  ];
+  const charCode = name.charCodeAt(0) || 0;
+  return gradients[charCode % gradients.length];
+};
+
+const getInitials = (name: string) => {
+  if (
+    name.toLowerCase() === "hamba allah" ||
+    name.toLowerCase() === "anonymous"
+  )
+    return "AN";
+  const parts = name.split(" ");
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return name.substring(0, 2).toUpperCase();
+};
+
 export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
-  // Format date
+  // Format DateTime
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    const d = new Date(dateString);
+    return {
+      date: d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      time: d.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
   };
 
   // Format currency
@@ -72,114 +188,165 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
   };
 
   return (
-    <div className="w-full">
-      <Table>
-        <TableHeader className="bg-muted/50 rounded-t-xl border-b-0">
-          <TableRow className="border-b-0 hover:bg-transparent">
-            <TableHead className="font-semibold text-foreground rounded-tl-xl h-11">
-              Donatur
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Jumlah
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Metode
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Tanggal
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
+    <div className="overflow-x-auto w-full">
+      <table className="w-full text-left border-collapse min-w-[800px]">
+        <thead>
+          <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-border-light dark:border-border-dark">
+            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
+              Donatur Name
+            </th>
+            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
+              Amount (IDR)
+            </th>
+            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
+              Date
+            </th>
+            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
+              Method
+            </th>
+            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
               Status
-            </TableHead>
-            <TableHead className="w-[70px] rounded-tr-xl h-11"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            </th>
+            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider text-right">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border-light dark:divide-border-dark">
           {donations.length === 0 ? (
-            <TableRow>
-              <TableCell
+            <tr>
+              <td
                 colSpan={6}
-                className="h-32 text-center text-muted-foreground font-medium"
+                className="px-6 py-12 text-center text-text-secondary-light dark:text-text-secondary-dark"
               >
-                Belum ada data donasi.
-              </TableCell>
-            </TableRow>
+                No donations found.
+              </td>
+            </tr>
           ) : (
             donations.map((donation) => {
-              const status = statusColorMap[donation.status] || {
+              const statusInfo = statusMap[donation.status] || {
                 label: donation.status,
-                colorClass: "bg-gray-100 text-gray-800 border-gray-200",
+                colorClass: "bg-gray-100 text-gray-800",
               };
+              const methodInfo = methodMap[donation.metode] || methodMap.other;
+              const isAnonymous =
+                donation.nama_donatur.toLowerCase().includes("hamba allah") ||
+                donation.nama_donatur.toLowerCase() === "anonymous";
+              const dateInfo = formatDate(donation.tanggal);
+
               return (
-                <TableRow
+                <tr
                   key={donation.id}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
                 >
-                  <TableCell className="font-medium text-foreground">
-                    <div className="font-semibold">{donation.nama_donatur}</div>
-                    {donation.deskripsi && (
-                      <p className="text-xs text-muted-foreground font-medium mt-0.5 max-w-[200px] truncate">
-                        {donation.deskripsi}
-                      </p>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div
+                        className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
+                          isAnonymous
+                            ? "bg-gray-200 dark:bg-gray-700 text-text-secondary-light dark:text-text-secondary-dark"
+                            : `bg-gradient-to-tr ${getAvatarGradient(donation.nama_donatur)} text-white`
+                        }`}
+                      >
+                        {getInitials(donation.nama_donatur)}
+                      </div>
+                      <div className="ml-4 truncate max-w-[200px]">
+                        <div
+                          className={`text-sm font-medium truncate ${isAnonymous ? "text-text-secondary-light dark:text-text-secondary-dark" : "text-gray-900 dark:text-white"}`}
+                        >
+                          {isAnonymous ? "Anonymous" : donation.nama_donatur}
+                        </div>
+                        <div className="text-xs text-text-secondary-light dark:text-text-secondary-dark truncate">
+                          {donation.deskripsi || "General Donation"}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${isAnonymous ? "text-text-secondary-light dark:text-text-secondary-dark" : ""}`}
+                  >
                     {formatRupiah(donation.jumlah)}
-                  </TableCell>
-                  <TableCell className="capitalize text-muted-foreground font-medium">
-                    {donation.metode.replace("_", " ")}
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">
-                    {formatDate(donation.tanggal)}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase border ${status.colorClass}`}
-                    >
-                      {status.label}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                    {dateInfo.date}{" "}
+                    <span className="text-xs block text-gray-400">
+                      {dateInfo.time}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-muted"
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      {methodInfo.icon}
+                      <span
+                        className={`text-sm ${isAnonymous ? "text-text-secondary-light dark:text-text-secondary-dark" : ""}`}
+                      >
+                        {methodInfo.label}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.colorClass}`}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* For now we leave Edit to standard view editing flow to handle status or anything else */}
+                      <PermissionGate permission={PERMISSIONS.EDIT_DONATIONS}>
+                        <button
+                          className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 transition-colors"
+                          title="View / Edit Details"
+                          onClick={() => onEdit(donation)}
                         >
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36">
-                        <PermissionGate permission={PERMISSIONS.EDIT_DONATIONS}>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onClick={() => onEdit(donation)}
+                          <svg
+                            className="w-5 h-5 block"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
                           >
-                            <Pencil className="mr-2 h-4 w-4 text-primary" />
-                            Edit
-                          </DropdownMenuItem>
-                        </PermissionGate>
-                        <PermissionGate
-                          permission={PERMISSIONS.DELETE_DONATIONS}
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            <path d="m15 5 4 4" />
+                          </svg>
+                        </button>
+                      </PermissionGate>
+
+                      <PermissionGate permission={PERMISSIONS.DELETE_DONATIONS}>
+                        <button
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors ml-1"
+                          title="Delete"
+                          onClick={() => onDelete(donation)}
                         >
-                          <DropdownMenuItem
-                            className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
-                            onClick={() => onDelete(donation)}
+                          <svg
+                            className="w-5 h-5 block"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Hapus
-                          </DropdownMenuItem>
-                        </PermissionGate>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            <line x1="10" x2="10" y1="11" y2="17" />
+                            <line x1="14" x2="14" y1="11" y2="17" />
+                          </svg>
+                        </button>
+                      </PermissionGate>
+                    </div>
+                  </td>
+                </tr>
               );
             })
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };

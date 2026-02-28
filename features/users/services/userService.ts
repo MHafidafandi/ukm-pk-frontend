@@ -15,18 +15,18 @@ export type UsersParams = {
   division_id?: string;
   angkatan?: number;
 };
-
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  total_pages: number;
+  page_size: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
 export interface UsersResponse {
   data: {
     users: User[];
-    pagination: {
-      total: number;
-      page: number;
-      total_pages: number;
-      page_size: number;
-      has_next: boolean;
-      has_previous: boolean;
-    };
+    pagination: PaginationMeta;
     filters: Record<string, unknown>;
   };
 }
@@ -55,17 +55,17 @@ export interface UsersStatsResponse {
 export async function getUsers(
   params: UsersParams = {},
 ): Promise<UsersResponse> {
-  const { data } = await api.get("/users", { params });
+  const data = await api.get("/users", { params });
   return data;
 }
 
 export async function getUserById(id: string): Promise<{ data: User }> {
-  const { data } = await api.get(`/users/${id}`);
+  const data = await api.get(`/users/${id}`);
   return data;
 }
 
 export async function getUsersStats(): Promise<UsersStatsResponse> {
-  const { data } = await api.get("/users/statistics");
+  const data = await api.get("/users/statistics");
   return data;
 }
 

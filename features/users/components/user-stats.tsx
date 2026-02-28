@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Users, UserCheck, Clock, TrendingUp } from "lucide-react";
 
 type Props = {
   stats: {
@@ -11,26 +11,61 @@ type Props = {
 
 export const UsersStats = ({ stats }: Props) => {
   const items = [
-    { label: "Total Anggota", value: stats.total, color: "text-primary" },
-    { label: "Aktif", value: stats.active, color: "text-green-600" },
     {
-      label: "Nonaktif",
-      value: stats.inactive,
-      color: "text-muted-foreground",
+      label: "Total Members",
+      value: stats.total,
+      icon: Users,
+      ringClass: "bg-purple-100 dark:bg-purple-900/30 text-primary",
+      hoverClass: "hover:border-primary/50",
     },
-    { label: "Alumni", value: stats.alumni, color: "text-orange-600" },
+    {
+      label: "Active Users",
+      value: stats.active,
+      icon: UserCheck,
+      ringClass:
+        "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+      hoverClass: "hover:border-green-500/50",
+    },
+    {
+      label: "Pending / Inactive",
+      value: stats.inactive,
+      icon: Clock,
+      ringClass:
+        "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
+      hoverClass: "hover:border-orange-500/50",
+    },
+    {
+      label: "Alumni",
+      value: stats.alumni,
+      icon: TrendingUp,
+      ringClass:
+        "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+      hoverClass: "hover:border-blue-500/50",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <>
       {items.map((s) => (
-        <Card key={s.label}>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-          </CardContent>
-        </Card>
+        <div
+          key={s.label}
+          className={`bg-surface-light dark:bg-surface-dark p-6 rounded-2xl shadow-soft border border-border-light dark:border-border-dark flex items-center justify-between group transition-all ${s.hoverClass}`}
+        >
+          <div>
+            <p className="text-sm font-medium text-subtext-light dark:text-subtext-dark">
+              {s.label}
+            </p>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {s.value}
+            </h3>
+          </div>
+          <div
+            className={`h-12 w-12 rounded-xl flex items-center justify-center ${s.ringClass}`}
+          >
+            <s.icon className="h-6 w-6" />
+          </div>
+        </div>
       ))}
-    </div>
+    </>
   );
 };

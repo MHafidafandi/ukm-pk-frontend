@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -21,6 +21,11 @@ interface DonationContextType {
   stats: { data: DonationStats } | undefined;
   isLoadingDonations: boolean;
   isLoadingStats: boolean;
+
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+  activeFilter: string;
+  setActiveFilter: (val: string) => void;
 
   createDonation: (data: CreateDonationInput) => Promise<any>;
   updateDonation: (args: {
@@ -49,6 +54,8 @@ export const DonationProvider = ({
   children: React.ReactNode;
 }) => {
   const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
 
   const { data: donations, isLoading: isLoadingDonations } = useQuery({
     queryKey: ["donations", "list"],
@@ -118,6 +125,11 @@ export const DonationProvider = ({
       isLoadingDonations,
       isLoadingStats,
 
+      searchQuery,
+      setSearchQuery,
+      activeFilter,
+      setActiveFilter,
+
       createDonation: createDonationMutation.mutateAsync,
       updateDonation: updateDonationMutation.mutateAsync,
       deleteDonation: deleteDonationMutation.mutateAsync,
@@ -128,6 +140,8 @@ export const DonationProvider = ({
       stats,
       isLoadingDonations,
       isLoadingStats,
+      searchQuery,
+      activeFilter,
       createDonationMutation,
       updateDonationMutation,
       deleteDonationMutation,

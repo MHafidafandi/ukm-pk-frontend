@@ -1,9 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { useRef, useState } from "react";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { loginSchema } from "@/lib/validations/auth-schema";
@@ -103,10 +100,7 @@ export function LoginForm({
     formData.email && !errors.email && /\S+@\S+\.\S+/.test(formData.email);
   return (
     <form
-      className={cn(
-        `flex flex-col gap-6 ${isShaking ? "animate-shake" : ""}  `,
-        className,
-      )}
+      className={cn(`space-y-6 ${isShaking ? "animate-shake" : ""}`, className)}
       onSubmit={onSubmit}
       noValidate
       {...props}
@@ -126,135 +120,127 @@ export function LoginForm({
         </div>
       )}
 
-      <FieldGroup>
-        <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
-          <p className="text-muted-foreground text-sm text-balance">
-            Enter your email below to login to your account
-          </p>
-        </div>
-        <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
-          <div className="relative">
-            <div
-              className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${errors.email ? "text-red-400" : "text-slate-400 group-focus-within:text-indigo-500"}`}
-            >
-              <LucideMail size={18} />
-            </div>
-            <Input
-              ref={emailInputRef}
-              id="email"
-              type="email"
-              name="email"
-              value={formData.email}
-              placeholder="m@sipeduli.com"
-              onChange={handleInputChange}
-              disabled={isLoading}
-              autoComplete="email"
-              aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? "email-error" : undefined}
-              className={`w-full h-10 pl-11 pr-11 transition-all duration-200 ${
-                errors.email
-                  ? "border-red-400 bg-red-50/30 focus:border-red-500 ring-4 ring-red-50"
-                  : "border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 hover:border-slate-200"
-              } `}
-            />
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-              {errors.email && (
-                <LucideAlertCircle
-                  className="text-red-500 animate-in zoom-in duration-300"
-                  size={20}
-                />
-              )}
-              {isEmailValid && (
-                <LucideCheckCircle2
-                  className="text-green-500 animate-in zoom-in duration-300"
-                  size={20}
-                />
-              )}
-            </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+          Email
+        </label>
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <LucideMail className="text-slate-400 group-focus-within:text-primary transition-colors size-5" />
           </div>
-          <div className="min-h-4 px-1">
+          <input
+            ref={emailInputRef}
+            id="email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            disabled={isLoading}
+            autoComplete="email"
+            aria-invalid={!!errors.email}
+            className={`block w-full pl-11 pr-11 py-3 bg-slate-50 dark:bg-slate-800/50 border rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none ${
+              errors.email
+                ? "border-red-400"
+                : "border-slate-200 dark:border-slate-700"
+            }`}
+            placeholder="m@sipeduli.com"
+          />
+          <div className="absolute inset-y-0 right-0 pr-4 flex items-center gap-1.5 pointer-events-none">
             {errors.email && (
-              <p
-                id="email-error"
-                className="text-[13px] font-semibold text-red-500 flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200"
-              >
-                <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                {errors.email}
-              </p>
+              <LucideAlertCircle className="text-red-500 animate-in zoom-in duration-300 size-5" />
+            )}
+            {isEmailValid && (
+              <LucideCheckCircle2 className="text-green-500 animate-in zoom-in duration-300 size-5" />
             )}
           </div>
-        </Field>
-        <Field>
-          <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a
-              href="#"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
-            >
-              Forgot your password?
-            </a>
-          </div>
-          <div className="relative">
-            <div
-              className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${errors.password ? "text-red-400" : "text-slate-400 group-focus-within:text-indigo-500"}`}
-            >
-              <LucideLock size={18} />
-            </div>
-            <Input
-              ref={passwordInputRef}
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="••••••••"
-              disabled={isLoading}
-              autoComplete="new-password"
-              aria-invalid={!!errors.password}
-              aria-describedby={errors.password ? "password-error" : undefined}
-              className={`w-full h-10 pl-11 pr-12 transition-all duration-200 font-medium
-              ${
-                errors.password
-                  ? "border-red-400 bg-red-50/30 focus:border-red-500 ring-4 ring-red-50"
-                  : "border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 hover:border-slate-200"
-              } `}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 focus:text-indigo-600 transition-colors focus:outline-none rounded-lg hover:bg-slate-100"
-              aria-label={
-                showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"
-              }
-            >
-              {showPassword ? (
-                <LucideEyeOff size={18} />
-              ) : (
-                <LucideEye size={18} />
-              )}
-            </button>
-          </div>
-          <div className="min-h-4 px-1">
-            {errors.password && (
-              <p
-                id="password-error"
-                className="text-[13px] font-semibold text-red-500 flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200"
-              >
-                <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                {errors.password}
-              </p>
-            )}
-          </div>
-        </Field>
+        </div>
+        <div className="min-h-5 mt-1">
+          {errors.email && (
+            <p className="text-[12px] font-semibold text-red-500 flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200">
+              <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+              {errors.email}
+            </p>
+          )}
+        </div>
+      </div>
 
-        <Field>
-          <Button type="submit" disabled={isLoggingIn || isLoading}>
-            {isLoggingIn || isLoading ? "Logging in..." : "Login"}
-          </Button>
-        </Field>
-      </FieldGroup>
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Password
+          </label>
+          <a
+            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+            href="#"
+          >
+            Forgot Password?
+          </a>
+        </div>
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <LucideLock className="text-slate-400 group-focus-within:text-primary transition-colors size-5" />
+          </div>
+          <input
+            ref={passwordInputRef}
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleInputChange}
+            disabled={isLoading}
+            autoComplete="new-password"
+            aria-invalid={!!errors.password}
+            className={`block w-full pl-11 pr-12 py-3 bg-slate-50 dark:bg-slate-800/50 border rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none font-medium ${
+              errors.password
+                ? "border-red-400"
+                : "border-slate-200 dark:border-slate-700"
+            }`}
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-4 flex items-center"
+          >
+            {showPassword ? (
+              <LucideEyeOff className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors size-5" />
+            ) : (
+              <LucideEye className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors size-5" />
+            )}
+          </button>
+        </div>
+        <div className="min-h-5 mt-1">
+          {errors.password && (
+            <p className="text-[12px] font-semibold text-red-500 flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200">
+              <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+              {errors.password}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center pb-2">
+        <input
+          className="h-4 w-4 text-primary focus:ring-primary border-slate-300 rounded"
+          id="remember-me"
+          name="remember-me"
+          type="checkbox"
+        />
+        <label
+          className="ml-2 block text-sm text-slate-600 dark:text-slate-400"
+          htmlFor="remember-me"
+        >
+          Remember me for 30 days
+        </label>
+      </div>
+
+      <button
+        type="submit"
+        disabled={isLoggingIn || isLoading}
+        className="w-full py-3.5 bg-primary hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-primary/20 transition-all transform active:scale-[0.98]"
+      >
+        {isLoggingIn || isLoading ? "Logging in..." : "Sign In to Dashboard"}
+      </button>
     </form>
   );
 }

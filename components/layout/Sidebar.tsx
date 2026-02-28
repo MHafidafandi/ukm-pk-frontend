@@ -13,7 +13,6 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 
-import { NavMainSub } from "./NavMainSub";
 import { NavUser } from "./NavUser";
 import { NavMain } from "./NavMain";
 import { MENU_ITEMS } from "@/configs/menu";
@@ -21,22 +20,6 @@ import { MENU_ITEMS } from "@/configs/menu";
 // =======================
 // Menu Config
 // =======================
-
-// =======================
-// Types
-// =======================
-type MenuItem = {
-  title: string;
-  url: string;
-  icon?: LucideIcon;
-  isActive?: boolean;
-  items?: {
-    title: string;
-    url: string;
-    permission?: string;
-  }[];
-  permission?: string;
-};
 
 export function AppSidebar() {
   const menuItems = MENU_ITEMS;
@@ -49,46 +32,10 @@ export function AppSidebar() {
   // Filter menu items based on permissions
   const { userPermissions } = usePermission();
 
-  const filteredMenuItems = menuItems
-    .filter((item) => {
-      // If no permission required, show it (or default to show)
-      if (!item.permission) return true;
-      return userPermissions.includes(item.permission);
-    })
-    .map((item) => {
-      // Filter sub-items if they exist
-      if (item.items) {
-        return {
-          ...item,
-          items: item.items.filter((subItem) => {
-            // @ts-ignore - subItem might have permission
-            return (
-              !subItem.permission ||
-              userPermissions.includes(subItem.permission)
-            );
-          }),
-        };
-      }
-      return item;
-    })
-    .filter((item) => {
-      // Remove groups that became empty after filtering sub-items
-      if (item.items && item.items.length === 0) return false;
-      return true;
-    });
-
-  let navSub: MenuItem[] | undefined;
-  let nav: MenuItem[] | undefined;
-
-  // Use filtered items
-  filteredMenuItems.forEach((menu) => {
-    if (menu.items && menu.items.length > 0) {
-      navSub = navSub || [];
-      navSub.push(menu);
-    } else {
-      nav = nav || [];
-      nav.push(menu);
-    }
+  const filteredMenuItems = menuItems.filter((item) => {
+    // If no permission required, show it (or default to show)
+    if (!item.permission) return true;
+    return userPermissions.includes(item.permission);
   });
 
   return (
@@ -96,8 +43,8 @@ export function AppSidebar() {
       {/* Header */}
       <SidebarHeader className="p-4 pb-6 border-b border-sidebar-border/50 mb-1">
         <div className="flex items-center gap-3 px-1">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm ring-1 ring-white/20 shadow-sm">
-            <Heart className="h-5 w-5 text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary backdrop-blur-sm ring-1 ring-primary/20 shadow-sm">
+            <Heart className="h-5 w-5 text-primary-foreground" />
           </div>
 
           <div className="flex flex-col truncate">
@@ -113,8 +60,7 @@ export function AppSidebar() {
 
       {/* Content */}
       <SidebarContent>
-        <NavMain items={nav || []} />
-        <NavMainSub items={navSub || []} />
+        <NavMain items={filteredMenuItems} />
       </SidebarContent>
 
       <SidebarSeparator />
