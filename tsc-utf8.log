@@ -1,1 +1,0 @@
-﻿features/activities/components/activity-table.tsx(80,16): error TS2339: Property 'image_url' does not exist on type 'Activity'.
