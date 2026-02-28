@@ -144,7 +144,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     onMutate: () => console.log("🔄 [LOGIN] Starting..."),
     onSuccess: async (data) => {
       console.log("✅ [LOGIN] Success");
-      console.log(data);
       setToken(data.access_token);
       setIsTokenPresent(true);
 
@@ -155,7 +154,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Redirect logic
         const permissions = user.permissions || [];
-        if (permissions.includes("view-dashboard")) {
+        if (permissions.includes("view-users")) {
           router.replace("/dashboard");
         } else if (permissions.includes("view-users")) {
           router.replace("/dashboard/users");

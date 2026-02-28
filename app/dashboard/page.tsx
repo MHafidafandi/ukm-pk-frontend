@@ -28,7 +28,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
         {/* User Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_USERS}>
-          <div className="bg-gradient-to-br from-[#9F7AEA] to-[#7C3AED] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
+          <div className="bg-linear-to-br from-[#9F7AEA] to-[#7C3AED] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
             <div className="flex items-start justify-between">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <Users className="h-6 w-6" />
@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
         {/* Division Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_DIVISIONS}>
-          <div className="bg-gradient-to-br from-[#60A5FA] to-[#3B82F6] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
+          <div className="bg-linear-to-br from-[#60A5FA] to-[#3B82F6] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
             <div className="flex items-start justify-between">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <Briefcase className="h-6 w-6" />
@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
         {/* Activity Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_ACTIVITIES}>
-          <div className="bg-gradient-to-br from-[#34D399] to-[#10B981] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
+          <div className="bg-linear-to-br from-[#34D399] to-[#10B981] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
             <div className="flex items-start justify-between">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <FileText className="h-6 w-6" />
@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
         {/* Donation Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_DONATIONS}>
-          <div className="bg-gradient-to-br from-[#FB923C] to-[#F97316] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
+          <div className="bg-linear-to-br from-[#FB923C] to-[#F97316] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
             <div className="flex items-start justify-between">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <HeartHandshake className="h-6 w-6" />
@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
         {/* Inventory Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_ASSETS}>
-          <div className="bg-gradient-to-br from-[#F87171] to-[#EF4444] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
+          <div className="bg-linear-to-br from-[#F87171] to-[#EF4444] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
             <div className="flex items-start justify-between">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <Package className="h-6 w-6" />

@@ -19,6 +19,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { User } from "@/features/auth/contexts/AuthContext";
+import Link from "next/link";
 
 type NavUserProps = {
   readonly user: User | null;
@@ -68,9 +69,14 @@ export function NavUser({ user, logout }: NavUserProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Settings />
-                Setting
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/settings"
+                  className="w-full cursor-pointer flex items-center"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Setting</span>
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

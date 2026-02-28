@@ -42,6 +42,10 @@ export const ActivityList = () => {
     updateActivity,
     deleteActivity,
     isFetchingActivities,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
   } = useActivityContext();
 
   const openAdd = () => {
@@ -138,43 +142,38 @@ export const ActivityList = () => {
       </div>
 
       {/* Filters & Search */}
-      <div className="mb-8 flex flex-col gap-4 rounded-xl bg-card border border-border p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-8 flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm dark:bg-[#1e1429] lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-md">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <span className="material-symbols-outlined">search</span>
           </div>
           <input
-            className="block w-full rounded-lg border-0 bg-muted/50 py-2.5 pl-10 pr-4 text-foreground ring-1 ring-inset ring-border placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 transition-all"
+            className="block w-full rounded-lg border-0 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-white/5 dark:text-white dark:ring-slate-700 dark:focus:ring-primary sm:text-sm sm:leading-6 transition-all"
             placeholder="Search activities by name, location..."
             type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="flex w-full flex-wrap gap-2 lg:w-auto">
-          <button className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm">
-            All Status
-          </button>
-          <button className="inline-flex items-center justify-center rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80">
-            Perencanaan
-          </button>
-          <button className="inline-flex items-center justify-center rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80">
-            Berjalan
-          </button>
-          <button className="inline-flex items-center justify-center rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80">
-            Selesai
-          </button>
+          {[
+            { id: "all", label: "All Status" },
+            { id: "perencanaan", label: "Perencanaan" },
+            { id: "berjalan", label: "Berjalan" },
+            { id: "selesai", label: "Selesai" },
+          ].map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setStatusFilter(s.id)}
+              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                statusFilter === s.id
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
       </div>
 
