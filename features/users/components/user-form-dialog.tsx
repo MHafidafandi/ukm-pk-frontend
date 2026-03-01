@@ -34,6 +34,7 @@ type Props = {
   setForm: React.Dispatch<React.SetStateAction<Omit<CreateUserInput, "id">>>;
 
   divisions: { id: string; nama: string }[];
+  roles: { id: string; name: string }[];
 
   onSubmit: () => void;
 };
@@ -49,6 +50,7 @@ export const UserFormDialog = ({
   setForm,
 
   divisions,
+  roles,
 
   onSubmit,
 }: Props) => {
@@ -69,7 +71,6 @@ export const UserFormDialog = ({
 
         <div className="grid gap-4 py-2">
           {/* Name */}
-
           <div className="grid gap-2">
             <Label>Nama Lengkap *</Label>
             <Input
@@ -85,7 +86,6 @@ export const UserFormDialog = ({
           </div>
 
           {/* Email */}
-
           <div className="grid gap-2">
             <Label>Email *</Label>
             <Input
@@ -101,8 +101,24 @@ export const UserFormDialog = ({
             />
           </div>
 
-          {/* Angkatan + Phone */}
+          {!isEdit && (
+            <div className="grid gap-2">
+              <Label>Password *</Label>
+              <Input
+                type="password"
+                value={form.password}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    password: e.target.value,
+                  })
+                }
+                placeholder="Minimal 8 karakter"
+              />
+            </div>
+          )}
 
+          {/* Angkatan + Phone */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label>Angkatan</Label>
@@ -131,6 +147,21 @@ export const UserFormDialog = ({
                 placeholder="08xxxxxx"
               />
             </div>
+          </div>
+
+          {/* Alamat */}
+          <div className="grid gap-2">
+            <Label>Alamat *</Label>
+            <Input
+              value={form.alamat}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  alamat: e.target.value,
+                })
+              }
+              placeholder="Jl. Contoh No. 123"
+            />
           </div>
 
           {/* Division + Role */}
@@ -195,10 +226,11 @@ export const UserFormDialog = ({
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="administrator">Administrator</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="guest">Guest</SelectItem>
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -223,8 +255,8 @@ export const UserFormDialog = ({
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Nonaktif</SelectItem>
+                <SelectItem value="aktif">Aktif</SelectItem>
+                <SelectItem value="nonaktif">Nonaktif</SelectItem>
                 <SelectItem value="alumni">Alumni</SelectItem>
               </SelectContent>
             </Select>
@@ -238,7 +270,10 @@ export const UserFormDialog = ({
             Batal
           </Button>
 
-          <Button onClick={onSubmit}>{isEdit ? "Simpan" : "Tambah"}</Button>
+          <Button onClick={() => {
+            onSubmit();
+            onOpenChange(false);
+          }} >{isEdit ? "Simpan" : "Tambah"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

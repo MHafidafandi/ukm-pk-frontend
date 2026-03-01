@@ -108,7 +108,7 @@ export async function markAsAlumniUser(
 
 export async function bulkUserStatus(body: {
   user_ids: string[];
-  status: "aktif" | "nonaktif" | "alumni";
+  status: "active" | "inactive" | "alumni";
 }): Promise<{ message: string; updated_count?: number }> {
   const { data } = await api.post("/users/bulk/status", body);
   return data;

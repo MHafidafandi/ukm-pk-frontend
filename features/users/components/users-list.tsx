@@ -21,6 +21,7 @@ import { UserFormDialog } from "./user-form-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
 import { UserRoleDialog } from "./user-role-dialog";
 import { UserDivisionDialog } from "./user-division-dialog";
+import { useRoleContext } from "@/features/roles/contexts/RoleContext";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
 
@@ -79,6 +80,12 @@ export const UsersList = () => {
   const [form, setForm] = useState(emptyForm);
 
   const { divisions: rawDivisions } = useDivisionContext();
+  const { roles: rawRoles } = useRoleContext();
+  const roles = rawRoles.map((d: any) => ({
+    id: d.id,
+    name: d.name,
+  }));
+
   const divisions = rawDivisions.map((d: any) => ({
     id: d.id,
     nama: d.nama_divisi,
@@ -108,23 +115,12 @@ export const UsersList = () => {
       nama: user.nama, // mapping
       username: user.username,
       email: user.email,
-
       password: "", // kosong pas edit
-
       nomor_telepon: user.nomor_telepon ?? "+62",
       alamat: user.alamat ?? "",
-
       angkatan: Number(user.angkatan),
-
-      status:
-        user.status === "aktif"
-          ? "aktif"
-          : user.status === "nonaktif"
-            ? "nonaktif"
-            : "alumni",
-
+      status: user.status,
       division_id: user.division?.id ?? "",
-
       role_ids: user.roles?.map((r) => r.id) ?? [],
     });
 
@@ -150,9 +146,9 @@ export const UsersList = () => {
     try {
       const payload = editing
         ? {
-            ...form,
-            password: undefined, // hapus password saat edit
-          }
+          ...form,
+          password: undefined, // hapus password saat edit
+        }
         : form;
 
       if (editing) {
@@ -176,11 +172,11 @@ export const UsersList = () => {
       setForm(emptyForm);
     } catch (err: any) {
       if (err.name === "ZodError") {
-        toast.error(err.errors[0].message);
+        console.error(err.message);
         return;
       }
 
-      toast.error("Gagal menyimpan user");
+      console.error("Gagal menyimpan user");
     }
   };
 
@@ -293,7 +289,6 @@ export const UsersList = () => {
         </PermissionGate>
       </div>
 
-      {/* Add/Edit Dialog */}
       <UserFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
@@ -301,6 +296,7 @@ export const UsersList = () => {
         form={form}
         setForm={setForm}
         divisions={divisions ?? []}
+        roles={roles}
         onSubmit={handleSave}
       />
 

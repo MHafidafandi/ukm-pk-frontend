@@ -71,14 +71,20 @@ export const DivisionProvider = ({
 
   // Derived Filtering for local search since Divisions list isn't paginated over API according to SRS
   const divisions = useMemo(() => {
-    let result = divisionsData?.data || [];
+    let result = divisionsData ?? [];
+
     if (debounceSearch) {
       result = result.filter(
-        (r) =>
-          r.nama_divisi.toLowerCase().includes(debounceSearch.toLowerCase()) ||
-          r.deskripsi?.toLowerCase().includes(debounceSearch.toLowerCase()),
+        (r: Division) =>
+          r.nama_divisi
+            .toLowerCase()
+            .includes(debounceSearch.toLowerCase()) ||
+          r.deskripsi
+            ?.toLowerCase()
+            .includes(debounceSearch.toLowerCase())
       );
     }
+
     return result;
   }, [divisionsData, debounceSearch]);
 

@@ -66,7 +66,7 @@ export const RoleProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Derived Filtering for local search since Roles list isn't paginated over API according to SRS
   const roles = useMemo(() => {
-    let result = rolesData?.data || [];
+    let result = rolesData || [];
     if (debounceSearch) {
       result = result.filter(
         (r) =>
