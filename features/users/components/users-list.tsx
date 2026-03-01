@@ -23,6 +23,7 @@ import { UserRoleDialog } from "./user-role-dialog";
 import { UserDivisionDialog } from "./user-division-dialog";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
+import { useRoleContext } from "@/features/roles/contexts/RoleContext";
 
 const emptyForm: CreateUserInput = {
   nama: "",
@@ -62,8 +63,6 @@ export const UsersList = () => {
     activateUser: activate,
     deactivateUser: deactivate,
     markAsAlumniUser: alumni,
-    isFetchingUsers,
-    isFetchingStats,
   } = useUserContext();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -79,6 +78,8 @@ export const UsersList = () => {
   const [form, setForm] = useState(emptyForm);
 
   const { divisions: rawDivisions } = useDivisionContext();
+  const { roles: rawRoles } = useRoleContext();
+  const roles = rawRoles;
   const divisions = rawDivisions.map((d: any) => ({
     id: d.id,
     nama: d.nama_divisi,
@@ -216,13 +217,6 @@ export const UsersList = () => {
       toast.error("Gagal update status");
     }
   };
-  if (isFetchingUsers || isFetchingStats) {
-    return (
-      <div className="flex h-48 w-full items-center justify-center">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -301,6 +295,7 @@ export const UsersList = () => {
         form={form}
         setForm={setForm}
         divisions={divisions ?? []}
+        roles={roles ?? []}
         onSubmit={handleSave}
       />
 
@@ -316,12 +311,14 @@ export const UsersList = () => {
         open={roleOpen}
         onOpenChange={setRoleOpen}
         user={managingRole}
+        roles={roles ?? []}
       />
 
       <UserDivisionDialog
         open={divisionOpen}
         onOpenChange={setDivisionOpen}
         user={assigningDivision}
+        divisions={divisions}
       />
     </>
   );

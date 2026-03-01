@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useMemo,
-  useEffect,
-} from "react";
+import React, { createContext, useContext, useState, useMemo } from "react";
 import { useDebounce } from "use-debounce";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -89,22 +83,60 @@ export const useUserContext = () => {
   return context;
 };
 
+// ── Helper ─────────────────────────────────────────────────────────────────
+
+const handleError = (err: any, fallback: string) => {
+  const message =
+    err?.response?.data?.message || err?.response?.data?.error || fallback;
+  toast.error(message);
+  console.error(err);
+};
+
+// ── Provider ───────────────────────────────────────────────────────────────
+
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState("");
+  const [search, setSearchRaw] = useState("");
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [divisionFilter, setDivisionFilter] = useState("");
-  const [angkatanFilter, setAngkatanFilter] = useState<number | undefined>(
+  const [limit, setLimitRaw] = useState(10);
+  const [statusFilter, setStatusFilterRaw] = useState("");
+  const [divisionFilter, setDivisionFilterRaw] = useState("");
+  const [angkatanFilter, setAngkatanFilterRaw] = useState<number | undefined>(
     undefined,
   );
 
   const [debounceSearch] = useDebounce(search, 500);
 
-  // Queries
-  const { data: userData, isLoading: isFetchingUsers } = useQuery({
+  // Reset ke page 1 setiap kali filter/search berubah
+  const setSearch = (s: string) => {
+    setSearchRaw(s);
+    setPage(1);
+  };
+  const setLimit = (l: number) => {
+    setLimitRaw(l);
+    setPage(1);
+  };
+  const setStatusFilter = (s: string) => {
+    setStatusFilterRaw(s);
+    setPage(1);
+  };
+  const setDivisionFilter = (d: string) => {
+    setDivisionFilterRaw(d);
+    setPage(1);
+  };
+  const setAngkatanFilter = (a: number | undefined) => {
+    setAngkatanFilterRaw(a);
+    setPage(1);
+  };
+
+  // ── Queries ──────────────────────────────────────────────────────────────
+
+  const {
+    data: userData,
+    isLoading: isLoadingUsers,
+    isFetching: isFetchingUsers, // ✅ isFetching untuk loading saat refetch
+  } = useQuery({
     queryKey: [
       "users",
       "list",
@@ -126,14 +158,16 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         division_id: divisionFilter || undefined,
         angkatan: angkatanFilter,
       }),
+    placeholderData: (prev) => prev, // ✅ jaga data lama saat filter berubah (ganti keepPreviousData)
   });
 
-  const { data: statsData, isLoading: isFetchingStats } = useQuery({
+  const { data: statsData, isFetching: isFetchingStats } = useQuery({
     queryKey: ["users", "stats"],
     queryFn: getUsersStats,
   });
 
-  // Mutations
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
   const invalidateUsers = () => {
     queryClient.invalidateQueries({ queryKey: ["users", "list"] });
     queryClient.invalidateQueries({ queryKey: ["users", "stats"] });
@@ -141,70 +175,77 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const createMutation = useMutation({
     mutationFn: createUser,
-    onSuccess: () => {
-      invalidateUsers();
-    },
-    onError: (err: any) => {
-      console.error(err);
-    },
+    onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal membuat user"),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       updateUser(id, data),
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal mengupdate user"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal menghapus user"),
   });
 
   const activateMutation = useMutation({
     mutationFn: activateUser,
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal mengaktifkan user"),
   });
 
   const deactivateMutation = useMutation({
     mutationFn: deactivateUser,
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal menonaktifkan user"),
   });
 
   const alumniMutation = useMutation({
     mutationFn: markAsAlumniUser,
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal menandai sebagai alumni"),
   });
 
   const bulkStatusMutation = useMutation({
     mutationFn: bulkUserStatus,
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal bulk update status"),
   });
 
   const assignRoleMutation = useMutation({
     mutationFn: ({ id, roleIds }: { id: string; roleIds: string[] }) =>
       assignUserRole(id, roleIds),
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal assign role"),
   });
 
   const removeRoleMutation = useMutation({
     mutationFn: ({ id, roleIds }: { id: string; roleIds: string[] }) =>
       removeUserRole(id, roleIds),
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal menghapus role"),
   });
 
   const assignDivisionMutation = useMutation({
     mutationFn: ({ id, divisionId }: { id: string; divisionId: string }) =>
       assignUserDivision(id, divisionId),
     onSuccess: () => invalidateUsers(),
+    onError: (err: any) => handleError(err, "Gagal assign divisi"),
   });
+
+  // ── Context Value ─────────────────────────────────────────────────────────
 
   const contextValue = useMemo(
     () => ({
       // Data
-      users: userData?.data?.users || [],
-      pagination: userData?.data?.pagination || null,
-      filters: userData?.data?.filters || null,
-      stats: statsData?.data || null,
+      users: userData?.data?.users ?? [],
+      pagination: userData?.data?.pagination ?? null,
+      filters: userData?.data?.filters ?? null,
+      stats: statsData?.data ?? null,
 
       // State Controls
       search,
@@ -233,7 +274,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       assignUserDivision: assignDivisionMutation.mutateAsync,
 
       // Loaders
-      isFetchingUsers,
+      isFetchingUsers: isLoadingUsers || isFetchingUsers,
       isFetchingStats,
       isCreating: createMutation.isPending,
       isUpdating: updateMutation.isPending,
@@ -246,6 +287,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       isRemovingRole: removeRoleMutation.isPending,
       isAssigningDivision: assignDivisionMutation.isPending,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       userData,
       statsData,
@@ -255,18 +297,19 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       statusFilter,
       divisionFilter,
       angkatanFilter,
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      activateMutation,
-      deactivateMutation,
-      alumniMutation,
-      bulkStatusMutation,
-      assignRoleMutation,
-      removeRoleMutation,
-      assignDivisionMutation,
+      isLoadingUsers,
       isFetchingUsers,
       isFetchingStats,
+      createMutation.isPending,
+      updateMutation.isPending,
+      deleteMutation.isPending,
+      activateMutation.isPending,
+      deactivateMutation.isPending,
+      alumniMutation.isPending,
+      bulkStatusMutation.isPending,
+      assignRoleMutation.isPending,
+      removeRoleMutation.isPending,
+      assignDivisionMutation.isPending,
     ],
   );
 

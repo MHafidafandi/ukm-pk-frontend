@@ -118,9 +118,8 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const res = await api.post<{ data: { access_token: string } }>(
-        "/auth/refresh",
-      );
+      const res = (await api.post("/auth/refresh")) as any;
+      console.log(res);
       const newToken = res.data.data.access_token;
       setToken(newToken);
 

@@ -34,19 +34,19 @@ export type UpdateDivisionInput = Partial<CreateDivisionInput>;
 /** GET /divisions */
 export async function getDivisions(): Promise<{ data: Division[] }> {
   // Return shape aligns with SRS for non-paginated lists
-  const { data } = await api.get("/divisions");
+  const data = await api.get("/divisions");
   return data;
 }
 
 /** GET /divisions/:id */
 export async function getDivision(id: string): Promise<{ data: Division }> {
-  const { data } = await api.get(`/divisions/${id}`);
-  return { data };
+  const data = await api.get(`/divisions/${id}`);
+  return data;
 }
 
 /** GET /divisions/:id/division (users in division) */
 export async function getDivisionUsers(id: string): Promise<any> {
-  const { data } = await api.get(`/divisions/${id}/division`);
+  const data = await api.get(`/divisions/${id}/division`);
   return data;
 }
 

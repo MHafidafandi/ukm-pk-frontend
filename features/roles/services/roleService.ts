@@ -27,19 +27,19 @@ export type UpdateRoleInput = Partial<CreateRoleInput>;
 /** GET /roles */
 export async function getRoles(): Promise<{ data: Role[] }> {
   // Return shape aligns with SRS for non-paginated lists
-  const { data } = await api.get("/roles");
+  const data = await api.get("/roles");
   return data;
 }
 
 /** GET /roles/:id */
 export async function getRole(id: string): Promise<{ data: Role }> {
-  const { data } = await api.get(`/roles/${id}`);
-  return { data };
+  const data = await api.get(`/roles/${id}`);
+  return data;
 }
 
 /** GET /roles/statistics */
 export async function getRoleStats(): Promise<any> {
-  const { data } = await api.get("/roles/statistics");
+  const data = await api.get("/roles/statistics");
   return data;
 }
 
