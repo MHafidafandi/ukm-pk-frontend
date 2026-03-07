@@ -14,6 +14,7 @@ export const CreateActivitySchema = z.object({
   deskripsi: z.string().min(1, "Deskripsi wajib diisi"),
   tanggal: z.string().or(z.date()), // API seems to accept string date
   lokasi: z.string().min(1, "Lokasi wajib diisi"),
+  thumbnail: z.any().optional(), // File object for thumbnail upload
 });
 
 export type CreateActivityInput = z.infer<typeof CreateActivitySchema>;

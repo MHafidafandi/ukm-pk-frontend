@@ -28,12 +28,10 @@ export function getToken(): string | null {
 
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
-  document.cookie = `has_token=1; path=/; max-age=86400; SameSite=Lax`;
 }
 
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
-  document.cookie = `has_token=; path=/; max-age=0; SameSite=Lax`;
 }
 
 // ── Refresh token state ────────────────────────────────────────────────────

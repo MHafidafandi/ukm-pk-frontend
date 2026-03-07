@@ -31,6 +31,7 @@ export interface Activity {
   tanggal: string;
   lokasi: string;
   status: ActivityStatus;
+  thumbnail: string;
   created_at: string;
   updated_at: string;
 }
@@ -74,13 +75,11 @@ export type ActivityParams = {
   status?: string;
 };
 
-interface PaginationMeta {
+export interface PaginationMeta {
   total: number;
   page: number;
   total_pages: number;
   page_size: number;
-  has_next: boolean;
-  has_previous: boolean;
 }
 
 // ── Activity API ──────────────────────────────────────────────────────────
@@ -89,14 +88,15 @@ interface PaginationMeta {
 export async function getActivities(
   params?: ActivityParams,
 ): Promise<{ data: { activities: Activity[]; pagination: PaginationMeta } }> {
-  const { data } = await api.get("/activities", { params });
+  const data = await api.get("/activities", { params });
+  console.log("data", data);
   return data;
 }
 
 /** GET /activities/:id */
 export async function getActivity(id: string): Promise<{ data: Activity }> {
-  const { data } = await api.get(`/activities/${id}`);
-  return { data };
+  const data = await api.get(`/activities/${id}`);
+  return data;
 }
 
 /** POST /activities */
@@ -104,7 +104,7 @@ export async function createActivity(
   body: CreateActivityInput | FormData,
 ): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.post("/activities", payload);
+  const data = await api.post("/activities", payload);
   return data;
 }
 

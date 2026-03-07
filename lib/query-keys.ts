@@ -66,4 +66,8 @@ export const queryKeys = {
     details: () => [...queryKeys.recruitments.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.recruitments.details(), id] as const,
   },
+  landingContents: {
+    all: ["landing-contents"] as const,
+    list: () => [...queryKeys.landingContents.all, "list"] as const,
+  },
 };

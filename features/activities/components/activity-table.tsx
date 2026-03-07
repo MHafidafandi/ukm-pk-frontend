@@ -1,12 +1,4 @@
-import { Button } from "@/components/ui/button";
-import {
-  Edit,
-  Eye,
-  MapPin,
-  Calendar,
-  Trash2,
-  Image as ImageIcon,
-} from "lucide-react";
+import { Eye, Calendar, LocateIcon, Pencil } from "lucide-react";
 import { Activity } from "../services/activityService";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -16,13 +8,6 @@ type Props = {
   onEdit: (activity: Activity) => void;
   onDelete: (activity: Activity) => void;
   onViewDetail: (activity: Activity) => void;
-};
-
-const statusConfig: Record<string, { label: string; colorClass: string }> = {
-  ongoing: { label: "Berjalan", colorClass: "bg-blue-500/90" },
-  completed: { label: "Selesai", colorClass: "bg-emerald-500/90" },
-  pending: { label: "Perencanaan", colorClass: "bg-amber-500/90" },
-  cancelled: { label: "Dibatalkan", colorClass: "bg-rose-500/90" },
 };
 
 export const ActivityGrid = ({
@@ -108,18 +93,14 @@ export const ActivityGrid = ({
             <div className="flex flex-1 flex-col p-5">
               <div className="mb-4 flex-1">
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  <span className="material-symbols-outlined text-[16px]">
-                    calendar_today
-                  </span>
+                  <Calendar className="size-4" />
                   <span>
                     {format(new Date(item.tanggal), "dd MMM yyyy", {
                       locale: idLocale,
                     })}
                   </span>
                   <span className="mx-1">•</span>
-                  <span className="material-symbols-outlined text-[16px]">
-                    location_on
-                  </span>
+                  <LocateIcon className="size-4" />
                   <span className="truncate max-w-[120px]">{item.lokasi}</span>
                 </div>
                 <h3 className="line-clamp-2 text-lg font-bold text-slate-900 dark:text-white">
@@ -135,18 +116,14 @@ export const ActivityGrid = ({
                   onClick={() => onEdit(item)}
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-transparent dark:text-slate-300 dark:hover:bg-white/5 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    edit
-                  </span>
+                  <Pencil className="size-4" />
                   Edit
                 </button>
                 <button
                   onClick={() => onViewDetail(item)}
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-sm font-medium text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary/30 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    visibility
-                  </span>
+                  <Eye className="size-4" />
                   Details
                 </button>
               </div>

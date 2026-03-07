@@ -1,111 +1,149 @@
+import { LayoutGrid, Edit, Trash2, Users } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { Division } from "@/features/divisions/services/divisionService";
+  Division,
+  DivisionsStatRes,
+  getDivision,
+} from "@/features/divisions/services/divisionService";
 import { PermissionGate } from "@/components/guard";
+import { PERMISSIONS } from "@/lib/permissions";
+import { useState } from "react";
 
-type Props = {
-  divisions: Division[];
-  onEdit: (division: Division) => void;
-  onDelete: (division: Division) => void;
-};
+const DIVISION_COLORS = [
+  {
+    color: "text-primary",
+    bg: "bg-purple-50 dark:bg-purple-900/20",
+    border: "border-purple-200 dark:border-purple-800",
+  },
+  {
+    color: "text-blue-600",
+    bg: "bg-blue-50 dark:bg-blue-900/20",
+    border: "border-blue-200 dark:border-blue-800",
+  },
+  {
+    color: "text-emerald-600",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    border: "border-emerald-200 dark:border-emerald-800",
+  },
+  {
+    color: "text-orange-600",
+    bg: "bg-orange-50 dark:bg-orange-900/20",
+    border: "border-orange-200 dark:border-orange-800",
+  },
+  {
+    color: "text-pink-600",
+    bg: "bg-pink-50 dark:bg-pink-900/20",
+    border: "border-pink-200 dark:border-pink-800",
+  },
+  {
+    color: "text-cyan-600",
+    bg: "bg-cyan-50 dark:bg-cyan-900/20",
+    border: "border-cyan-200 dark:border-cyan-800",
+  },
+  {
+    color: "text-yellow-600",
+    bg: "bg-yellow-50 dark:bg-yellow-900/20",
+    border: "border-yellow-200 dark:border-yellow-800",
+  },
+  {
+    color: "text-red-600",
+    bg: "bg-red-50 dark:bg-red-900/20",
+    border: "border-red-200 dark:border-red-800",
+  },
+];
 
-export const DivisionsTable = ({ divisions, onEdit, onDelete }: Props) => {
+export const DivisionCard = ({
+  division,
+  index,
+  onEdit,
+  onDelete,
+}: {
+  division: DivisionsStatRes;
+  index: number;
+  onEdit: (d: Division) => void;
+  onDelete: (d: Division) => void;
+}) => {
+  const palette = DIVISION_COLORS[index % DIVISION_COLORS.length];
+  const memberCount = division.user_count ?? 0;
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+
+  const handleEdit = async () => {
+    try {
+      setIsLoadingEdit(true);
+      const res = await getDivision(division.division_id);
+      onEdit(res.data);
+    } catch {
+      // handle error jika perlu
+    } finally {
+      setIsLoadingEdit(false);
+    }
+  };
   return (
-    <div className="w-full rounded-xl border border-border bg-card shadow-sm overflow-hidden mt-6">
-      <Table>
-        <TableHeader className="bg-muted/50 border-b-0">
-          <TableRow className="border-b-0 hover:bg-transparent">
-            <TableHead className="font-semibold text-foreground h-11 pl-4">
-              Nama Divisi
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Deskripsi
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Anggota
-            </TableHead>
-            <TableHead className="w-[70px] h-11 pr-4" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {divisions.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={4}
-                className="h-32 text-center text-muted-foreground font-medium"
+    <div
+      className={`group relative bg-surface-light dark:bg-surface-dark rounded-xl border ${palette.border} shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}
+    >
+      {/* Top accent bar */}
+      <div
+        className={`h-1 w-full ${palette.bg.replace("bg-", "bg-").replace("/20", "")}`}
+      />
+
+      <div className="p-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${palette.bg}`}>
+              <LayoutGrid className={`w-5 h-5 ${palette.color}`} />
+            </div>
+            <div>
+              <h3 className="font-bold text-text-primary-light dark:text-text-primary-dark text-sm leading-tight">
+                {division.nama_divisi}
+              </h3>
+              {/* {division.deskripsi && (
+                <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-0.5 line-clamp-1">
+                  {division.deskripsi}
+                </p>
+              )} */}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            <PermissionGate permission={PERMISSIONS.EDIT_DIVISIONS}>
+              <button
+                onClick={handleEdit}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-text-secondary-light hover:text-primary transition-colors"
               >
-                Tidak ada data divisi.
-              </TableCell>
-            </TableRow>
-          ) : (
-            divisions.map((division) => (
-              <TableRow
-                key={division.id}
-                className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                {isLoadingEdit ? (
+                  <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block" />
+                ) : (
+                  <Edit className="w-4 h-4" />
+                )}
+              </button>
+            </PermissionGate>
+            <PermissionGate permission={PERMISSIONS.DELETE_DIVISIONS}>
+              <button
+                onClick={() =>
+                  onDelete({
+                    id: division.division_id,
+                    nama_divisi: division.nama_divisi,
+                  })
+                }
+                className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-text-secondary-light hover:text-red-600 transition-colors"
               >
-                <TableCell className="font-semibold text-foreground pl-4">
-                  {division.nama_divisi}
-                </TableCell>
-                <TableCell className="text-muted-foreground font-medium">
-                  {division.deskripsi || "-"}
-                </TableCell>
-                <TableCell>
-                  <span className="inline-flex items-center justify-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                    {division._count?.users ?? 0} Anggota
-                  </span>
-                </TableCell>
-                <TableCell className="pr-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-muted"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-36">
-                      <PermissionGate permission={"divisions:update" as any}>
-                        <DropdownMenuItem
-                          className="cursor-pointer"
-                          onClick={() => onEdit(division)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4 text-primary" />
-                          Edit
-                        </DropdownMenuItem>
-                      </PermissionGate>
-                      <PermissionGate permission={"divisions:delete" as any}>
-                        <DropdownMenuItem
-                          className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10"
-                          onClick={() => onDelete(division)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Hapus
-                        </DropdownMenuItem>
-                      </PermissionGate>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </PermissionGate>
+          </div>
+        </div>
+
+        {/* Member count */}
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <Users className="w-4 h-4 text-text-secondary-light dark:text-text-secondary-dark" />
+          <span className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+            <span className={`font-bold ${palette.color}`}>{memberCount}</span>{" "}
+            anggota
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
