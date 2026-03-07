@@ -98,7 +98,7 @@ export const ActivityProvider = ({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("");
   const [debounceSearch] = useDebounce(search, 500);
 
   // Active Context State (for Reports, LPJ, Docs)
@@ -115,7 +115,8 @@ export const ActivityProvider = ({
         page,
         limit,
         search: debounceSearch || undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
+        status:
+          statusFilter && statusFilter !== "all" ? statusFilter : undefined,
       }),
   });
 

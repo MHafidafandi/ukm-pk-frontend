@@ -11,12 +11,13 @@ import {
   updateDivision,
   deleteDivision,
   Division,
+  DivisionStats,
 } from "@/features/divisions/services/divisionService";
 
 interface DivisionContextType {
   // Data
   divisions: Division[];
-  stats: any;
+  stats: DivisionStats | null;
 
   // UI State
   search: string;
@@ -82,7 +83,7 @@ export const DivisionProvider = ({
     return result;
   }, [divisionsData, debounceSearch]);
 
-  const stats = statsData || null;
+  const stats = statsData?.data || null;
 
   // Mutations
   const invalidateDivisions = () => {

@@ -5,18 +5,14 @@ import { api } from "@/lib/api/client";
 export interface Role {
   id: string;
   name: string;
-  description: string;
   permissions: string[];
   created_at?: string;
   updated_at?: string;
-  _count?: {
-    users: number;
-  };
+  user_count: number;
 }
 
 export interface CreateRoleInput {
   name: string;
-  description?: string;
   permissions?: string[];
 }
 
@@ -26,20 +22,19 @@ export type UpdateRoleInput = Partial<CreateRoleInput>;
 
 /** GET /roles */
 export async function getRoles(): Promise<{ data: Role[] }> {
-  // Return shape aligns with SRS for non-paginated lists
-  const { data } = await api.get("/roles");
+  const data = await api.get("/roles");
   return data;
 }
 
 /** GET /roles/:id */
 export async function getRole(id: string): Promise<{ data: Role }> {
-  const { data } = await api.get(`/roles/${id}`);
-  return { data };
+  const data = await api.get(`/roles/${id}`);
+  return data;
 }
 
 /** GET /roles/statistics */
 export async function getRoleStats(): Promise<any> {
-  const { data } = await api.get("/roles/statistics");
+  const data = await api.get("/roles/statistics");
   return data;
 }
 

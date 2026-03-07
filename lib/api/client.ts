@@ -28,12 +28,10 @@ export function getToken(): string | null {
 
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
-  document.cookie = `has_token=1; path=/; max-age=86400; SameSite=Lax`;
 }
 
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
-  document.cookie = `has_token=; path=/; max-age=0; SameSite=Lax`;
 }
 
 // ── Refresh token state ────────────────────────────────────────────────────
@@ -118,9 +116,8 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const res = await api.post<{ data: { access_token: string } }>(
-        "/auth/refresh",
-      );
+      const res = (await api.post("/auth/refresh")) as any;
+      console.log(res);
       const newToken = res.data.data.access_token;
       setToken(newToken);
 
