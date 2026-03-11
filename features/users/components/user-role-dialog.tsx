@@ -29,18 +29,16 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
+  roles: Role[];
 };
 
-export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
+export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
   const [selectedRole, setSelectedRole] = useState("");
-
-  const { roles, isFetchingRoles } = useRoleContext();
 
   const {
     assignUserRole: assignRole,
     removeUserRole: removeRole,
     isAssigningRole,
-    isRemovingRole,
   } = useUserContext();
 
   // Ensure userRoles is always an array
@@ -48,7 +46,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
 
   // Filter out roles user already has
   const availableRoles = roles.filter(
-    (role: Role) => !currentRoles.some((ur: any) => ur.id === role.id),
+    (role) => !currentRoles.some((ur: any) => ur.id === role.id),
   );
 
   const handleAssign = async () => {
@@ -139,7 +137,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
             </div>
             <Button
               onClick={handleAssign}
-              disabled={!selectedRole || isAssigningRole || isFetchingRoles}
+              disabled={!selectedRole || isAssigningRole}
             >
               Tambah
             </Button>

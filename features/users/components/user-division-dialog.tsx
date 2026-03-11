@@ -25,12 +25,17 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
+  divisions: { id: string; nama: string }[];
 };
 
-export const UserDivisionDialog = ({ open, onOpenChange, user }: Props) => {
+export const UserDivisionDialog = ({
+  open,
+  onOpenChange,
+  user,
+  divisions,
+}: Props) => {
   const [selectedDivision, setSelectedDivision] = useState("");
 
-  const { divisions } = useDivisionContext();
   const { assignUserDivision: assignDivision, isAssigningDivision } =
     useUserContext();
 
@@ -86,7 +91,7 @@ export const UserDivisionDialog = ({ open, onOpenChange, user }: Props) => {
               <SelectContent>
                 {divisions.map((d) => (
                   <SelectItem key={d.id} value={d.id}>
-                    {d.nama_divisi}
+                    {d.nama}
                   </SelectItem>
                 ))}
               </SelectContent>

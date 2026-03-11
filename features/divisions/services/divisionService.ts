@@ -1,3 +1,4 @@
+import { User } from "@/features/auth/contexts/AuthContext";
 import { api } from "@/lib/api/client";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -9,17 +10,26 @@ export interface Division {
   description?: string;
   created_at?: string;
   updated_at?: string;
-  _count?: {
-    users: number;
-  };
 }
-
 export interface DivisionStats {
-  id: string;
-  name: string;
-  member_count: number;
-  active_member_count: number;
-  alumni_member_count: number;
+  total_divisions: number; // ← bukan Number
+  total_users: number;
+  average_users_per_division: number;
+  divisions: DivisionsStatRes[];
+}
+export interface DivisionsStatRes {
+  division_id: string;
+  nama_divisi: string;
+  user_count: number;
+  percentage: number;
+}
+export interface DivisionMemberStats {
+  division_id: string;
+  nama_divisi: string;
+  total_members: number;
+  active_members: number;
+  inactive_members: number;
+  alumni_members: number;
 }
 
 export interface CreateDivisionInput {
@@ -33,34 +43,35 @@ export type UpdateDivisionInput = Partial<CreateDivisionInput>;
 
 /** GET /divisions */
 export async function getDivisions(): Promise<{ data: Division[] }> {
-  // Return shape aligns with SRS for non-paginated lists
-  const { data } = await api.get("/divisions");
+  const data = await api.get("/divisions");
   return data;
 }
 
 /** GET /divisions/:id */
 export async function getDivision(id: string): Promise<{ data: Division }> {
-  const { data } = await api.get(`/divisions/${id}`);
-  return { data };
+  const data = await api.get(`/divisions/${id}`);
+  return data;
 }
 
-/** GET /divisions/:id/division (users in division) */
-export async function getDivisionUsers(id: string): Promise<any> {
-  const { data } = await api.get(`/divisions/${id}/division`);
+/** GET /divisions/:id/users (users in division) */
+export async function getDivisionUsers(id: string): Promise<{ data: User[] }> {
+  const { data } = await api.get(`/divisions/${id}/users`);
   return data;
 }
 
 /** GET /divisions/:id/member-stats */
 export async function getDivisionStats(
   id: string,
-): Promise<{ data: DivisionStats }> {
+): Promise<{ data: DivisionMemberStats }> {
   const { data } = await api.get(`/divisions/${id}/member-stats`);
   return { data };
 }
 
 /** GET /divisions/statistics */
-export async function getDivisionsStatistics(): Promise<any> {
-  const { data } = await api.get("/divisions/statistics");
+export async function getDivisionsStatistics(): Promise<{
+  data: DivisionStats;
+}> {
+  const data = await api.get("/divisions/statistics");
   return data;
 }
 

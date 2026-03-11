@@ -2,18 +2,23 @@
 
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
-import { ActivityList } from "@/features/activities/components/activity-list";
+import { ActivityDetail } from "@/features/activities/components/activity-detail";
 import { ActivityProvider } from "@/features/activities/contexts/ActivityContext";
+import { use } from "react";
 
-export default function ActivitiesPage() {
+export default function ActivityDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+
   return (
     <PermissionGuard permission={PERMISSIONS.VIEW_ACTIVITIES}>
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="h-full flex-1 flex-col space-y-8 flex">
-          <ActivityProvider>
-            <ActivityList />
-          </ActivityProvider>
-        </div>
+        <ActivityProvider>
+          <ActivityDetail id={id} />
+        </ActivityProvider>
       </div>
     </PermissionGuard>
   );

@@ -24,7 +24,11 @@ export const UsersFilters = ({
   onAngkatanChange,
 }: Props) => {
   const { divisions } = useDivisionContext();
-
+  const currentYear = new Date().getFullYear();
+  const angkatanOptions = Array.from(
+    { length: currentYear - 2000 + 1 },
+    (_, i) => currentYear - i,
+  );
   const handleReset = () => {
     onSearch("");
     onStatusChange("");
@@ -86,17 +90,25 @@ export const UsersFilters = ({
         </div>
 
         <div className="relative">
-          <input
-            type="number"
-            placeholder="Angkatan..."
+          <select
             value={angkatan ?? ""}
             onChange={(e) =>
               onAngkatanChange(
                 e.target.value ? Number(e.target.value) : undefined,
               )
             }
-            className="block w-32 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm py-2.5 px-3 shadow-sm transition-shadow outline-none"
-          />
+            className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2.5 pl-4 pr-10 rounded-xl leading-tight focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer text-sm font-medium shadow-sm"
+          >
+            <option value="">Semua Angkatan</option>
+            {angkatanOptions.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+            <ChevronDown className="h-4 w-4" />
+          </div>
         </div>
 
         <button

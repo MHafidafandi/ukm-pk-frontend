@@ -9,7 +9,7 @@ export default function DonationsPage() {
   return (
     <PermissionGuard permission={PERMISSIONS.VIEW_DONATIONS}>
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="hidden h-full flex-1 flex-col space-y-8 md:flex">
+        <div className="h-full flex-1 flex-col space-y-8 flex">
           <DonationProvider>
             <DonationList />
           </DonationProvider>

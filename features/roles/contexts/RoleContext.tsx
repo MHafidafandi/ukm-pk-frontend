@@ -68,10 +68,8 @@ export const RoleProvider = ({ children }: { children: React.ReactNode }) => {
   const roles = useMemo(() => {
     let result = rolesData || [];
     if (debounceSearch) {
-      result = result.filter(
-        (r) =>
-          r.name.toLowerCase().includes(debounceSearch.toLowerCase()) ||
-          r.description?.toLowerCase().includes(debounceSearch.toLowerCase()),
+      result = result.filter((r) =>
+        r.name.toLowerCase().includes(debounceSearch.toLowerCase()),
       );
     }
     return result;

@@ -1,9 +1,7 @@
 "use client";
-
 import React, { createContext, useContext, useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "use-debounce";
-
 import {
   getDivisions,
   getDivisionsStatistics,
@@ -11,23 +9,17 @@ import {
   updateDivision,
   deleteDivision,
   Division,
+  DivisionStats,
 } from "@/features/divisions/services/divisionService";
 
 interface DivisionContextType {
-  // Data
   divisions: Division[];
-  stats: any;
-
-  // UI State
+  stats: DivisionStats | null;
   search: string;
   setSearch: (s: string) => void;
-
-  // Actions
   createDivision: (data: any) => Promise<any>;
   updateDivision: (args: { id: string; data: any }) => Promise<any>;
   deleteDivision: (id: string) => Promise<any>;
-
-  // Loaders
   isFetchingDivisions: boolean;
   isFetchingStats: boolean;
   isCreating: boolean;
@@ -35,9 +27,7 @@ interface DivisionContextType {
   isDeleting: boolean;
 }
 
-const DivisionContext = createContext<DivisionContextType | undefined>(
-  undefined,
-);
+const DivisionContext = createContext<DivisionContextType | undefined>(undefined);
 
 export const useDivisionContext = () => {
   const context = useContext(DivisionContext);
@@ -56,73 +46,64 @@ export const DivisionProvider = ({
   const [search, setSearch] = useState("");
   const [debounceSearch] = useDebounce(search, 500);
 
-  // Queries
-  const { data: divisionsData, isLoading: isFetchingDivisions } = useQuery({
+  // ✅ select langsung mengeluarkan Division[] dari { data: [...] }
+  const { data: divisions = [], isLoading: isFetchingDivisions } = useQuery({
     queryKey: ["divisions", "list"],
     queryFn: getDivisions,
+    select: (response): Division[] => response.data ?? [],
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: statsData, isLoading: isFetchingStats } = useQuery({
+  // ✅ Konsisten, stats juga pakai select
+  const { data: stats = null, isLoading: isFetchingStats } = useQuery({
     queryKey: ["divisions", "stats"],
     queryFn: getDivisionsStatistics,
+    select: (response): DivisionStats | null => response.data ?? null,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Derived Filtering for local search since Divisions list isn't paginated over API according to SRS
-  const divisions = useMemo(() => {
-    let result = divisionsData ?? [];
+  // ✅ Filtering lokal — keyword di-lowercase sekali saja
+  const filteredDivisions = useMemo(() => {
+    if (!debounceSearch) return divisions;
 
-    if (debounceSearch) {
-      result = result.filter(
-        (r: Division) =>
-          r.nama_divisi
-            .toLowerCase()
-            .includes(debounceSearch.toLowerCase()) ||
-          r.deskripsi
-            ?.toLowerCase()
-            .includes(debounceSearch.toLowerCase())
-      );
-    }
+    const keyword = debounceSearch.toLowerCase();
 
-    return result;
-  }, [divisionsData, debounceSearch]);
+    return divisions.filter(
+      (r) =>
+        r.nama_divisi.toLowerCase().includes(keyword) ||
+        r.deskripsi?.toLowerCase().includes(keyword)
+    );
+  }, [divisions, debounceSearch]);
 
-  const stats = statsData || null;
-
-  // Mutations
   const invalidateDivisions = () => {
     queryClient.invalidateQueries({ queryKey: ["divisions"] });
   };
 
   const createMutation = useMutation({
     mutationFn: createDivision,
-    onSuccess: () => invalidateDivisions(),
+    onSuccess: invalidateDivisions,
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       updateDivision(id, data),
-    onSuccess: () => invalidateDivisions(),
+    onSuccess: invalidateDivisions,
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteDivision,
-    onSuccess: () => invalidateDivisions(),
+    onSuccess: invalidateDivisions,
   });
 
   const contextValue = useMemo(
     () => ({
-      divisions,
+      divisions: filteredDivisions,
       stats,
-
       search,
       setSearch,
-
       createDivision: createMutation.mutateAsync,
       updateDivision: updateMutation.mutateAsync,
       deleteDivision: deleteMutation.mutateAsync,
-
       isFetchingDivisions,
       isFetchingStats,
       isCreating: createMutation.isPending,
@@ -130,7 +111,7 @@ export const DivisionProvider = ({
       isDeleting: deleteMutation.isPending,
     }),
     [
-      divisions,
+      filteredDivisions,
       stats,
       search,
       createMutation,

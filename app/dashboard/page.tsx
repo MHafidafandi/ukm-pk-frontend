@@ -10,9 +10,22 @@ import {
   HeartHandshake,
   Package,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
   const { userPermissions } = usePermission();
+  const router = useRouter();
+  const { isLoggedIn, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [isLoggedIn, loading, router]);
+
+  if (loading || !isLoggedIn) return null;
 
   return (
     <div className="flex flex-col">

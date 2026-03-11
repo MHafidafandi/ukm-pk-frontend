@@ -1,19 +1,9 @@
 "use client";
-
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, CalendarClock, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +14,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import { useActivityContext } from "../contexts/ActivityContext";
 import { ProgressReport } from "../services/activityService";
 import { ProgressReportFormDialog } from "./progress-report-form-dialog";
@@ -55,6 +44,7 @@ export const ProgressReportList = ({ activityId }: Props) => {
 
   const {
     progressReports: reports,
+    isFetchingProgressReports: isLoading,
     createProgressReport: createReport,
     updateProgressReport: updateReport,
     deleteProgressReport: deleteReport,
@@ -86,14 +76,17 @@ export const ProgressReportList = ({ activityId }: Props) => {
     try {
       const parsed = CreateProgressReportSchema.parse(form);
 
+      // ✅ Format tanggal ke YYYY-MM-DD sesuai yang diminta API
+      const payload = {
+        ...parsed,
+        tanggal: format(new Date(parsed.tanggal), "yyyy-MM-dd"),
+      };
+
       if (editing) {
-        await updateReport({
-          id: editing.id,
-          data: parsed,
-        });
+        await updateReport({ id: editing.id, data: payload });
         toast.success("Laporan progres diperbarui");
       } else {
-        await createReport(parsed);
+        await createReport(payload);
         toast.success("Laporan progres dibuat");
       }
       setFormOpen(false);
@@ -112,6 +105,7 @@ export const ProgressReportList = ({ activityId }: Props) => {
       await deleteReport(deleting.id);
       toast.success("Laporan dihapus");
       setDeleteOpen(false);
+      setDeleting(null);
     } catch {
       toast.error("Gagal menghapus laporan");
     }
@@ -121,72 +115,69 @@ export const ProgressReportList = ({ activityId }: Props) => {
     <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">
-            timeline
-          </span>
+          <CalendarClock className="text-primary" />
           Progress Reports
         </h2>
         <button
           onClick={openAdd}
-          className="flex items-center gap-2 text-primary hover:text-primary/80 font-medium text-sm transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg transition-colors shadow-sm"
         >
-          <span className="material-symbols-outlined text-lg">add_circle</span>
+          <Plus className="size-4" />
           Add Progress
         </button>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50">
-        <div className="relative timeline-line space-y-8 pl-2">
-          {reports.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Belum ada laporan progres.
-            </div>
-          ) : (
-            reports.map((item) => (
-              <div key={item.id} className="relative pl-8 group">
-                <div className="absolute left-[11px] top-1.5 size-4 rounded-full border-[3px] border-white dark:border-slate-800 bg-primary ring-2 ring-primary/20"></div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                    <h4 className="text-base font-bold text-slate-900 dark:text-white flex-1 min-w-[200px] text-wrap">
-                      {item.judul}
-                    </h4>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">
-                      {format(new Date(item.tanggal), "MMM dd, yyyy", {
-                        locale: idLocale,
-                      })}
-                    </span>
-                  </div>
-
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    {item.deskripsi}
-                  </p>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => openEdit(item)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors text-xs font-medium text-slate-600 dark:text-slate-300"
-                    >
-                      <span className="material-symbols-outlined text-base">
-                        edit
+        {isLoading ? (
+          <div className="text-center py-8 text-sm text-slate-400">
+            Memuat laporan...
+          </div>
+        ) : (
+          <div className="relative timeline-line space-y-8 pl-2">
+            {reports.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Belum ada laporan progres.
+              </div>
+            ) : (
+              reports.map((item) => (
+                <div key={item.id} className="relative pl-8 group">
+                  <div className="absolute left-[11px] top-1.5 size-4 rounded-full border-[3px] border-white dark:border-slate-800 bg-primary ring-2 ring-primary/20" />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                      <h4 className="text-base font-bold text-slate-900 dark:text-white flex-1 min-w-[200px] text-wrap">
+                        {item.judul}
+                      </h4>
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">
+                        {format(new Date(item.tanggal), "MMM dd, yyyy", {
+                          locale: idLocale,
+                        })}
                       </span>
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => openDelete(item)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-red-200 dark:border-red-900/50 rounded-lg bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-xs font-medium text-red-600 dark:text-red-400"
-                    >
-                      <span className="material-symbols-outlined text-base">
-                        delete
-                      </span>
-                      Remove
-                    </button>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {item.deskripsi}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => openEdit(item)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors text-xs font-medium text-slate-600 dark:text-slate-300"
+                      >
+                        <Edit className="size-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => openDelete(item)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-red-200 dark:border-red-900/50 rounded-lg bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-xs font-medium text-red-600 dark:text-red-400"
+                      >
+                        <Trash2 className="size-4" />
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       <ProgressReportFormDialog

@@ -1,4 +1,4 @@
-import { User } from "@/features/auth/contexts/AuthContext";
+import { Role, User } from "@/features/auth/contexts/AuthContext";
 
 import {
   Dialog,
@@ -27,15 +27,11 @@ import { CreateUserInput } from "@/lib/validations/users-schema";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-
   isEdit: boolean;
-
   form: Omit<CreateUserInput, "id">;
   setForm: React.Dispatch<React.SetStateAction<Omit<CreateUserInput, "id">>>;
-
   divisions: { id: string; nama: string }[];
-  roles: { id: string; name: string }[];
-
+  roles: Role[];
   onSubmit: () => void;
 };
 
@@ -45,43 +41,45 @@ export const UserFormDialog = ({
   open,
   onOpenChange,
   isEdit,
-
   form,
   setForm,
-
   divisions,
   roles,
-
   onSubmit,
 }: Props) => {
+  const update = (field: Partial<typeof form>) =>
+    setForm((prev) => ({ ...prev, ...field }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit Anggota" : "Tambah Anggota"}
           </DialogTitle>
-
           <DialogDescription>
             {isEdit ? "Perbarui informasi anggota." : "Isi data anggota baru."}
           </DialogDescription>
         </DialogHeader>
 
-        {/* ================= FORM ================= */}
-
         <div className="grid gap-4 py-2">
-          {/* Name */}
+          {/* Nama */}
           <div className="grid gap-2">
             <Label>Nama Lengkap *</Label>
             <Input
               value={form.nama}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  nama: e.target.value,
-                })
-              }
+              onChange={(e) => update({ nama: e.target.value })}
               placeholder="Nama lengkap"
+            />
+          </div>
+
+          {/* Username */}
+          <div className="grid gap-2">
+            <Label>Username *</Label>
+            <Input
+              value={form.username}
+              onChange={(e) => update({ username: e.target.value })}
+              placeholder="username"
             />
           </div>
 
@@ -91,44 +89,33 @@ export const UserFormDialog = ({
             <Input
               type="email"
               value={form.email}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  email: e.target.value,
-                })
-              }
+              onChange={(e) => update({ email: e.target.value })}
               placeholder="mail@example.com"
             />
           </div>
 
+          {/* Password — hanya saat tambah */}
           {!isEdit && (
             <div className="grid gap-2">
               <Label>Password *</Label>
               <Input
                 type="password"
                 value={form.password}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    password: e.target.value,
-                  })
-                }
-                placeholder="Minimal 8 karakter"
+                onChange={(e) => update({ password: e.target.value })}
+                placeholder="••••••••"
               />
             </div>
           )}
 
-          {/* Angkatan + Phone */}
+          {/* Angkatan + No. Telepon */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label>Angkatan</Label>
               <Input
+                type="number"
                 value={form.angkatan}
                 onChange={(e) =>
-                  setForm({
-                    ...form,
-                    angkatan: parseInt(e.target.value) || 0,
-                  })
+                  update({ angkatan: parseInt(e.target.value) || 0 })
                 }
                 placeholder="2024"
               />
@@ -138,37 +125,24 @@ export const UserFormDialog = ({
               <Label>No. Telepon</Label>
               <Input
                 value={form.nomor_telepon}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    nomor_telepon: e.target.value,
-                  })
-                }
-                placeholder="08xxxxxx"
+                onChange={(e) => update({ nomor_telepon: e.target.value })}
+                placeholder="+628xxxxxx"
               />
             </div>
           </div>
 
           {/* Alamat */}
           <div className="grid gap-2">
-            <Label>Alamat *</Label>
+            <Label>Alamat</Label>
             <Input
               value={form.alamat}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  alamat: e.target.value,
-                })
-              }
-              placeholder="Jl. Contoh No. 123"
+              onChange={(e) => update({ alamat: e.target.value })}
+              placeholder="Alamat lengkap"
             />
           </div>
 
-          {/* Division + Role */}
-
+          {/* Divisi + Role */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Division */}
-
             <div className="grid gap-2">
               <Label>Divisi</Label>
               {isEdit && (
@@ -176,21 +150,14 @@ export const UserFormDialog = ({
                   Gunakan menu "Pindah Divisi" di tabel untuk mengubah divisi.
                 </p>
               )}
-
               <Select
                 disabled={isEdit}
                 value={form.division_id}
-                onValueChange={(v) =>
-                  setForm({
-                    ...form,
-                    division_id: v,
-                  })
-                }
+                onValueChange={(v) => update({ division_id: v })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih divisi" />
                 </SelectTrigger>
-
                 <SelectContent>
                   {divisions.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
@@ -201,8 +168,6 @@ export const UserFormDialog = ({
               </Select>
             </div>
 
-            {/* Role */}
-
             <div className="grid gap-2">
               <Label>Role</Label>
               {isEdit && (
@@ -210,25 +175,18 @@ export const UserFormDialog = ({
                   Gunakan menu "Kelola Role" di tabel untuk mengubah role.
                 </p>
               )}
-
               <Select
                 disabled={isEdit}
-                value={form.role_ids[0]}
-                onValueChange={(v) =>
-                  setForm({
-                    ...form,
-                    role_ids: [v],
-                  })
-                }
+                value={form.role_ids?.[0] ?? ""}
+                onValueChange={(v) => update({ role_ids: [v] })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih role" />
                 </SelectTrigger>
-
                 <SelectContent>
-                  {roles.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -237,23 +195,15 @@ export const UserFormDialog = ({
           </div>
 
           {/* Status */}
-
           <div className="grid gap-2">
             <Label>Status</Label>
-
             <Select
               value={form.status}
-              onValueChange={(v) =>
-                setForm({
-                  ...form,
-                  status: v as User["status"],
-                })
-              }
+              onValueChange={(v) => update({ status: v as User["status"] })}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-
               <SelectContent>
                 <SelectItem value="aktif">Aktif</SelectItem>
                 <SelectItem value="nonaktif">Nonaktif</SelectItem>
@@ -263,17 +213,11 @@ export const UserFormDialog = ({
           </div>
         </div>
 
-        {/* ================= FOOTER ================= */}
-
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Batal
           </Button>
-
-          <Button onClick={() => {
-            onSubmit();
-            onOpenChange(false);
-          }} >{isEdit ? "Simpan" : "Tambah"}</Button>
+          <Button onClick={onSubmit}>{isEdit ? "Simpan" : "Tambah"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
