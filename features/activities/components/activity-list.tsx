@@ -115,6 +115,21 @@ export const ActivityList = () => {
         console.log(` ${key}:`, value);
       }
 
+      const formData = new FormData();
+      formData.append("judul", parsed.judul);
+      formData.append("deskripsi", parsed.deskripsi);
+      formData.append(
+        "tanggal",
+        parsed.tanggal instanceof Date
+          ? parsed.tanggal.toISOString()
+          : String(parsed.tanggal),
+      );
+      formData.append("lokasi", parsed.lokasi);
+
+      if (parsed.thumbnail instanceof File) {
+        formData.append("thumbnail", parsed.thumbnail);
+      }
+
       if (editing) {
         await updateActivity({ id: editing.id, data: formData });
         toast.success("Kegiatan berhasil diperbarui");
