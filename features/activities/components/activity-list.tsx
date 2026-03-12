@@ -69,17 +69,6 @@ export const ActivityList = () => {
     setFormOpen(true);
   };
 
-  const removeThumbnail = () => {
-    setForm({ ...form, thumbnail: null as any });  // null = "hapus dari server"
-    if (previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   const openDelete = (item: Activity) => {
     setDeleting(item);
     setDeleteOpen(true);
@@ -92,8 +81,8 @@ export const ActivityList = () => {
   const handleSave = async () => {
     try {
       const parsed = CreateActivitySchema.parse(form);
-      const formData = new FormData();
 
+      const formData = new FormData();
       formData.append("judul", parsed.judul);
       formData.append("deskripsi", parsed.deskripsi);
       formData.append("lokasi", parsed.lokasi);
@@ -107,27 +96,8 @@ export const ActivityList = () => {
       if (form.thumbnail instanceof File) {
         formData.append("thumbnail", form.thumbnail);
       } else if (form.thumbnail === null) {
+        // null = sinyal untuk menghapus thumbnail dari server
         formData.append("thumbnail", "");
-      }
-
-      console.log("[handleSave] FormData entries:");
-      for (const [key, value] of formData.entries()) {
-        console.log(` ${key}:`, value);
-      }
-
-      const formData = new FormData();
-      formData.append("judul", parsed.judul);
-      formData.append("deskripsi", parsed.deskripsi);
-      formData.append(
-        "tanggal",
-        parsed.tanggal instanceof Date
-          ? parsed.tanggal.toISOString()
-          : String(parsed.tanggal),
-      );
-      formData.append("lokasi", parsed.lokasi);
-
-      if (parsed.thumbnail instanceof File) {
-        formData.append("thumbnail", parsed.thumbnail);
       }
 
       if (editing) {
