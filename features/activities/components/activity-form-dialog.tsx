@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CreateActivityInput } from "@/lib/validations/activity-schema";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Popover,
   PopoverContent,
@@ -22,6 +22,9 @@ import { format } from "date-fns";
 import { CalendarIcon, ImagePlus, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 
+// ✅ Base URL untuk media/thumbnail dari backend
+const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -29,6 +32,7 @@ type Props = {
   form: CreateActivityInput;
   setForm: React.Dispatch<React.SetStateAction<CreateActivityInput>>;
   onSubmit: () => void;
+  existingThumbnailUrl?: string;
 };
 
 export const ActivityFormDialog = ({
@@ -38,21 +42,45 @@ export const ActivityFormDialog = ({
   form,
   setForm,
   onSubmit,
+  existingThumbnailUrl,
 }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      if (form.thumbnail instanceof File) {
+        setPreviewUrl(URL.createObjectURL(form.thumbnail));
+      } else if (existingThumbnailUrl) {
+        // ✅ Kalau sudah full URL biarkan, kalau relatif prefix dengan base URL
+        const fullUrl = existingThumbnailUrl.startsWith("http")
+          ? existingThumbnailUrl
+          : `${MEDIA_BASE_URL}${existingThumbnailUrl}`;
+        setPreviewUrl(fullUrl);
+      } else {
+        setPreviewUrl(null);
+      }
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [open, existingThumbnailUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setForm({ ...form, thumbnail: file });
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      if (previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
   const removeThumbnail = () => {
-    setForm({ ...form, thumbnail: undefined });
+    setForm({ ...form, thumbnail: null as any });
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setPreviewUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -60,13 +88,7 @@ export const ActivityFormDialog = ({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) setPreviewUrl(null);
-        onOpenChange(v);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
@@ -85,11 +107,12 @@ export const ActivityFormDialog = ({
             <Label>Thumbnail</Label>
             {previewUrl ? (
               <div className="relative h-36 w-full overflow-hidden rounded-lg border border-border bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
                   alt="Thumbnail preview"
                   className="h-full w-full object-cover"
+                  // ✅ Fallback kalau gambar gagal load
+                  onError={() => setPreviewUrl(null)}
                 />
                 <button
                   type="button"
@@ -98,6 +121,9 @@ export const ActivityFormDialog = ({
                 >
                   <X className="size-3.5" />
                 </button>
+                <span className="absolute left-2 bottom-2 rounded-md bg-black/50 px-2 py-0.5 text-[10px] text-white backdrop-blur-sm">
+                  {form.thumbnail instanceof File ? "Foto baru" : "Foto saat ini"}
+                </span>
               </div>
             ) : (
               <button

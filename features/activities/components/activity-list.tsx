@@ -64,8 +64,20 @@ export const ActivityList = () => {
       deskripsi: item.deskripsi,
       tanggal: new Date(item.tanggal),
       lokasi: item.lokasi,
+      thumbnail: undefined,
     });
     setFormOpen(true);
+  };
+
+  const removeThumbnail = () => {
+    setForm({ ...form, thumbnail: null as any });  // null = "hapus dari server"
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const openDelete = (item: Activity) => {
@@ -80,6 +92,28 @@ export const ActivityList = () => {
   const handleSave = async () => {
     try {
       const parsed = CreateActivitySchema.parse(form);
+      const formData = new FormData();
+
+      formData.append("judul", parsed.judul);
+      formData.append("deskripsi", parsed.deskripsi);
+      formData.append("lokasi", parsed.lokasi);
+      formData.append(
+        "tanggal",
+        parsed.tanggal instanceof Date
+          ? parsed.tanggal.toISOString().split("T")[0]
+          : String(parsed.tanggal),
+      );
+
+      if (form.thumbnail instanceof File) {
+        formData.append("thumbnail", form.thumbnail);
+      } else if (form.thumbnail === null) {
+        formData.append("thumbnail", "");
+      }
+
+      console.log("[handleSave] FormData entries:");
+      for (const [key, value] of formData.entries()) {
+        console.log(` ${key}:`, value);
+      }
 
       const formData = new FormData();
       formData.append("judul", parsed.judul);
@@ -98,8 +132,10 @@ export const ActivityList = () => {
 
       if (editing) {
         await updateActivity({ id: editing.id, data: formData });
+        toast.success("Kegiatan berhasil diperbarui");
       } else {
         await createActivity(formData);
+        toast.success("Kegiatan berhasil ditambahkan");
       }
 
       setFormOpen(false);
@@ -110,11 +146,15 @@ export const ActivityList = () => {
         toast.error(err.errors[0].message);
         return;
       }
-      console.error(err);
-      toast.error("Gagal menyimpan kegiatan");
+      const message =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        err?.message ??
+        "Gagal menyimpan kegiatan";
+      toast.error(message);
+      console.error("[handleSave] error:", err);
     }
   };
-
   const handleDelete = async () => {
     if (!deleting) return;
     try {
@@ -198,11 +238,10 @@ export const ActivityList = () => {
             <button
               key={s.id}
               onClick={() => setStatusFilter(s.id)}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                statusFilter === s.id
-                  ? "bg-primary text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
-              }`}
+              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${statusFilter === s.id
+                ? "bg-primary text-white shadow-sm"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
+                }`}
             >
               {s.label}
             </button>
@@ -248,11 +287,10 @@ export const ActivityList = () => {
               <button
                 key={p}
                 onClick={() => setPage(p)}
-                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === p
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
-                }`}
+                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+                  }`}
               >
                 {p}
               </button>
@@ -285,6 +323,7 @@ export const ActivityList = () => {
         form={form}
         setForm={setForm}
         onSubmit={handleSave}
+        existingThumbnailUrl={editing?.thumbnail}
       />
 
       <ActivityDeleteDialog

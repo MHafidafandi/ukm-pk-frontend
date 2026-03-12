@@ -104,7 +104,11 @@ export async function createActivity(
   body: CreateActivityInput | FormData,
 ): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const data = await api.post("/activities", payload);
+  const { data } = await api.post("/activities", payload, {
+    headers: {
+      "Content-Type": undefined,
+    },
+  });
   return data;
 }
 
@@ -114,7 +118,11 @@ export async function updateActivity(
   body: UpdateActivityInput | FormData,
 ): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.put(`/activities/${id}`, payload);
+  const { data } = await api.put(`/activities/${id}`, payload, {
+    headers: {
+      "Content-Type": undefined,
+    },
+  });
   return data;
 }
 
@@ -125,19 +133,15 @@ export async function deleteActivity(id: string): Promise<{ message: string }> {
 }
 
 // ── Progress Report API ───────────────────────────────────────────────────
-
 /** GET /progress-reports */
 export async function getProgressReports(params?: {
   activity_id?: string;
   page?: number;
   limit?: number;
-}): Promise<{
-  data: { progress_reports: ProgressReport[]; pagination: PaginationMeta };
-}> {
-  const { data } = await api.get("/progress-reports", { params });
+}): Promise<{ data: { reports: ProgressReport[]; pagination: PaginationMeta } }> {
+  const data = await api.get("/progress-reports", { params }); // ✅ TANPA destructure
   return data;
 }
-
 /** POST /progress-reports */
 export async function createProgressReport(
   body: CreateProgressReportInput,
@@ -145,7 +149,6 @@ export async function createProgressReport(
   const { data } = await api.post("/progress-reports", body);
   return data;
 }
-
 /** PUT /progress-reports/:id */
 export async function updateProgressReport(
   id: string,
@@ -154,7 +157,6 @@ export async function updateProgressReport(
   const { data } = await api.put(`/progress-reports/${id}`, body);
   return data;
 }
-
 /** DELETE /progress-reports/:id */
 export async function deleteProgressReport(
   id: string,
@@ -163,23 +165,40 @@ export async function deleteProgressReport(
   return data;
 }
 
+
 // ── LPJ API ───────────────────────────────────────────────────────────────
+
+export interface LPJ {
+  id: string;
+  activity_id: string;
+  file_url: string;       // ← field baru dari API
+  tanggal: string;
+  created_at: string;
+  updated_at: string;
+}
 
 /** GET /lpj/activity/:activity_id */
 export async function getLpjByActivity(
   activityId: string,
-): Promise<{ message: string; lpj: LPJ[] }> {
-  const { data } = await api.get(`/lpj/activity/${activityId}`);
+): Promise<{ data: LPJ | null }> {
+  try {
+    const data = await api.get(`/lpj/activity/${activityId}`);
+    return data;
+  } catch (err: any) {
+    if (err?.response?.status === 404) return { data: null };
+    throw err;
+  }
+}
+/** POST /lpj */
+export async function createLpj(
+  formData: FormData,
+): Promise<{ message: string; id?: string }> {
+  const { data } = await api.post("/lpj", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data;
 }
 
-/** POST /lpj */
-export async function createLpj(
-  body: CreateLpjInput,
-): Promise<{ message: string; id?: string }> {
-  const { data } = await api.post("/lpj", body);
-  return data;
-}
 
 /** DELETE /lpj/:id */
 export async function deleteLpj(id: string): Promise<{ message: string }> {
@@ -193,12 +212,9 @@ export async function deleteLpj(id: string): Promise<{ message: string }> {
 export async function getDocumentations(
   activityId: string,
 ): Promise<{ data: Documentation[] }> {
-  const { data } = await api.get(`/documentations/activity/${activityId}`);
-  // Normalizing to just array if it's not paginated
-  // Let's assume the API returns { data: [...] } based on "List non-pagin" SRS rule
+  const data = await api.get(`/documentations/activity/${activityId}`); // ✅ TANPA destructure
   return data;
 }
-
 /** POST /documentations */
 export async function createDocumentation(
   body: CreateDocumentationInput | FormData,
@@ -207,7 +223,6 @@ export async function createDocumentation(
   const { data } = await api.post("/documentations", payload);
   return data;
 }
-
 /** DELETE /documentations/:id */
 export async function deleteDocumentation(
   id: string,
@@ -215,3 +230,4 @@ export async function deleteDocumentation(
   const { data } = await api.delete(`/documentations/${id}`);
   return data;
 }
+

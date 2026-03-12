@@ -27,6 +27,8 @@ type Props = {
   id: string;
 };
 
+const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
+
 export const ActivityDetail = ({ id }: Props) => {
   const router = useRouter();
   const {
@@ -213,7 +215,11 @@ export const ActivityDetail = ({ id }: Props) => {
           {activity.thumbnail ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={activity.thumbnail}
+              src={
+                activity.thumbnail.startsWith("http")
+                  ? activity.thumbnail
+                  : `${MEDIA_BASE_URL}${activity.thumbnail}`
+              }
               alt={activity.judul}
               className="h-full w-full object-cover"
             />
@@ -248,7 +254,6 @@ export const ActivityDetail = ({ id }: Props) => {
 
       {/* Two Column Layout for Reports & LPJ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Progress Timeline (Left Column) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <ProgressReportList activityId={id} />
         </div>
@@ -267,6 +272,7 @@ export const ActivityDetail = ({ id }: Props) => {
         form={editForm}
         setForm={setEditForm}
         onSubmit={handleEditSave}
+        existingThumbnailUrl={activity.thumbnail}
       />
     </div>
   );

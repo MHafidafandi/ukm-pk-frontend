@@ -68,12 +68,49 @@ export interface CreateLoanInput {
   catatan?: string;
 }
 
+// types
+export interface AssetFilters {
+  page?: number;
+  limit?: number;
+  kondisi?: string;
+  lokasi?: string;
+  search?: string;
+  sort?: string;
+  order?: string;
+}
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  total_pages: number;
+  page_size: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+export interface AssetsResponse {
+  data: {
+    assets: Asset[];
+    pagination: PaginationMeta;
+    filters: Record<string, any>;
+  };
+}
+
 // ── Assets API ─────────────────────────────────────────────────────────────
 
-export async function getAssets(): Promise<{ data: Asset[] }> {
-  const { data } = await api.get("/inventory/assets");
-  return data;
-}
+
+export const getAssets = async (filters?: AssetFilters) => {
+  const params = new URLSearchParams();
+
+  if (filters?.page) params.set("page", String(filters.page));
+  if (filters?.limit) params.set("limit", String(filters.limit));
+  if (filters?.kondisi) params.set("kondisi", filters.kondisi);
+  if (filters?.lokasi) params.set("lokasi", filters.lokasi);
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.sort) params.set("sort", filters.sort);
+  if (filters?.order) params.set("order", filters.order);
+
+  const response = await api.get(`/api/v1/assets?${params.toString()}`);
+  return response.data;
+};
 
 export async function getAsset(id: string): Promise<{ data: Asset }> {
   const { data } = await api.get(`/inventory/assets/${id}`);

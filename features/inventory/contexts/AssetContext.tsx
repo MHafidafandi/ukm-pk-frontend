@@ -1,6 +1,5 @@
 "use client";
-
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -20,9 +19,32 @@ import {
 } from "@/features/inventory/services/assetService";
 import { getErrorMessage } from "@/lib/api/client";
 
+// ✅ Tambah types baru
+export interface AssetFilters {
+  page?: number;
+  limit?: number;
+  kondisi?: string;
+  lokasi?: string;
+  search?: string;
+  sort?: string;
+  order?: string;
+}
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  total_pages: number;
+  page_size: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
 interface AssetContextType {
   assets: Asset[];
   isFetchingAssets: boolean;
+  pagination: PaginationMeta | null;      // ✅ tambah
+  filters: AssetFilters;                  // ✅ tambah
+  setFilters: (filters: AssetFilters) => void; // ✅ tambah
   createAsset: (data: CreateAssetInput) => Promise<any>;
   updateAsset: (args: {
     id: string;
@@ -30,7 +52,6 @@ interface AssetContextType {
   }) => Promise<any>;
   deleteAsset: (id: string) => Promise<any>;
   uploadAssetImage: (args: { id: string; file: File }) => Promise<any>;
-
   loans: Loan[];
   isFetchingLoans: boolean;
   createLoan: (data: CreateLoanInput) => Promise<any>;
@@ -50,10 +71,16 @@ export const useAssetContext = () => {
 export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   const queryClient = useQueryClient();
 
+  // ✅ Filter state
+  const [filters, setFilters] = useState<AssetFilters>({
+    page: 1,
+    limit: 10,
+  });
+
   // -- Queries --
   const { data: assetsData, isLoading: isFetchingAssets } = useQuery({
-    queryKey: ["inventory", "assets"],
-    queryFn: getAssets,
+    queryKey: ["inventory", "assets", filters], // ✅ include filters agar re-fetch otomatis
+    queryFn: () => getAssets(filters),          // ✅ pass filters ke service
   });
 
   const { data: loansData, isLoading: isFetchingLoans } = useQuery({
@@ -61,7 +88,9 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     queryFn: getLoans,
   });
 
-  const assets = assetsData?.data || [];
+  // ✅ Fix: ambil dari nested response sesuai struktur API
+  const assets = assetsData?.data?.assets || [];
+  const pagination = assetsData?.data?.pagination || null;
   const loans = loansData?.data || [];
 
   // -- Mutations (Assets) --
@@ -121,7 +150,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     mutationFn: createLoan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "loans"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] }); // Update asset availability
+      queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
       toast.success("Peminjaman berhasil dicatat");
     },
     onError: (error: any) => {
@@ -146,11 +175,13 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       assets,
       isFetchingAssets,
+      pagination,      // ✅ expose pagination
+      filters,         // ✅ expose filters
+      setFilters,      // ✅ expose setFilters
       createAsset: createAssetMutation.mutateAsync,
       updateAsset: updateAssetMutation.mutateAsync,
       deleteAsset: deleteAssetMutation.mutateAsync,
       uploadAssetImage: uploadAssetImageMutation.mutateAsync,
-
       loans,
       isFetchingLoans,
       createLoan: createLoanMutation.mutateAsync,
@@ -159,6 +190,8 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     [
       assets,
       isFetchingAssets,
+      pagination,
+      filters,
       createAssetMutation,
       updateAssetMutation,
       deleteAssetMutation,

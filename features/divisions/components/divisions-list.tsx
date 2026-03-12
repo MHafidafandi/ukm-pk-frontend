@@ -79,6 +79,7 @@ export const DivisionsList = () => {
   const [form, setForm] = useState<CreateDivisionInput>(emptyForm);
 
   const {
+    divisions,
     stats,
     search,
     setSearch,
@@ -192,9 +193,9 @@ export const DivisionsList = () => {
                 value={
                   (stats?.total_divisions ?? 0) > 0
                     ? Math.round(
-                        (stats?.total_users ?? 0) /
-                          (stats?.total_divisions ?? 1),
-                      )
+                      (stats?.total_users ?? 0) /
+                      (stats?.total_divisions ?? 1),
+                    )
                     : 0
                 }
                 icon={TrendingUp}
@@ -224,12 +225,12 @@ export const DivisionsList = () => {
           <div className="flex justify-center py-16">
             <Spinner className="h-8 w-8" />
           </div>
-        ) : stats?.divisions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-text-secondary-light dark:text-text-secondary-dark border-2 border-dashed rounded-xl border-gray-200 dark:border-gray-800">
+        ) : divisions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 ...">
             <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
               <LayoutGrid className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="font-semibold text-lg text-text-primary-light dark:text-text-primary-dark">
+            <p className="font-semibold text-lg ...">
               Belum Ada Divisi
             </p>
             <p className="text-sm mt-1">
@@ -240,9 +241,9 @@ export const DivisionsList = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {stats?.divisions.map((division, index) => (
+            {divisions.map((division, index) => (
               <DivisionCard
-                key={division.division_id}
+                key={division.id}
                 division={division}
                 index={index}
                 onEdit={openEdit}

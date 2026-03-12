@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Eye, Calendar, LocateIcon, Pencil } from "lucide-react";
 import { Activity } from "../services/activityService";
 import { format } from "date-fns";
@@ -16,6 +17,8 @@ export const ActivityGrid = ({
   onDelete,
   onViewDetail,
 }: Props) => {
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
   if (activities.length === 0) {
     return (
       <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/50 text-muted-foreground">
@@ -26,16 +29,11 @@ export const ActivityGrid = ({
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-      {activities.map((item, idx) => {
-        const isOngoing =
-          item.status.toLowerCase() === "ongoing" ||
-          item.status.toLowerCase() === "berjalan";
-        const isCompleted =
-          item.status.toLowerCase() === "selesai" ||
-          item.status.toLowerCase() === "completed";
-        const isPending =
-          item.status.toLowerCase() === "perencanaan" ||
-          item.status.toLowerCase() === "pending";
+      {activities.map((item) => {
+        const statusLower = item.status.toLowerCase();
+        const isOngoing = statusLower === "ongoing" || statusLower === "berjalan";
+        const isCompleted = statusLower === "selesai" || statusLower === "completed";
+        const isPending = statusLower === "perencanaan" || statusLower === "pending";
 
         let statusConfig: { label: string; colorClass: string } = {
           label: item.status,
@@ -46,43 +44,43 @@ export const ActivityGrid = ({
         else if (isCompleted)
           statusConfig = { label: "Selesai", colorClass: "bg-emerald-500/90" };
         else if (isPending)
-          statusConfig = {
-            label: "Perencanaan",
-            colorClass: "bg-amber-500/90",
-          };
+          statusConfig = { label: "Perencanaan", colorClass: "bg-amber-500/90" };
         else
           statusConfig = { label: "Dibatalkan", colorClass: "bg-rose-500/90" };
 
-        // Basic avatar placeholder map based on index to give it the mockup feel
-        const placeholders = [
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuAO8GEaq_Vag4jtDnbHAvZbXpUsvJD0qcB47SmV6hYWdxQDCTQVZl3-WJDfSj-ucb20bbl0_MMWjKK1_i81GTQ-aGP5wr57x5-pnB1De0uq0kyCHkewYNYdjv3D_0vSW4n6f0eI9PE4zbeLr2htMi4sd2niN8i11RZYDuBBimgmEGKydB9gCTRVfx7xXIAUPSS1A0kdXELcNmrWVKWg_ioiZcRjrs0jwLd3fbptMBQGgIqzc5s1skqRRgc2wDsED_bKlalBhi5R-Yip",
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuBNPmD8Jaq-s0QtD26NPe4qp7WX8EEG0-pGj0I4k7eP1rQFgKdGL_f1b480tdtlskzZ56qXxJMTgK6H9a7_ygquqFJfAV3IfB4A3MSJe5UkMq8HmSuDtVnEAKeCETcBe7r7lNYg9Nom7gUV-YiFZsyh7HlMPSYqewi808wvJt9VoGSmmzA1_J5hcpwCR3tn6GBfj9_mx-uQlIGxmIRBwSnyyhY-dKVBecJ-wEPKvktqTyY-NvC81b-EZZoe4ehAkCjCAFx6V7oP16Es",
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDwuiDTEat7Oay3nLmz1WytSng9grFFxilTb_SCdpQ2cA9eFgJICq91TcJGaRhWEIhgi8VF6q8kF5ntLCNYj0hYWbK0IBc-2ciTcHeq2PLNRLAowqCIDEVy2hBKSQwAG3qSnKCNK8P-b8g6rQrKGmjen5lD15iGJXe8AmDN5rl6Qo8EGCvl6tBv8ETMekqGDvOQ69bbGQHkH9PjpHYvexDFcN3mxOUWh6qTtZabqEPi1cK2WyijNb0QlsOY6kyZdjioU-_GQk4oSlZ9",
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDgPKLlrVT45MltACdHNQceh3-11WKaTEZaAed3NfJmDEa9U8azpo15gIkeiJphulnTNkbkul-uLb2bdyGChU725DxQcRz7nmLxxyfVFQJTfeye_OfmCvbYLcH08OUZn51VKE7Zgs2YMNh-bDJ0v4h8QbP6fNRebCawn7jqgSUcUGIOlmxNrN5zzh6ihJHdI_1L8OX77eP9mOy0JuD3nGBfASBveQra-UmVRWfBvpM-kE5IpozN7QM95FyUkfQnMliTgiHLqYIDwAfl",
-        ];
-        const imgUrl =
-          (item as any).image_url || placeholders[idx % placeholders.length];
+        const imgUrl = item.thumbnail
+          ? `${process.env.NEXT_PUBLIC_MEDIA_URL ?? ""}${item.thumbnail}`
+          : null;
+
+        const showFallback = !imgUrl || imgErrors[item.id];
 
         return (
           <div
             key={item.id}
             className="group relative flex flex-col overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md dark:bg-[#1e1429]"
           >
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
-              {imgUrl ? (
+            {/* ── Gambar ── */}
+            <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+              {!showFallback ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={imgUrl}
+                  src={imgUrl!}
                   alt={item.judul}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={() =>
+                    setImgErrors((prev) => ({ ...prev, [item.id]: true }))
+                  }
                 />
               ) : (
-                <div className="absolute inset-0 bg-linear-to-br from-slate-200 to-slate-300 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-4xl text-slate-400">
-                    image
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+                  <Calendar className="size-10 text-slate-300 dark:text-slate-600" />
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
+                    Tidak ada thumbnail
                   </span>
                 </div>
               )}
+
+              {/* Badge status */}
               <div
                 className={`absolute right-3 top-3 rounded-full ${statusConfig.colorClass} px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm`}
               >
@@ -90,6 +88,7 @@ export const ActivityGrid = ({
               </div>
             </div>
 
+            {/* ── Konten ── */}
             <div className="flex flex-1 flex-col p-5">
               <div className="mb-4 flex-1">
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">

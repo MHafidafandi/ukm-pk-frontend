@@ -369,11 +369,10 @@ export const UsersTable = ({
                   <button
                     key={page}
                     onClick={() => onPageChange(page)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                      currentPage === page
-                        ? "z-10 bg-primary/10 border-primary text-primary"
-                        : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
+                      ? "z-10 bg-primary/10 border-primary text-primary"
+                      : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
                   >
                     {page}
                   </button>

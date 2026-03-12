@@ -44,6 +44,8 @@ export const UsersFilters = ({
         </div>
         <input
           value={search}
+          name="global-search-users"
+          autoComplete="off"
           onChange={(e) => onSearch(e.target.value)}
           className="pl-10 block w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm py-2.5 shadow-sm transition-shadow outline-none"
           placeholder="Cari nama, email, nim..."

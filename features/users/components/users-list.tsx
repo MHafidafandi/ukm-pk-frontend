@@ -109,23 +109,12 @@ export const UsersList = () => {
       nama: user.nama, // mapping
       username: user.username,
       email: user.email,
-
       password: "", // kosong pas edit
-
       nomor_telepon: user.nomor_telepon ?? "+62",
       alamat: user.alamat ?? "",
-
       angkatan: Number(user.angkatan),
-
-      status:
-        user.status === "aktif"
-          ? "aktif"
-          : user.status === "nonaktif"
-            ? "nonaktif"
-            : "alumni",
-
+      status: user.status,
       division_id: user.division?.id ?? "",
-
       role_ids: user.roles?.map((r) => r.id) ?? [],
     });
 
@@ -151,9 +140,9 @@ export const UsersList = () => {
     try {
       const payload = editing
         ? {
-            ...form,
-            password: undefined, // hapus password saat edit
-          }
+          ...form,
+          password: undefined, // hapus password saat edit
+        }
         : form;
 
       if (editing) {
@@ -177,11 +166,11 @@ export const UsersList = () => {
       setForm(emptyForm);
     } catch (err: any) {
       if (err.name === "ZodError") {
-        toast.error(err.errors[0].message);
+        console.error(err.message);
         return;
       }
 
-      toast.error("Gagal menyimpan user");
+      console.error("Gagal menyimpan user");
     }
   };
 
@@ -287,7 +276,6 @@ export const UsersList = () => {
         </PermissionGate>
       </div>
 
-      {/* Add/Edit Dialog */}
       <UserFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}

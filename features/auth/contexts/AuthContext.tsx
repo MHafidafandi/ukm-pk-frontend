@@ -170,8 +170,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("❌ [LOGIN] Error:", error);
       toast.error(
         error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          "Login gagal",
+        error?.response?.data?.error ||
+        "Login gagal",
       );
     },
   });

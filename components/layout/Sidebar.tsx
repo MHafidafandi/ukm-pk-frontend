@@ -1,4 +1,3 @@
-"use client";
 
 import { Heart, LucideIcon } from "lucide-react";
 
