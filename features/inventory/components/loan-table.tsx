@@ -10,40 +10,48 @@ import {
 } from "@/components/ui/table";
 import { Loan } from "../services/assetService";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 type Props = {
   loans: Loan[];
+  onReturn?: (loanId: string, data: any) => Promise<void>;
+  onMarkLost?: (loanId: string, data: any) => Promise<void>;
 };
 
 const statusColor: Record<string, { label: string; colorClass: string }> = {
   dipinjam: {
-    label: "Dipinjam",
+    label: "Borrowed",
     colorClass:
       "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
   },
   dikembalikan: {
-    label: "Dikembalikan",
+    label: "Returned",
     colorClass:
       "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
   },
   hilang: {
-    label: "Hilang",
+    label: "Lost",
     colorClass:
       "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
   },
   rusak: {
-    label: "Rusak",
+    label: "Broken",
     colorClass:
       "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
   },
   terlambat: {
-    label: "Terlambat",
+    label: "Late",
     colorClass:
       "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
   },
 };
 
-export const LoanTable = ({ loans }: Props) => {
+export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
+  const [returningId, setReturningId] = useState<string | null>(null);
+
+  const [markingLostId, setMarkingLostId] = useState<string | null>(null);
+
   const formatDate = (date?: string) => {
     if (!date) return "-";
     return new Date(date).toLocaleDateString("id-ID", {
@@ -53,28 +61,48 @@ export const LoanTable = ({ loans }: Props) => {
     });
   };
 
+  const handleReturn = async (loanId: string, data: any) => {
+    if (!onReturn) return;
+    setReturningId(loanId);
+    try {
+      await onReturn(loanId, data);
+    } finally {
+      setReturningId(null);
+    }
+  };
+
+  const handleMarkLost = async (loanId: string, data: any) => {
+    if (!onMarkLost) return;
+    setMarkingLostId(loanId);
+    try {
+      await onMarkLost(loanId, data);
+    } finally {
+      setMarkingLostId(null);
+    }
+  };
+
   return (
     <div className="w-full">
       <Table>
         <TableHeader className="bg-muted/50 rounded-t-xl border-b-0">
           <TableRow className="border-b-0 hover:bg-transparent">
-            <TableHead className="font-semibold text-foreground rounded-tl-xl h-11">
-              Aset
+            <TableHead className="font-semibold text-foreground rounded-tl-xl h-11 text-center">
+              Assets
             </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Peminjam
+            <TableHead className="font-semibold text-foreground h-11 text-center">
+              Borrower
             </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Tgl Pinjam
+            <TableHead className="font-semibold text-foreground h-11 text-center">
+              Loan Date
             </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Tgl Kembali
+            <TableHead className="font-semibold text-foreground h-11 text-center">
+              Return Date
             </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
+            <TableHead className="font-semibold text-foreground h-11 text-center">
               Status
             </TableHead>
-            <TableHead className="w-[120px] rounded-tr-xl h-11 text-right">
-              Aksi
+            <TableHead className="w-[120px] rounded-tr-xl h-11 text-center">
+              Action
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -85,7 +113,7 @@ export const LoanTable = ({ loans }: Props) => {
                 colSpan={6}
                 className="h-32 text-center text-muted-foreground font-medium"
               >
-                Belum ada data peminjaman.
+                No loan data yet.
               </TableCell>
             </TableRow>
           ) : (
@@ -94,6 +122,8 @@ export const LoanTable = ({ loans }: Props) => {
                 label: loan.status,
                 colorClass: "bg-gray-100 text-gray-800 border-gray-200",
               };
+              const isReturning = returningId === loan.id;
+
               return (
                 <TableRow
                   key={loan.id}
@@ -101,15 +131,11 @@ export const LoanTable = ({ loans }: Props) => {
                 >
                   <TableCell>
                     <div className="font-semibold text-foreground">
-                      {loan.asset?.nama}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                      {loan.asset?.kode}
+                      {loan.asset_id}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium text-muted-foreground">
-                    {loan.user?.username || "Unknown"}
-                    {/* Note: User type might differ slightly, adjusted based on sipeduli types */}
+                    {loan.user_id || "Unknown"}
                   </TableCell>
                   <TableCell className="text-sm font-medium">
                     {formatDate(loan.tanggal_pinjam)}
@@ -124,14 +150,39 @@ export const LoanTable = ({ loans }: Props) => {
                       {status.label}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
-                    {loan.status === "dipinjam" && (
+                  <TableCell className="text-right flex gap-2 justify-end">
+                    {loan.status === "dipinjam" && onReturn && (
                       <Button
                         size="sm"
                         variant="outline"
                         className="h-8 hover:bg-muted font-medium"
+                        disabled={isReturning || markingLostId === loan.id}
+                        onClick={() =>
+                          handleReturn(loan.id, {
+                            asset_id: loan.asset_id,
+                            tanggal_kembali: new Date().toISOString().split("T")[0],
+                            kondisi: "baik",
+                            catatan: "Returned in good condition",
+                          })
+                        }
                       >
-                        Kembalikan
+                        {isReturning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Return"}
+                      </Button>
+                    )}
+                    {loan.status === "dipinjam" && onMarkLost && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 font-medium"
+                        disabled={isReturning || markingLostId === loan.id}
+                        onClick={() =>
+                          handleMarkLost(loan.id, {
+                            asset_id: loan.asset_id,
+                            catatan: "Marked as lost",
+                          })
+                        }
+                      >
+                        {markingLostId === loan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark Lost"}
                       </Button>
                     )}
                   </TableCell>

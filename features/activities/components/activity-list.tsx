@@ -96,7 +96,6 @@ export const ActivityList = () => {
       if (form.thumbnail instanceof File) {
         formData.append("thumbnail", form.thumbnail);
       } else if (form.thumbnail === null) {
-        // null = sinyal untuk menghapus thumbnail dari server
         formData.append("thumbnail", "");
       }
 
