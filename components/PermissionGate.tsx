@@ -1,4 +1,6 @@
-import { ReactNode } from "react";
+"use client";
+
+import { ReactNode, useEffect, useState } from "react";
 import { usePermission } from "@/hooks/usePermission";
 import { Permission } from "@/lib/permissions";
 
@@ -14,6 +16,15 @@ export function PermissionGate({
   fallback = null,
 }: PermissionGateProps) {
   const { can } = usePermission();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <>{fallback}</>;
+  }
 
   if (!can(permission)) {
     return <>{fallback}</>;

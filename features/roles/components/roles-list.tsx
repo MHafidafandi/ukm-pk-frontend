@@ -375,7 +375,7 @@ export const RolesList = () => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background-light dark:bg-background-dark min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark">
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark">
       <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-6">
         {/* ── Left: Roles List ── */}
         <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-4">
@@ -392,7 +392,7 @@ export const RolesList = () => {
             </PermissionGate>
           </div>
 
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col">
+          <div className="bg-slate-50 dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
             {roles.map((role, idx) => {
               const isActive = activeRole?.id === role.id;
               return (
@@ -402,10 +402,10 @@ export const RolesList = () => {
                   className={[
                     "flex items-center justify-between p-4 border-l-4 transition-colors w-full text-left group",
                     isActive
-                      ? "border-primary bg-primary/5 dark:bg-primary/10"
-                      : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50",
+                      ? "border-primary bg-slate-100 dark:bg-slate-700"
+                      : "border-transparent hover:bg-slate-100 dark:hover:bg-slate-700/80",
                     idx !== roles.length - 1
-                      ? "border-b border-gray-100 dark:border-gray-800"
+                      ? "border-b border-gray-100 dark:border-gray-700"
                       : "",
                   ].join(" ")}
                 >
@@ -436,7 +436,7 @@ export const RolesList = () => {
                           e.stopPropagation();
                           openEdit(role);
                         }}
-                        className="p-1.5 rounded hover:bg-white dark:hover:bg-gray-700 text-text-secondary-light hover:text-primary cursor-pointer transition-colors"
+                        className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-text-secondary-light hover:text-primary cursor-pointer transition-colors"
                       >
                         <Edit className="w-4 h-4" />
                       </div>
@@ -447,7 +447,7 @@ export const RolesList = () => {
                           e.stopPropagation();
                           openDelete(role);
                         }}
-                        className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-secondary-light hover:text-red-600 cursor-pointer transition-colors"
+                        className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-800 text-text-secondary-light hover:text-red-600 cursor-pointer transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </div>
@@ -475,10 +475,10 @@ export const RolesList = () => {
                 </h3>
               </div>
 
-              <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden relative">
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden relative">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-background-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-800 text-text-secondary-light dark:text-text-secondary-dark uppercase font-semibold text-xs tracking-wider">
+                    <thead className="bg-slate-100 dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 text-text-secondary-light dark:text-text-secondary-dark uppercase font-semibold text-xs tracking-wider">
                       <tr>
                         <th className="px-6 py-4 min-w-[220px]">Feature</th>
                         {ACTIONS.map((action) => {
@@ -495,21 +495,19 @@ export const RolesList = () => {
                             </th>
                           );
                         })}
-                        {/* Extra column header */}
                         <th className="px-4 py-4 text-center min-w-[120px]">
                           Extra
                         </th>
                         <th className="px-4 py-4 text-center w-24">All</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                       {PERMISSION_GROUPS.map((group) => {
                         const allPerms = [
                           ...ACTIONS.map((a) => group.permissions[a]).filter(
                             Boolean,
                           ),
-                          ...(group.permissions.extra?.map((e) => e.value) ??
-                            []),
+                          ...(group.permissions.extra?.map((e) => e.value) ?? []),
                         ];
                         const hasAll = allPerms.every((p) =>
                           currentPermissions.has(p),
@@ -518,9 +516,8 @@ export const RolesList = () => {
                         return (
                           <tr
                             key={group.id}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                            className="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                           >
-                            {/* Feature */}
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
                                 <div
@@ -539,7 +536,6 @@ export const RolesList = () => {
                               </div>
                             </td>
 
-                            {/* CRUD checkboxes */}
                             {ACTIONS.map((action) => {
                               const permValue = group.permissions[action];
                               return (
@@ -556,10 +552,10 @@ export const RolesList = () => {
                                       onChange={() =>
                                         togglePermission(permValue)
                                       }
-                                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-surface-dark dark:border-gray-600 cursor-pointer"
+                                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-slate-800 dark:border-gray-600 cursor-pointer"
                                     />
                                   ) : (
-                                    <span className="text-gray-300 dark:text-gray-700">
+                                    <span className="text-gray-400 dark:text-gray-600">
                                       —
                                     </span>
                                   )}
@@ -567,7 +563,6 @@ export const RolesList = () => {
                               );
                             })}
 
-                            {/* Extra permissions */}
                             <td className="px-4 py-4">
                               {group.permissions.extra?.length ? (
                                 <div className="flex flex-wrap gap-2">
@@ -591,13 +586,12 @@ export const RolesList = () => {
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-gray-300 dark:text-gray-700 text-xs">
+                                <span className="text-gray-400 dark:text-gray-600 text-xs">
                                   —
                                 </span>
                               )}
                             </td>
 
-                            {/* Toggle All */}
                             <td className="px-4 py-4 text-center">
                               <button
                                 onClick={() => toggleGroupAll(group)}
@@ -613,12 +607,11 @@ export const RolesList = () => {
                   </table>
                 </div>
 
-                {/* Save Footer */}
                 {isMatrixModified && (
-                  <div className="p-4 bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 sticky bottom-0 animate-in slide-in-from-bottom-2">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 sticky bottom-0 animate-in slide-in-from-bottom-2">
                     <button
                       onClick={handleDiscardMatrix}
-                      className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-text-secondary-light dark:text-text-secondary-dark font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-text-secondary-light dark:text-text-secondary-dark font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       Discard
                     </button>
@@ -634,7 +627,7 @@ export const RolesList = () => {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-text-secondary-light dark:text-text-secondary-dark border-2 border-dashed rounded-xl border-gray-200 dark:border-gray-800 bg-surface-light/50 dark:bg-surface-dark/50">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-text-secondary-light dark:text-text-secondary-dark border-2 border-dashed rounded-xl border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-slate-900">
               <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
                 <Settings className="w-8 h-8 text-gray-400" />
               </div>

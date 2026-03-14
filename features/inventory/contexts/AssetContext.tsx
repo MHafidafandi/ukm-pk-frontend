@@ -12,6 +12,7 @@ import {
   getLoans,
   createLoan,
   returnLoan,
+  markLoanAsLost,
   Asset,
   Loan,
   CreateAssetInput,
@@ -56,6 +57,7 @@ interface AssetContextType {
   isFetchingLoans: boolean;
   createLoan: (data: CreateLoanInput) => Promise<any>;
   returnLoan: (args: { id: string; data: any }) => Promise<any>;
+  markLoanAsLost: (args: { id: string; catatan: string }) => Promise<any>;
 }
 
 const AssetContext = createContext<AssetContextType | undefined>(undefined);
@@ -91,14 +93,14 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   // ✅ Fix: ambil dari nested response sesuai struktur API
   const assets = assetsData?.data?.assets || [];
   const pagination = assetsData?.data?.pagination || null;
-  const loans = loansData?.data || [];
+  const loans = loansData?.data?.loans || [];
 
   // -- Mutations (Assets) --
   const createAssetMutation = useMutation({
     mutationFn: createAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
-      toast.success("Aset berhasil ditambahkan");
+      toast.success("Asset successfully added");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
@@ -115,7 +117,6 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     }) => updateAsset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
-      toast.success("Aset berhasil diperbarui");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
@@ -126,7 +127,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     mutationFn: deleteAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
-      toast.success("Aset berhasil dihapus");
+      toast.success("Asset successfully deleted");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
@@ -138,24 +139,21 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
       uploadAssetImage(id, file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
-      toast.success("Foto aset berhasil diupload");
+      toast.success("Photo asset successfully uploaded");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
     },
   });
 
-  // -- Mutations (Loans) --
   const createLoanMutation = useMutation({
-    mutationFn: createLoan,
+    mutationFn: (data: CreateLoanInput) => createLoan(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "loans"] });
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
-      toast.success("Peminjaman berhasil dicatat");
+      toast.success("Loan successfully created");
     },
-    onError: (error: any) => {
-      toast.error(getErrorMessage(error));
-    },
+    onError: (err: any) => toast.error(getErrorMessage(err)),
   });
 
   const returnLoanMutation = useMutation({
@@ -164,11 +162,19 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "loans"] });
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
-      toast.success("Pengembalian berhasil dicatat");
+      toast.success("Loan successfully returned ");
     },
-    onError: (error: any) => {
-      toast.error(getErrorMessage(error));
+    onError: (err: any) => toast.error(getErrorMessage(err)),
+  });
+
+  const markLoanAsLostMutation = useMutation({
+    mutationFn: ({ id, catatan }: { id: string; catatan: string }) => markLoanAsLost(id, { catatan }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", "loans"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
+      toast.success("Loan marked as lost");
     },
+    onError: (err: any) => toast.error(getErrorMessage(err)),
   });
 
   const contextValue = useMemo(
@@ -186,6 +192,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
       isFetchingLoans,
       createLoan: createLoanMutation.mutateAsync,
       returnLoan: returnLoanMutation.mutateAsync,
+      markLoanAsLost: markLoanAsLostMutation.mutateAsync,
     }),
     [
       assets,
@@ -200,6 +207,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
       isFetchingLoans,
       createLoanMutation,
       returnLoanMutation,
+      markLoanAsLostMutation,
     ],
   );
 

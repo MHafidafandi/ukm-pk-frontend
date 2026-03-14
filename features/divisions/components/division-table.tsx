@@ -79,11 +79,11 @@ export const DivisionCard = ({
   };
   return (
     <div
-      className={`group relative bg-surface-light dark:bg-surface-dark rounded-xl border ${palette.border} shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}
+      className={`group relative bg-slate-50 dark:bg-slate-900 rounded-xl border ${palette.border} shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}
     >
       {/* Top accent bar */}
       <div
-        className={`h-1 w-full ${palette.bg.replace("bg-", "bg-").replace("/20", "")}`}
+        className={`h-1 w-full ${palette.bg}`}
       />
 
       <div className="p-5">

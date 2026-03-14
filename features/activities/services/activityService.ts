@@ -89,7 +89,6 @@ export async function getActivities(
   params?: ActivityParams,
 ): Promise<{ data: { activities: Activity[]; pagination: PaginationMeta } }> {
   const data = await api.get("/activities", { params });
-  console.log("data", data);
   return data;
 }
 

@@ -49,7 +49,7 @@ export const UsersStats = ({ stats }: Props) => {
       {items.map((s) => (
         <div
           key={s.label}
-          className={`bg-surface-light dark:bg-surface-dark p-6 rounded-2xl shadow-soft border border-border-light dark:border-border-dark flex items-center justify-between group transition-all ${s.hoverClass}`}
+          className={`bg-slate-50/50 dark:bg-slate-800 p-6 rounded-2xl shadow-soft border border-border-light dark:border-border-dark flex items-center justify-between group transition-all ${s.hoverClass}`}
         >
           <div>
             <p className="text-sm font-medium text-subtext-light dark:text-subtext-dark">
