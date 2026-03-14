@@ -75,8 +75,8 @@ export const DocumentTable = ({ documents }: Props) => {
       <div className="overflow-x-auto w-full">
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
-            <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
-              <th className="p-4 w-10 sticky left-0 bg-gray-50/50 dark:bg-gray-800/30 z-10">
+            <tr className="border-b border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-900">
+              <th className="p-4 w-10 sticky left-0 bg-slate-50 dark:bg-slate-900 z-10">
                 <input
                   className="rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-900"
                   type="checkbox"

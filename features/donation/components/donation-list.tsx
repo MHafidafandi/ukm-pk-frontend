@@ -9,17 +9,30 @@ import { DonationFormDialog } from "./donation-form-dialog";
 import { DonationDeleteDialog } from "./donation-delete-dialog";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
+import { CreateDonationInput, createDonationSchema } from "@/lib/validations/donation-schema";
+import { toast } from "sonner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const emptyForm: CreateDonationInput = {
+  nama_donatur: "",
+  jumlah: 0,
+  tanggal: new Date(),
+  metode: "qris",
+  status: "pending",
+  deskripsi: "",
+};
 
 export const DonationList = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-
   const [editing, setEditing] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState<Donation | null>(null);
-
   const {
-    donations: donationsResponse,
+    donations,
     stats,
+    page,
+    setPage,
+    pagination,
     createDonation,
     updateDonation,
     deleteDonation,
@@ -31,7 +44,6 @@ export const DonationList = () => {
     setActiveFilter,
   } = useDonationContext();
 
-  const donations = donationsResponse?.data ?? [];
   const donationStats = stats?.data;
 
   // Derive today's metrics statically if no direct API representation (Fallback)
@@ -45,16 +57,6 @@ export const DonationList = () => {
     );
   });
   const todayAmount = todaysDonations.reduce((acc, obj) => acc + obj.jumlah, 0);
-
-  // Filter functionality
-  const filteredDonations = donations.filter((donation) => {
-    const matchesSearch =
-      donation.nama_donatur.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      donation.id.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (activeFilter === "all") return matchesSearch;
-    return matchesSearch && donation.status === activeFilter;
-  });
 
   const openAdd = () => {
     setEditing(null);
@@ -71,16 +73,30 @@ export const DonationList = () => {
     setDeleteOpen(true);
   };
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (formData: FormData) => {
     try {
       if (editing) {
-        await updateDonation({ id: editing.id, data: values });
+        await updateDonation({ id: editing.id, data: formData });
+        toast.success("Donation successfully updated 🎉");
       } else {
-        await createDonation(values);
+        await createDonation(formData);
+        toast.success("Donation successfully created 🎉");
       }
+
       setFormOpen(false);
-    } catch (error) {
-      console.error(error);
+      setEditing(null);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        toast.error(err.errors[0].message);
+        return;
+      }
+      const message =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        err?.message ??
+        "Failed to save donation";
+      toast.error(message);
+      console.error("[handleSave] error:", err);
     }
   };
 
@@ -88,14 +104,15 @@ export const DonationList = () => {
     if (!deleting) return;
     try {
       await deleteDonation(deleting.id);
+      toast.success("Donation deleted 🎉");
       setDeleteOpen(false);
-    } catch (error) {
-      console.error(error);
+    } catch (err: any) {
+      toast.error(err.response?.error || "Failed to delete donation");
     }
   };
 
   const handleExportCSV = () => {
-    if (filteredDonations.length === 0) return;
+    if (donations.length === 0) return;
 
     const headers = [
       "Donatur Name",
@@ -107,7 +124,7 @@ export const DonationList = () => {
     ];
     const csvRows = [headers.join(",")];
 
-    for (const row of filteredDonations) {
+    for (const row of donations) {
       const values = [
         `"${row.nama_donatur.replace(/"/g, '""')}"`,
         row.jumlah,
@@ -150,10 +167,36 @@ export const DonationList = () => {
     }).format(amount);
   };
 
+  // Pagination helpers
+  const totalPages = pagination?.total_pages ?? 1;
+  const currentPage = page;
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+
+  const getPageNumbers = () => {
+    const pages: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("ellipsis");
+      for (
+        let i = Math.max(2, currentPage - 1);
+        i <= Math.min(totalPages - 1, currentPage + 1);
+        i++
+      ) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push("ellipsis");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-display relative -m-8 p-8">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-display relative -m-8 p-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
           Donation Management
         </h1>
         <PermissionGate permission={PERMISSIONS.CREATE_DONATIONS}>
@@ -181,7 +224,7 @@ export const DonationList = () => {
 
       <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 shrink-0">
-          <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-sm border border-border-light dark:border-border-dark">
+          <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-300 dark:border-slate-700">
             <div className="flex justify-between items-start mb-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <svg
@@ -209,7 +252,7 @@ export const DonationList = () => {
               {formatRupiah(donationStats?.verified_amount || 0)}
             </p>
           </div>
-          <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-sm border border-border-light dark:border-border-dark">
+          <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-300 dark:border-slate-700">
             <div className="flex justify-between items-start mb-4">
               <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
                 <svg
@@ -239,7 +282,7 @@ export const DonationList = () => {
               {formatRupiah(donationStats?.pending_amount || 0)}
             </p>
           </div>
-          <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-sm border border-border-light dark:border-border-dark">
+          <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-300 dark:border-slate-700">
             <div className="flex justify-between items-start mb-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <svg
@@ -294,14 +337,15 @@ export const DonationList = () => {
                 <path d="m21 21-4.3-4.3" />
               </svg>
               <input
-                className="w-full pl-10 pr-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:placeholder-gray-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
                 placeholder="Search donor or ID..."
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg transition-colors shadow-sm"
+            >
               <svg
                 className="w-5 h-5"
                 xmlns="http://www.w3.org/2000/svg"
@@ -326,16 +370,15 @@ export const DonationList = () => {
             </button>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-            <div className="flex items-center gap-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg p-1">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
               {["all", "verified", "pending", "rejected"].map((status) => (
                 <button
                   key={status}
                   onClick={() => setActiveFilter(status)}
-                  className={`capitalize px-3 py-1.5 rounded text-xs font-medium transition-all ${
-                    activeFilter === status
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
+                  className={`capitalize px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeFilter === status
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
                 >
                   {status}
                 </button>
@@ -364,13 +407,57 @@ export const DonationList = () => {
           </div>
         </div>
 
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden flex flex-col flex-1 min-h-[500px]">
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-[500px]">
           <DonationTable
-            donations={filteredDonations}
+            donations={donations}
             onEdit={openEdit}
             onDelete={openDelete}
           />
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1 pt-4">
+              <button
+                onClick={() => setPage(currentPage - 1)}
+                disabled={!hasPrev}
+                className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-40 dark:text-slate-400 dark:hover:bg-white/5"
+              >
+                <ChevronLeft className="size-4" />
+                <span className="hidden sm:inline">Prev</span>
+              </button>
+
+              {getPageNumbers().map((p, i) =>
+                p === "ellipsis" ? (
+                  <span
+                    key={`ellipsis-${i}`}
+                    className="flex size-9 items-center justify-center text-sm text-slate-400"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+                      }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() => setPage(currentPage + 1)}
+                disabled={!hasNext}
+                className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-40 dark:text-slate-400 dark:hover:bg-white/5"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          )}
         </div>
+
       </div>
 
       <DonationFormDialog

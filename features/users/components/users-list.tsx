@@ -222,7 +222,7 @@ export const UsersList = () => {
           <PermissionGate permission={PERMISSIONS.CREATE_USERS}>
             <button
               onClick={openAdd}
-              className="bg-primary hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95"
+              className="bg-primary hover:bg-primary/80 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95"
             >
               <Plus className="h-5 w-5" />
               Tambah Anggota

@@ -1,5 +1,6 @@
 import { api } from "@/lib/api/client";
 import { objectToFormData } from "@/lib/utils";
+import { UpdateDonationInput } from "@/lib/validations/donation-schema";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -41,40 +42,80 @@ export interface DonationStats {
   verified_amount: number;
 }
 
+export type DonationParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+};
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  total_pages: number;
+  page_size: number;
+}
+
 // ── API Functions ──────────────────────────────────────────────────────────
 
 const BASE_URL = "/donations";
 
-export async function getDonations(): Promise<{ data: Donation[] }> {
-  const { data } = await api.get(BASE_URL);
+export async function getDonations(
+  params?: DonationParams,
+): Promise<{ data: { donations: Donation[]; pagination: PaginationMeta } }> {
+  const data = await api.get("/donations", { params });
   return data;
 }
 
 export async function getDonation(id: string): Promise<{ data: Donation }> {
-  const { data } = await api.get(`${BASE_URL}/${id}`);
+  const data = await api.get(`/donations/${id}`);
   return data;
 }
 
+// export async function uploadProof(
+//   id: string,
+//   file: File,
+// ): Promise<{ url: string }> {
+//   const formData = new FormData();
+//   formData.append("file", file);
+//   const response = (await api.post(`${BASE_URL}/${id}/proof`, formData, {
+//     headers: {
+//       "Content-Type": "multipart/form-data",
+//     },
+//   })) as any;
+//   return response.data; // assuming API returns { data: { url: "..." } } => response.data has { url }
+// }
+
 export async function createDonation(
   body: CreateDonationInput | FormData,
-): Promise<{ data: Donation }> {
+): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.post(BASE_URL, payload);
+  const { data } = await api.post("/donations", payload, {
+    headers: {
+      "Content-Type": undefined,
+    },
+  });
+  return data;
+}
+
+export async function deleteDonation(id: string): Promise<{ message: string }> {
+  const { data } = await api.delete(`/donations/${id}`);
   return data;
 }
 
 export async function updateDonation(
   id: string,
-  body: (Partial<CreateDonationInput> & { status?: string }) | FormData,
-): Promise<{ data: Donation }> {
+  body: UpdateDonationInput | FormData,
+): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.put(`${BASE_URL}/${id}`, payload);
+  const { data } = await api.put(`/donations/${id}`, payload, {
+    headers: {
+      "Content-Type": undefined,
+    },
+  });
   return data;
 }
 
-export async function deleteDonation(id: string): Promise<void> {
-  await api.delete(`${BASE_URL}/${id}`);
-}
 
 export async function uploadProof(
   id: string,
@@ -82,15 +123,15 @@ export async function uploadProof(
 ): Promise<{ url: string }> {
   const formData = new FormData();
   formData.append("file", file);
-  const { data } = await api.post(`${BASE_URL}/${id}/proof`, formData, {
+  const response = (await api.post(`${BASE_URL}/${id}/proof`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
-  });
-  return data;
+  })) as any;
+  return response.data; // assuming API returns { data: { url: "..." } } => response.data has { url }
 }
 
 export async function getDonationStats(): Promise<{ data: DonationStats }> {
-  const { data } = await api.get(`${BASE_URL}/stats`);
-  return data;
+  const response = (await api.get(`${BASE_URL}/statistics/summary`)) as any;
+  return { data: response.data };
 }

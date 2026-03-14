@@ -52,7 +52,7 @@ const StatCard = ({
   color: string;
   bg: string;
 }) => (
-  <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-800 p-5 flex items-center gap-4 shadow-sm">
+  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 flex items-center gap-4 shadow-sm">
     <div className={`p-3 rounded-xl ${bg}`}>
       <Icon className={`w-5 h-5 ${color}`} />
     </div>
@@ -143,7 +143,7 @@ export const DivisionsList = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background-light dark:bg-background-dark min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark">
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background-light dark:bg-slate-900 min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark">
       <div className="max-w-7xl mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -178,7 +178,7 @@ export const DivisionsList = () => {
                 label="Total Divisi"
                 value={stats?.total_divisions ?? 0}
                 icon={LayoutGrid}
-                color="text-primary"
+                color="text-purple-600"
                 bg="bg-purple-50 dark:bg-purple-900/20"
               />
               <StatCard
@@ -214,7 +214,7 @@ export const DivisionsList = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 block w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary text-sm py-2.5 shadow-sm outline-none transition-shadow"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
             placeholder="Cari divisi..."
             type="text"
           />

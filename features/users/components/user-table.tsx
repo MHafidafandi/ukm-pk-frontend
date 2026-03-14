@@ -118,7 +118,7 @@ export const UsersTable = ({
   return (
     <>
       <table className="min-w-full divide-y divide-border-light dark:divide-border-dark">
-        <thead className="bg-gray-50 dark:bg-gray-800/50">
+        <thead className="bg-slate-50/50 dark:bg-slate-800">
           <tr>
             <th
               scope="col"
@@ -168,7 +168,7 @@ export const UsersTable = ({
             </th>
           </tr>
         </thead>
-        <tbody className="bg-surface-light dark:bg-surface-dark divide-y divide-border-light dark:divide-border-dark">
+        <tbody className="bg-background-light dark:bg-slate-900 divide-y divide-border-light dark:divide-border-dark">
           {users.length === 0 ? (
             <tr>
               <td
@@ -197,7 +197,7 @@ export const UsersTable = ({
               return (
                 <tr
                   key={user.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
+                  className="hover:bg-background-light dark:hover:bg-gray-800/50 transition-colors group"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -332,7 +332,7 @@ export const UsersTable = ({
       </table>
 
       {/* ================= PAGINATION ================= */}
-      <div className="bg-gray-50 dark:bg-gray-800/20 border-t border-border-light dark:border-border-dark px-6 py-4 flex items-center justify-between">
+      <div className="bg-slate-50/50 dark:bg-slate-800 border-t border-border-light dark:border-border-dark px-6 py-4 flex items-center justify-between">
         <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-subtext-light dark:text-subtext-dark">
