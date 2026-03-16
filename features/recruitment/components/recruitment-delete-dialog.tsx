@@ -1,10 +1,7 @@
+// @/features/recruitment/components/recruitment-delete-dialog.tsx
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Recruitment } from "@/features/recruitment/services/recruitmentService";
@@ -14,13 +11,11 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   recruitment: Recruitment | null;
   onConfirm: () => void;
+  isDeleting?: boolean;
 };
 
 export const RecruitmentDeleteDialog = ({
-  open,
-  onOpenChange,
-  recruitment,
-  onConfirm,
+  open, onOpenChange, recruitment, onConfirm, isDeleting,
 }: Props) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -29,7 +24,7 @@ export const RecruitmentDeleteDialog = ({
           <DialogTitle>Hapus Rekrutmen</DialogTitle>
           <DialogDescription>
             Apakah yakin ingin menghapus rekrutmen{" "}
-            <strong>{recruitment?.title}</strong>?
+            <strong>{recruitment?.nama_recruitment}</strong>?
             <br />
             Data pendaftar juga akan terhapus. Tindakan ini tidak bisa
             dibatalkan.
@@ -39,8 +34,12 @@ export const RecruitmentDeleteDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Batal
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
-            Hapus
+          <Button
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Menghapus..." : "Hapus"}
           </Button>
         </DialogFooter>
       </DialogContent>

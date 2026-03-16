@@ -57,7 +57,6 @@ export const InventoryList = () => {
   const handleOpenEdit = (asset: Asset) => {
     setEditingAsset(asset);
     setAssetFormOpen(true);
-    toast.success("Asset successfully updated");
   };
 
   // Coba sinkronkan ulang selectedAsset dari array 'assets' kalau direfetch (create/edit success)

@@ -117,6 +117,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     }) => updateAsset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
+      toast.success("Asset successfully updated");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
