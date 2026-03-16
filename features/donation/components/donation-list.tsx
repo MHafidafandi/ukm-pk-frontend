@@ -77,10 +77,10 @@ export const DonationList = () => {
     try {
       if (editing) {
         await updateDonation({ id: editing.id, data: formData });
-        toast.success("Donation successfully updated 🎉");
+        toast.success("Donation successfully updated");
       } else {
         await createDonation(formData);
-        toast.success("Donation successfully created 🎉");
+        toast.success("Donation successfully created");
       }
 
       setFormOpen(false);
@@ -104,7 +104,7 @@ export const DonationList = () => {
     if (!deleting) return;
     try {
       await deleteDonation(deleting.id);
-      toast.success("Donation deleted 🎉");
+      toast.success("Donation deleted");
       setDeleteOpen(false);
     } catch (err: any) {
       toast.error(err.response?.error || "Failed to delete donation");

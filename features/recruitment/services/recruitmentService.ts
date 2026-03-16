@@ -1,70 +1,40 @@
 import { api } from "@/lib/api/client";
-import { User } from "@/features/auth/contexts/AuthContext";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export type RecruitmentStatus = "draft" | "open" | "closed";
-export type RegistrantStatus =
-  | "pending"
-  | "accepted"
-  | "rejected"
-  | "interview";
+export type RegistrantStatus = "pending" | "accepted" | "rejected" | "interview";
 
 export interface Recruitment {
   id: string;
-  title: string;
-  description: string;
-  start_date: string;
-  end_date: string;
+  nama_recruitment: string;
+  deskripsi: string;
+  tanggal_buka: string;
+  tanggal_tutup: string;
   status: RecruitmentStatus;
-  requirements?: string[];
+  announcement_link?: string;
   created_at: string;
   updated_at: string;
-  _count?: {
-    registrants: number;
-  };
 }
 
 export interface Registrant {
   id: string;
-  recruitment_id: string;
-  user_id: string;
+  recruit_id: string;
+  nama: string;
+  email: string;
+  nim?: string;
+  jurusan?: string;
+  angkatan: number;
+  nomor_telepon?: string;
+  first_choice?: string;
+  second_choice?: string;
+  third_choice?: string;
   status: RegistrantStatus;
-  notes?: string;
   created_at: string;
   updated_at: string;
-  user: User;
 }
 
-export interface CreateRecruitmentInput {
-  title: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-  status: RecruitmentStatus;
-  requirements?: string[];
-}
-export type UpdateRecruitmentInput = Partial<CreateRecruitmentInput>;
-
-export interface RegisterRecruitmentInput {
-  recruitment_id: string;
-}
-
-export type RecruitmentParams = {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-};
-
-export type RegistrantParams = {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-};
-
-interface PaginationMeta {
+export interface Pagination {
   total: number;
   page: number;
   total_pages: number;
@@ -73,90 +43,145 @@ interface PaginationMeta {
   has_previous: boolean;
 }
 
+export type RecruitmentFilters = {
+  page?: number;
+  limit?: number;
+  order?: string;
+  sort?: string;
+  search?: string;
+  status?: string;
+};
+
+export type RegistrantFilters = {
+  page?: number;
+  limit?: number;
+  order?: string;
+  sort?: string;
+  search?: string;
+  recuruit_id?: string; // typo di API, ikutin aja
+  status?: string;
+};
+
+// DTOs
+export type CreateRecruitmentDTO = {
+  nama_recruitment: string;
+  deskripsi?: string;
+  tanggal_buka: string; // "2025-01-01"
+  tanggal_tutup: string;
+};
+
+export type UpdateRecruitmentDTO = {
+  nama_recruitment?: string;
+  deskripsi?: string;
+  tanggal_buka?: string;
+  tanggal_tutup?: string;
+  announcement_link?: string;
+};
+
 // ── API Functions ──────────────────────────────────────────────────────────
+//
+// PENTING: Interceptor di client.ts sudah melakukan `return response.data`,
+// jadi `api.get(url)` langsung mengembalikan body JSON (bukan AxiosResponse).
+// Contoh: api.get("/recruitments") → { data: { recruitments: [...], pagination: {...} } }
+//
+// ========================
 
-/** GET /recruitments */
-export async function getRecruitments(params?: RecruitmentParams): Promise<{
-  data: { recruitments: Recruitment[]; pagination: PaginationMeta };
-}> {
-  const { data } = await api.get("/recruitments", { params });
-  return data;
+const BASE = "/admin/recruitments";
+
+// --- Recruitments (List) ---
+
+export async function getRecruitments(
+  filters?: RecruitmentFilters
+): Promise<{ data: { recruitments: Recruitment[]; pagination: Pagination } }> {
+  const params: Record<string, string> = {};
+  if (filters?.page) params.page = String(filters.page);
+  if (filters?.limit) params.limit = String(filters.limit);
+  if (filters?.search) params.search = filters.search;
+  if (filters?.status) params.status = filters.status;
+  if (filters?.sort) params.sort = filters.sort;
+  if (filters?.order) params.order = filters.order;
+
+  // api.get sudah return response.data (body JSON)
+  const result = await api.get(BASE, { params });
+  return result as any;
 }
 
-/** GET /recruitments/:id */
-export async function getRecruitment(
-  id: string,
-): Promise<{ data: Recruitment }> {
-  const { data } = await api.get(`/recruitments/${id}`);
-  return { data };
+// --- Recruitment (single) ---
+
+export async function getRecruitmentById(id: string): Promise<Recruitment> {
+  const result: any = await api.get(`${BASE}/${id}`);
+  return result.data; // body = { data: Recruitment }
 }
 
-/** POST /recruitments */
+// --- Create ---
+
 export async function createRecruitment(
-  body: CreateRecruitmentInput,
-): Promise<{ message: string; id?: string }> {
-  const { data } = await api.post("/recruitments", body);
-  return data;
+  data: CreateRecruitmentDTO
+): Promise<any> {
+  const result = await api.post(BASE, data);
+  return result;
 }
 
-/** PUT /recruitments/:id */
+// --- Update ---
+
 export async function updateRecruitment(
   id: string,
-  body: UpdateRecruitmentInput,
-): Promise<{ message: string; id?: string }> {
-  const { data } = await api.put(`/recruitments/${id}`, body);
-  return data;
+  data: UpdateRecruitmentDTO
+): Promise<any> {
+  const result = await api.put(`${BASE}/${id}`, data);
+  return result;
 }
 
-/** DELETE /recruitments/:id */
-export async function deleteRecruitment(
-  id: string,
-): Promise<{ message: string }> {
-  const { data } = await api.delete(`/recruitments/${id}`);
-  return data;
+// --- Delete ---
+
+export async function deleteRecruitment(id: string): Promise<any> {
+  const result = await api.delete(`${BASE}/${id}`);
+  return result;
 }
 
-/** POST /recruitments/register */
-export async function registerRecruitment(
-  body: RegisterRecruitmentInput,
-): Promise<{ message: string }> {
-  const { data } = await api.post("/recruitments/register", body);
-  return data;
+// --- Status changes ---
+
+export async function openRecruitment(id: string): Promise<any> {
+  const result = await api.patch(`${BASE}/${id}/open`);
+  return result;
 }
 
-/** GET /recruitments/:id/registrants */
+export async function closeRecruitment(id: string): Promise<any> {
+  const result = await api.patch(`${BASE}/${id}/close`);
+  return result;
+}
+
+export async function archiveRecruitment(id: string): Promise<any> {
+  const result = await api.patch(`${BASE}/${id}/archive`);
+  return result;
+}
+
+// --- Registrants ---
+
 export async function getRegistrants(
-  recruitmentId: string,
-  params?: RegistrantParams,
-): Promise<{
-  data: { registrants: Registrant[]; pagination: PaginationMeta };
-}> {
-  const { data } = await api.get(`/recruitments/${recruitmentId}/registrants`, {
-    params,
-  });
-  return data;
+  filters?: RegistrantFilters
+): Promise<{ data: { registrants: Registrant[]; pagination: Pagination } }> {
+  const params: Record<string, string> = {};
+  if (filters?.page) params.page = String(filters.page);
+  if (filters?.limit) params.limit = String(filters.limit);
+  if (filters?.search) params.search = filters.search;
+  if (filters?.recuruit_id) params.recuruit_id = filters.recuruit_id;
+  if (filters?.status) params.status = filters.status;
+
+  const result = await api.get(`${BASE}/registrants`, { params });
+  return result as any;
 }
 
-/** PATCH /recruitments/:recruitmentId/registrants/:registrantId/status */
-export async function updateRegistrantStatus(
-  recruitmentId: string,
-  registrantId: string,
-  status: RegistrantStatus,
-): Promise<{ message: string }> {
-  const { data } = await api.patch(
-    `/recruitments/${recruitmentId}/registrants/${registrantId}/status`,
-    { status },
+export async function acceptRegistrant(registrantId: string): Promise<any> {
+  const result = await api.patch(
+    `${BASE}/registrants/${registrantId}/accept`
   );
-  return data;
+  return result;
 }
 
-/** DELETE /recruitments/:recruitmentId/registrants/:registrantId */
-export async function deleteRegistrant(
-  recruitmentId: string,
-  registrantId: string,
-): Promise<{ message: string }> {
-  const { data } = await api.delete(
-    `/recruitments/${recruitmentId}/registrants/${registrantId}`,
+export async function rejectRegistrant(registrantId: string): Promise<any> {
+  const result = await api.post(
+    `${BASE}/registrants/${registrantId}/reject`
   );
-  return data;
+  return result;
 }

@@ -72,20 +72,6 @@ export async function getDonation(id: string): Promise<{ data: Donation }> {
   return data;
 }
 
-// export async function uploadProof(
-//   id: string,
-//   file: File,
-// ): Promise<{ url: string }> {
-//   const formData = new FormData();
-//   formData.append("file", file);
-//   const response = (await api.post(`${BASE_URL}/${id}/proof`, formData, {
-//     headers: {
-//       "Content-Type": "multipart/form-data",
-//     },
-//   })) as any;
-//   return response.data; // assuming API returns { data: { url: "..." } } => response.data has { url }
-// }
-
 export async function createDonation(
   body: CreateDonationInput | FormData,
 ): Promise<{ message: string; id?: string }> {
