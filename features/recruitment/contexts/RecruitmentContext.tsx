@@ -27,15 +27,14 @@ import {
   openRecruitment as apiOpen,
   closeRecruitment as apiClose,
   archiveRecruitment as apiArchive,
-  getRegistrants,
   acceptRegistrant as apiAccept,
   rejectRegistrant as apiReject,
+  getRegistrants,
 } from "@/features/recruitment/services/recruitmentService";
 
 // ========================
 // CONTEXT TYPE
 // ========================
-
 type RecruitmentContextType = {
   // Recruitments
   recruitments: Recruitment[];
@@ -60,10 +59,12 @@ type RecruitmentContextType = {
   registrants: Registrant[];
   registrantPagination: Pagination | null;
   isFetchingRegistrants: boolean;
-  registrantFilters: RegistrantFilters;
-  setRegistrantFilters: React.Dispatch<
-    React.SetStateAction<RegistrantFilters>
-  >;
+  registrantSearch: string;
+  setRegistrantSearch: (s: string) => void;
+  registrantPage: number;
+  setRegistrantPage: (p: number) => void;
+  registrantStatusFilter: string;
+  setRegistrantStatusFilter: (s: string) => void;
 
   // Recruitment CRUD
   createRecruitment: (data: CreateRecruitmentDTO) => Promise<any>;
@@ -94,7 +95,6 @@ export const useRecruitmentContext = () => {
 // ========================
 // PROVIDER
 // ========================
-
 export const RecruitmentProvider = ({
   children,
 }: {
@@ -102,21 +102,29 @@ export const RecruitmentProvider = ({
 }) => {
   const qc = useQueryClient();
 
-  // --- Filter states ---
+  // --- Recruitment filter states ---
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [debouncedSearch] = useDebounce(searchQuery, 500);
 
-  const [registrantFilters, setRegistrantFilters] =
-    useState<RegistrantFilters>({ page: 1, limit: 10 });
+  // --- Registrant filter states ---
+  const [registrantSearch, setRegistrantSearch] = useState("");
+  const [registrantPage, setRegistrantPage] = useState(1);
+  const [registrantStatusFilter, setRegistrantStatusFilter] = useState("all");
+  const [debouncedRegistrantSearch] = useDebounce(registrantSearch, 500);
+
+  // --- Active recruitment ---
   const [activeRecruitmentId, setActiveRecruitmentId] = useState<
     string | null
   >(null);
 
-  // --- Queries ---
+  // ========================
+  // QUERIES
+  // ========================
 
+  // Recruitment list
   const recruitmentsQuery = useQuery({
     queryKey: ["recruitments", page, limit, debouncedSearch, statusFilter],
     queryFn: () =>
@@ -129,51 +137,73 @@ export const RecruitmentProvider = ({
     placeholderData: keepPreviousData,
   });
 
+  // Recruitment detail
   const recruitmentDetailQuery = useQuery({
     queryKey: ["recruitment", activeRecruitmentId],
     queryFn: () => getRecruitmentById(activeRecruitmentId!),
     enabled: !!activeRecruitmentId,
   });
 
-  // Registrants — auto-fetch when activeRecruitmentId is set
+  // Registrants (single query — no duplication)
   const registrantsQuery = useQuery({
-    queryKey: ["registrants", activeRecruitmentId, registrantFilters],
+    queryKey: [
+      "registrants",
+      activeRecruitmentId,
+      registrantPage,
+      limit,
+      debouncedRegistrantSearch,
+      registrantStatusFilter,
+    ],
     queryFn: () =>
       getRegistrants({
-        ...registrantFilters,
-        recuruit_id: activeRecruitmentId!,
+        page: registrantPage,
+        limit,
+        search: debouncedRegistrantSearch || undefined,
+        status: registrantStatusFilter !== "all" ? registrantStatusFilter : undefined,
+        recruitment_id: activeRecruitmentId!,
       }),
     enabled: !!activeRecruitmentId,
+    placeholderData: keepPreviousData,
   });
 
-  // --- Data extraction (matches donation pattern) ---
-  // getRecruitments returns the already-unwrapped JSON body:
-  // { data: { recruitments: [...], pagination: {...} } }
+  // ========================
+  // DATA EXTRACTION
+  // ========================
   const recruitments = recruitmentsQuery.data?.data?.recruitments ?? [];
   const recruitmentPagination =
     recruitmentsQuery.data?.data?.pagination ?? null;
+
+  const activeRecruitmentDetails =
+    recruitmentDetailQuery.data?.data ?? null;
 
   const registrants = registrantsQuery.data?.data?.registrants ?? [];
   const registrantPagination =
     registrantsQuery.data?.data?.pagination ?? null;
 
-  // --- Invalidation helper ---
+  // ========================
+  // INVALIDATION HELPERS
+  // ========================
   const invalidateRecruitments = () =>
     qc.invalidateQueries({ queryKey: ["recruitments"] });
+
   const invalidateRegistrants = () =>
-    qc.invalidateQueries({ queryKey: ["registrants"] });
+    qc.invalidateQueries({
+      queryKey: ["registrants", activeRecruitmentId],
+    });
+
   const invalidateDetail = () =>
     qc.invalidateQueries({
       queryKey: ["recruitment", activeRecruitmentId],
     });
 
-  // --- Mutations ---
-
+  // ========================
+  // MUTATIONS
+  // ========================
   const createMut = useMutation({
     mutationFn: (data: CreateRecruitmentDTO) => apiCreate(data),
     onSuccess: () => {
       invalidateRecruitments();
-      toast.success("recruitment successfully added");
+      toast.success("Rekrutmen berhasil ditambahkan");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
@@ -184,7 +214,7 @@ export const RecruitmentProvider = ({
     onSuccess: () => {
       invalidateRecruitments();
       invalidateDetail();
-      toast.success("recruitment successfully updated");
+      toast.success("Rekrutmen berhasil diperbarui");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
@@ -193,7 +223,7 @@ export const RecruitmentProvider = ({
     mutationFn: (id: string) => apiDelete(id),
     onSuccess: () => {
       invalidateRecruitments();
-      toast.success("recruitment successfully deleted");
+      toast.success("Rekrutmen berhasil dihapus");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
@@ -203,7 +233,7 @@ export const RecruitmentProvider = ({
     onSuccess: () => {
       invalidateRecruitments();
       invalidateDetail();
-      toast.success("recruitment successfully opened");
+      toast.success("Rekrutmen berhasil dibuka");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
@@ -213,7 +243,7 @@ export const RecruitmentProvider = ({
     onSuccess: () => {
       invalidateRecruitments();
       invalidateDetail();
-      toast.success("recruitment successfully closed");
+      toast.success("Rekrutmen berhasil ditutup");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
@@ -223,7 +253,6 @@ export const RecruitmentProvider = ({
     onSuccess: () => {
       invalidateRecruitments();
       invalidateDetail();
-      toast.success("recruitment successfully archived");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
@@ -232,7 +261,8 @@ export const RecruitmentProvider = ({
     mutationFn: (registrantId: string) => apiAccept(registrantId),
     onSuccess: () => {
       invalidateRegistrants();
-      toast.success("recruitment successfully accepted");
+      invalidateDetail();
+      toast.success("Registrant has been accepted");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
@@ -241,18 +271,23 @@ export const RecruitmentProvider = ({
     mutationFn: (registrantId: string) => apiReject(registrantId),
     onSuccess: () => {
       invalidateRegistrants();
-      toast.success("recruitment successfully rejected");
+      invalidateDetail();
+      toast.success("Registrant has been rejected");
     },
     onError: (error: any) => toast.error(getErrorMessage(error)),
   });
 
-  // --- Value ---
+  // ========================
+  // CONTEXT VALUE
+  // ========================
   const value = useMemo<RecruitmentContextType>(
     () => ({
+      // Recruitments
       recruitments,
       recruitmentPagination,
       isFetchingRecruitments: recruitmentsQuery.isFetching,
 
+      // Search & filter
       searchQuery,
       setSearchQuery,
       statusFilter,
@@ -260,24 +295,35 @@ export const RecruitmentProvider = ({
       page,
       setPage,
 
+      // Detail
       activeRecruitmentId,
       setActiveRecruitmentId,
-      activeRecruitmentDetails: recruitmentDetailQuery.data ?? null,
+      activeRecruitmentDetails,
       isFetchingRecruitmentDetails: recruitmentDetailQuery.isFetching,
 
+      // Registrants
       registrants,
       registrantPagination,
       isFetchingRegistrants: registrantsQuery.isFetching,
-      registrantFilters,
-      setRegistrantFilters,
+      registrantSearch,
+      setRegistrantSearch,
+      registrantPage,
+      setRegistrantPage,
+      registrantStatusFilter,
+      setRegistrantStatusFilter,
 
+      // CRUD
       createRecruitment: createMut.mutateAsync,
       updateRecruitment: (id: string, data: UpdateRecruitmentDTO) =>
         updateMut.mutateAsync({ id, data }),
       deleteRecruitment: deleteMut.mutateAsync,
+
+      // Status
       openRecruitment: openMut.mutateAsync,
       closeRecruitment: closeMut.mutateAsync,
       archiveRecruitment: archiveMut.mutateAsync,
+
+      // Registrant actions
       acceptRegistrant: acceptMut.mutateAsync,
       rejectRegistrant: rejectMut.mutateAsync,
     }),
@@ -289,12 +335,14 @@ export const RecruitmentProvider = ({
       statusFilter,
       page,
       activeRecruitmentId,
-      recruitmentDetailQuery.data,
+      activeRecruitmentDetails,
       recruitmentDetailQuery.isFetching,
       registrants,
       registrantPagination,
       registrantsQuery.isFetching,
-      registrantFilters,
+      registrantSearch,
+      registrantPage,
+      registrantStatusFilter,
       createMut,
       updateMut,
       deleteMut,
