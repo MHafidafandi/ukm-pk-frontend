@@ -101,7 +101,7 @@ export const RecruitmentList = () => {
   };
 
   const handleViewRegistrants = (item: Recruitment) => {
-    router.push(`/dashboard/recruitment/${item.id}/registrants`);
+    router.push(`/dashboard/recruitment/${item.id}`);
   };
 
   const handleSave = async () => {
@@ -202,7 +202,7 @@ export const RecruitmentList = () => {
   const pastRecruitments = recruitments.filter((r) => r.status !== "open");
 
   return (
-    <div className=" space-y-8 bg-slate-50 dark:bg-slate-900 min-h-screen text-text-light dark:text-text-dark font-sans">
+    <div className="space-y-8 bg-slate-50 dark:bg-slate-900 min-h-screen text-text-light dark:text-text-dark font-sans">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">

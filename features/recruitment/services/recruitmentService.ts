@@ -58,10 +58,13 @@ export type RegistrantFilters = {
   order?: string;
   sort?: string;
   search?: string;
-  recuruit_id?: string; // typo di API, ikutin aja
+  recruitment_id?: string; // ← ganti dari recuruit_id
   status?: string;
 };
 
+export interface RegisterRecruitmentInput {
+  recruitment_id: string;
+}
 // DTOs
 export type CreateRecruitmentDTO = {
   nama_recruitment: string;
@@ -156,16 +159,23 @@ export async function archiveRecruitment(id: string): Promise<any> {
   return result;
 }
 
+/** POST /recruitments/register */
+export async function registerRecruitment(
+  body: RegisterRecruitmentInput,
+): Promise<{ message: string }> {
+  const result = await api.post("/recruitments/register", body);
+  return result.data;
+}
 // --- Registrants ---
-
+// recruitmentService.ts
 export async function getRegistrants(
   filters?: RegistrantFilters
 ): Promise<{ data: { registrants: Registrant[]; pagination: Pagination } }> {
   const params: Record<string, string> = {};
+  if (filters?.recruitment_id) params.recruitment_id = filters.recruitment_id; // ← ini
   if (filters?.page) params.page = String(filters.page);
   if (filters?.limit) params.limit = String(filters.limit);
   if (filters?.search) params.search = filters.search;
-  if (filters?.recuruit_id) params.recuruit_id = filters.recuruit_id;
   if (filters?.status) params.status = filters.status;
 
   const result = await api.get(`${BASE}/registrants`, { params });
@@ -173,15 +183,9 @@ export async function getRegistrants(
 }
 
 export async function acceptRegistrant(registrantId: string): Promise<any> {
-  const result = await api.patch(
-    `${BASE}/registrants/${registrantId}/accept`
-  );
-  return result;
+  return api.patch(`${BASE}/registrants/${registrantId}/accept`);
 }
 
 export async function rejectRegistrant(registrantId: string): Promise<any> {
-  const result = await api.post(
-    `${BASE}/registrants/${registrantId}/reject`
-  );
-  return result;
+  return api.patch(`${BASE}/registrants/${registrantId}/reject`);
 }
