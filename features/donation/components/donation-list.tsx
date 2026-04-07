@@ -9,14 +9,17 @@ import { DonationFormDialog } from "./donation-form-dialog";
 import { DonationDeleteDialog } from "./donation-delete-dialog";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
-import { CreateDonationInput, createDonationSchema } from "@/lib/validations/donation-schema";
+import {
+  CreateDonationInput,
+  createDonationSchema,
+} from "@/lib/validations/donation-schema";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const emptyForm: CreateDonationInput = {
   nama_donatur: "",
   jumlah: 0,
-  tanggal: new Date(),
+  tanggal: new Date().toISOString().split("T")[0],
   metode: "qris",
   status: "pending",
   deskripsi: "",
@@ -75,11 +78,30 @@ export const DonationList = () => {
 
   const handleSave = async (formData: FormData) => {
     try {
+      const parsed = createDonationSchema.parse({
+        nama_donatur: String(formData.get("nama_donatur") ?? ""),
+        jumlah: Number(formData.get("jumlah") ?? 0),
+        tanggal: String(formData.get("tanggal") ?? ""),
+        metode:
+          (formData.get("metode") as CreateDonationInput["metode"]) ?? "qris",
+        status:
+          (formData.get("status") as CreateDonationInput["status"]) ??
+          "pending",
+        deskripsi: String(formData.get("deskripsi") ?? ""),
+      });
+
+      // Ensure optional fields default to strings for CreateDonationInput compatibility
+      const payload = {
+        ...parsed,
+        deskripsi: parsed.deskripsi ?? "",
+        tanggal: parsed.tanggal ?? new Date().toISOString().split("T")[0],
+      };
+
       if (editing) {
-        await updateDonation({ id: editing.id, data: formData });
+        await updateDonation({ id: editing.id, data: payload });
         toast.success("Donation successfully updated");
       } else {
-        await createDonation(formData);
+        await createDonation(payload as any);
         toast.success("Donation successfully created");
       }
 
@@ -344,8 +366,7 @@ export const DonationList = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg transition-colors shadow-sm"
-            >
+            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg transition-colors shadow-sm">
               <svg
                 className="w-5 h-5"
                 xmlns="http://www.w3.org/2000/svg"
@@ -375,10 +396,11 @@ export const DonationList = () => {
                 <button
                   key={status}
                   onClick={() => setActiveFilter(status)}
-                  className={`capitalize px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeFilter === status
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700"
-                    }`}
+                  className={`capitalize px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeFilter === status
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
                 >
                   {status}
                 </button>
@@ -436,14 +458,15 @@ export const DonationList = () => {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
-                      }`}
+                    className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === p
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+                    }`}
                   >
                     {p}
                   </button>
-                )
+                ),
               )}
 
               <button
@@ -457,7 +480,6 @@ export const DonationList = () => {
             </div>
           )}
         </div>
-
       </div>
 
       <DonationFormDialog

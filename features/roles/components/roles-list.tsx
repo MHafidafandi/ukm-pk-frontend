@@ -252,7 +252,7 @@ export const RolesList = () => {
   );
   const [isMatrixModified, setIsMatrixModified] = useState(false);
 
-  const { roles, createRole, updateRole, deleteRole, isFetchingRoles } =
+  const { roles, stats, createRole, updateRole, deleteRole, isFetchingRoles } =
     useRoleContext();
 
   useEffect(() => {
@@ -374,8 +374,70 @@ export const RolesList = () => {
     );
   }
 
+  const statsCards = stats?.data
+    ? [
+        {
+          label: "Total Roles",
+          value: stats.data.total_roles ?? 0,
+          icon: Shield,
+          color: "text-violet-600",
+          bg: "bg-violet-50 dark:bg-violet-900/20",
+        },
+        {
+          label: "Most Popular",
+          value: stats.data.most_popular?.role_name ?? "—",
+          sub: `${stats.data.most_popular?.user_count ?? 0} users`,
+          icon: Users,
+          color: "text-primary",
+          bg: "bg-purple-50 dark:bg-purple-900/20",
+        },
+        {
+          label: "Unassigned Roles",
+          value: stats.data.unassigned_roles?.length ?? 0,
+          icon: Settings,
+          color: "text-orange-600",
+          bg: "bg-orange-50 dark:bg-orange-900/20",
+        },
+      ]
+    : [];
+
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark">
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark flex flex-col gap-4">
+      {/* ── Stats Cards ── */}
+      {statsCards.length > 0 && (
+        <div className="max-w-7xl mx-auto w-full mb-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {statsCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.label}
+                  className="flex items-center gap-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-4"
+                >
+                  <div
+                    className={`p-3 rounded-xl ${card.bg} ${card.color} shrink-0`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark font-medium">
+                      {card.label}
+                    </p>
+                    <p className="text-xl font-bold text-text-primary-light dark:text-text-primary-dark truncate">
+                      {card.value}
+                    </p>
+                    {card.sub && (
+                      <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                        {card.sub}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-6">
         {/* ── Left: Roles List ── */}
         <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-4">
@@ -400,31 +462,40 @@ export const RolesList = () => {
                   key={role.id}
                   onClick={() => handleSelectRole(role)}
                   className={[
-                    "flex items-center justify-between p-4 border-l-4 transition-colors w-full text-left group",
+                    "flex items-center justify-between px-4 py-3.5 border-l-4 transition-all w-full text-left group",
                     isActive
-                      ? "border-primary bg-slate-100 dark:bg-slate-700"
-                      : "border-transparent hover:bg-slate-100 dark:hover:bg-slate-700/80",
+                      ? "border-primary bg-primary/5 dark:bg-primary/10"
+                      : "border-transparent hover:bg-slate-100 dark:hover:bg-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600",
                     idx !== roles.length - 1
-                      ? "border-b border-gray-100 dark:border-gray-700"
+                      ? "border-b border-gray-100 dark:border-gray-700/60"
                       : "",
                   ].join(" ")}
                 >
-                  <span
-                    className={[
-                      "text-sm font-bold",
-                      isActive
-                        ? "text-primary dark:text-primary-light"
-                        : "text-text-primary-light dark:text-text-primary-dark",
-                    ].join(" ")}
-                  >
-                    {role.name}
-                  </span>
-                  <span className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
-                    {role.user_count ?? 0} users
-                  </span>
+                  {/* Nama role + badge user count */}
+                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                    <span
+                      className={[
+                        "text-sm font-semibold truncate",
+                        isActive
+                          ? "text-primary dark:text-primary-light"
+                          : "text-text-primary-light dark:text-text-primary-dark",
+                      ].join(" ")}
+                    >
+                      {role.name}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3 h-3 text-text-secondary-light dark:text-text-secondary-dark shrink-0" />
+                      <span className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                        {role.user_count ?? 0}{" "}
+                        <span className="hidden sm:inline">user</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
                   <div
                     className={[
-                      "flex gap-1 shrink-0 transition-opacity",
+                      "flex gap-1 shrink-0 transition-opacity ml-2",
                       isActive
                         ? "opacity-100"
                         : "opacity-0 group-hover:opacity-100",
@@ -436,9 +507,9 @@ export const RolesList = () => {
                           e.stopPropagation();
                           openEdit(role);
                         }}
-                        className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-text-secondary-light hover:text-primary cursor-pointer transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-secondary-light hover:text-primary cursor-pointer transition-colors"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </div>
                     </PermissionGate>
                     <PermissionGate permission={PERMISSIONS.DELETE_ROLES}>
@@ -447,9 +518,9 @@ export const RolesList = () => {
                           e.stopPropagation();
                           openDelete(role);
                         }}
-                        className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-800 text-text-secondary-light hover:text-red-600 cursor-pointer transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-text-secondary-light hover:text-red-500 cursor-pointer transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </div>
                     </PermissionGate>
                   </div>
@@ -507,7 +578,8 @@ export const RolesList = () => {
                           ...ACTIONS.map((a) => group.permissions[a]).filter(
                             Boolean,
                           ),
-                          ...(group.permissions.extra?.map((e) => e.value) ?? []),
+                          ...(group.permissions.extra?.map((e) => e.value) ??
+                            []),
                         ];
                         const hasAll = allPerms.every((p) =>
                           currentPermissions.has(p),

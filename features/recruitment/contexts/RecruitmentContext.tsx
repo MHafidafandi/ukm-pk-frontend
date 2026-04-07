@@ -174,7 +174,7 @@ export const RecruitmentProvider = ({
     recruitmentsQuery.data?.data?.pagination ?? null;
 
   const activeRecruitmentDetails =
-    recruitmentDetailQuery.data?.data ?? null;
+    recruitmentDetailQuery.data ?? null;
 
   const registrants = registrantsQuery.data?.data?.registrants ?? [];
   const registrantPagination =

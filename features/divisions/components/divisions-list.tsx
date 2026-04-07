@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
@@ -193,9 +194,9 @@ export const DivisionsList = () => {
                 value={
                   (stats?.total_divisions ?? 0) > 0
                     ? Math.round(
-                      (stats?.total_users ?? 0) /
-                      (stats?.total_divisions ?? 1),
-                    )
+                        (stats?.total_users ?? 0) /
+                          (stats?.total_divisions ?? 1),
+                      )
                     : 0
                 }
                 icon={TrendingUp}
@@ -230,9 +231,7 @@ export const DivisionsList = () => {
             <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
               <LayoutGrid className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="font-semibold text-lg ...">
-              Belum Ada Divisi
-            </p>
+            <p className="font-semibold text-lg ...">Belum Ada Divisi</p>
             <p className="text-sm mt-1">
               {search
                 ? "Tidak ada divisi yang cocok dengan pencarian."
@@ -241,15 +240,26 @@ export const DivisionsList = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {divisions.map((division, index) => (
-              <DivisionCard
-                key={division.id}
-                division={division}
-                index={index}
-                onEdit={openEdit}
-                onDelete={openDelete}
-              />
-            ))}
+            {divisions.map((division, index) => {
+              const statEntry = stats?.divisions?.find(
+                (s) => s.division_id === division.id,
+              );
+
+              return (
+                <DivisionCard
+                  key={division.id}
+                  division={{
+                    division_id: division.id,
+                    nama_divisi: division.nama_divisi,
+                    user_count: statEntry?.user_count ?? 0,
+                    percentage: statEntry?.percentage ?? 0,
+                  }}
+                  index={index}
+                  onEdit={openEdit}
+                  onDelete={openDelete}
+                />
+              );
+            })}
           </div>
         )}
       </div>

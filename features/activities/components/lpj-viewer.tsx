@@ -23,7 +23,7 @@ type Props = {
 function safeFormatDate(
   value: string | null | undefined,
   fmt: string,
-  options?: { locale?: Locale }
+  options?: { locale?: typeof idLocale }
 ): string {
   if (!value) return "-";
   const d = new Date(value);

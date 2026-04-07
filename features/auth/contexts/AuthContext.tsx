@@ -10,6 +10,8 @@ import {
   logout,
   updateProfile,
   changePassword,
+  uploadAvatar,
+  deleteAvatar,
 } from "@/features/auth/services/authService";
 import { LoginInput } from "@/lib/validations/auth-schema";
 import { setToken, removeToken, getToken } from "@/lib/api/client";
@@ -72,6 +74,8 @@ interface AuthContextType {
   logout: () => Promise<any>;
   updateProfile: (data: any) => Promise<any>;
   changePassword: (data: any) => Promise<any>;
+  uploadAvatar: (file: File) => Promise<any>;
+  deleteAvatar: () => Promise<any>;
 
   // Loading States
   loading: boolean;
@@ -81,6 +85,8 @@ interface AuthContextType {
   isLoggingOut: boolean;
   isUpdatingProfile: boolean;
   isChangingPassword: boolean;
+  isUploadingAvatar: boolean;
+  isDeletingAvatar: boolean;
 
   // Utils
   refreshUser: () => void;
@@ -223,6 +229,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     },
   });
 
+  const uploadAvatarMutation = useMutation({
+    mutationFn: uploadAvatar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      toast.success("Avatar berhasil diupload");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Gagal mengupload avatar");
+    },
+  });
+
+  const deleteAvatarMutation = useMutation({
+    mutationFn: deleteAvatar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      toast.success("Avatar berhasil dihapus");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Gagal menghapus avatar");
+    },
+  });
+
   const contextValue = useMemo(
     () => ({
       // Data
@@ -237,6 +265,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       logout: logoutMutation.mutateAsync,
       updateProfile: updateProfileMutation.mutateAsync,
       changePassword: changePasswordMutation.mutateAsync,
+      uploadAvatar: uploadAvatarMutation.mutateAsync,
+      deleteAvatar: deleteAvatarMutation.mutateAsync,
 
       // Loading States
       loading: isTokenPresent && userLoading, // only loading if we expect a token
@@ -246,6 +276,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isLoggingOut: logoutMutation.isPending,
       isUpdatingProfile: updateProfileMutation.isPending,
       isChangingPassword: changePasswordMutation.isPending,
+      isUploadingAvatar: uploadAvatarMutation.isPending,
+      isDeletingAvatar: deleteAvatarMutation.isPending,
 
       // Utils
       refreshUser: () =>
@@ -261,6 +293,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       logoutMutation,
       updateProfileMutation,
       changePasswordMutation,
+      uploadAvatarMutation,
+      deleteAvatarMutation,
       queryClient,
     ],
   );

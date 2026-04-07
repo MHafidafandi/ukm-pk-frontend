@@ -31,10 +31,10 @@ const dateFieldSchema = z
 export const CreateRecruitmentSchema = z
   .object({
     nama_recruitment: z
-      .string({ required_error: "Judul wajib diisi" })
+      .string({ message: "Judul wajib diisi" })
       .min(1, "Judul wajib diisi"),
     deskripsi: z
-      .string({ required_error: "Deskripsi wajib diisi" })
+      .string({ message: "Deskripsi wajib diisi" })
       .min(1, "Deskripsi wajib diisi"),
     tanggal_buka: dateFieldSchema,
     tanggal_tutup: dateFieldSchema,

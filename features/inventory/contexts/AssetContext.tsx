@@ -87,7 +87,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
 
   const { data: loansData, isLoading: isFetchingLoans } = useQuery({
     queryKey: ["inventory", "loans"],
-    queryFn: getLoans,
+    queryFn: () => getLoans(),
   });
 
   // ✅ Fix: ambil dari nested response sesuai struktur API

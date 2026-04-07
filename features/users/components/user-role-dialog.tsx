@@ -54,7 +54,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
     try {
       await assignRole({
         id: user.id,
-        roleIds: [selectedRole],
+        roleId: selectedRole,
       });
       toast.success("Role berhasil ditambahkan");
       setSelectedRole("");
@@ -68,7 +68,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
     try {
       await removeRole({
         id: user.id,
-        roleIds: [roleId],
+        roleId: roleId,
       });
       toast.success("Role berhasil dihapus");
     } catch (error) {

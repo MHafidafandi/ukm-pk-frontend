@@ -65,7 +65,8 @@ export const RoleProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   const roles = useMemo(() => {
-    let result = Array.isArray(rolesData?.data) ? rolesData.data : [];
+    const data = rolesData?.data;
+    let result = Array.isArray(data) ? data : [];
     if (debounceSearch) {
       result = result.filter((r) =>
         r.name.toLowerCase().includes(debounceSearch.toLowerCase()),

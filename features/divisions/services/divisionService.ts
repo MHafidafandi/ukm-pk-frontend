@@ -79,8 +79,8 @@ export async function getDivisionsStatistics(): Promise<{
 export async function createDivision(
   body: CreateDivisionInput,
 ): Promise<{ message: string; id?: string }> {
-  const { data } = await api.post("/divisions", body);
-  return data;
+  const data = await api.post("/divisions", body);
+  return data.data;
 }
 
 /** PUT /divisions/:id */
