@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner } from "@/components/ui/spinner";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -13,41 +13,54 @@ type GuardProps = {
   role?: string | string[];
   /** Cek permission spesifik */
   permission?: Permission;
-  /** Redirect ke path ini jika akses ditolak (default: redirect ke login) */
+  /** Redirect ke path ini jika akses ditolak (default: /login) */
   redirectTo?: string;
   /** Tampilkan fallback ini jika akses ditolak (default: pesan "Akses ditolak") */
   fallback?: React.ReactNode;
 };
 
+/**
+ * Guard — proteksi halaman/komponen berdasarkan auth, role, atau permission.
+ *
+ * Alur:
+ * 1. Loading → tampilkan spinner
+ * 2. Tidak login → redirect ke redirectTo (default: /login)
+ * 3. Login tapi tidak punya role/permission → tampilkan fallback atau pesan error
+ * 4. Semua ok → render children
+ */
 export const Guard = ({
   children,
   role,
   permission,
-  redirectTo,
+  redirectTo = "/login",
   fallback,
 }: GuardProps) => {
-  const { currentUser: data, loading: isLoading, isError } = useAuth();
+  const { currentUser, loading } = useAuth();
   const { can } = usePermission();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && (isError || !data)) {
-      router.replace(redirectTo ?? "/login");
+    if (!loading && !currentUser) {
+      router.replace(redirectTo);
     }
-  }, [isLoading, isError, data, router, redirectTo]);
+  }, [loading, currentUser, router, redirectTo]);
 
-  if (isLoading) {
-    return <Spinner className="m-4" />;
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  if (!data) {
-    return null;
+  if (!currentUser) {
+    return null; // redirect sedang berjalan
   }
 
   // Cek role
   if (role) {
     const allowedRoles = Array.isArray(role) ? role : [role];
-    const userRoleNames = data.roles?.map((r) => r.name) || [];
+    const userRoleNames = currentUser.roles?.map((r) => r.name) ?? [];
     const hasRole = allowedRoles.some((r) => userRoleNames.includes(r));
     if (!hasRole) {
       return (
@@ -98,7 +111,8 @@ export const PermissionGate = ({
   role?: string | string[];
   fallback?: React.ReactNode;
 }) => {
-  const { can, userPermissions: roles } = usePermission(); // Note: Roles in usePermission might meant permissions. Kept as roles logic below based on permissions if needed. Or we fallback to auth.
+  const { can, userPermissions } = usePermission();
+  const { currentUser } = useAuth();
 
   if (permission && !can(permission)) {
     return <>{fallback}</>;
@@ -106,7 +120,8 @@ export const PermissionGate = ({
 
   if (role) {
     const allowedRoles = Array.isArray(role) ? role : [role];
-    if (!allowedRoles.some((r) => roles.includes(r))) {
+    const userRoleNames = currentUser?.roles?.map((r) => r.name) ?? [];
+    if (!allowedRoles.some((r) => userRoleNames.includes(r) || userPermissions.includes(r))) {
       return <>{fallback}</>;
     }
   }

@@ -94,15 +94,6 @@ export const ActivityList = () => {
           : String(parsed.tanggal),
       );
 
-<<<<<<< HEAD
-      if (form.thumbnail instanceof File) {
-        formData.append("thumbnail", form.thumbnail);
-      } else if (form.thumbnail === null) {
-        formData.append("thumbnail", "");
-      }
-
-=======
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
       if (editing) {
         const existingThumbnailUrl = editing.thumbnail || "";
 
@@ -148,16 +139,7 @@ export const ActivityList = () => {
         toast.error(err.errors[0].message as string);
         return;
       }
-<<<<<<< HEAD
-      const message =
-        err?.response?.data?.message ??
-        err?.response?.data?.error ??
-        err?.message ??
-        "Failed to save activity";
-      toast.error(message);
-=======
       toast.error(getErrorMessage(err) || "Failed to save activity");
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
       console.error("[handleSave] error:", err);
     }
   };
@@ -168,13 +150,8 @@ export const ActivityList = () => {
       await deleteActivity(deleting.id);
       toast.success("Activity deleted 🎉");
       setDeleteOpen(false);
-<<<<<<< HEAD
-    } catch (err: any) {
-      toast.error(err.response?.error || "Failed to delete activity");
-=======
     } catch (err: unknown) {
       toast.error(getErrorMessage(err) || "Failed to delete activity");
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
     }
   };
 
@@ -250,11 +227,10 @@ export const ActivityList = () => {
             <button
               key={s.id}
               onClick={() => setStatusFilter(s.id)}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                statusFilter === s.id
-                  ? "bg-primary text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
-              }`}
+              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${statusFilter === s.id
+                ? "bg-primary text-white shadow-sm"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
+                }`}
             >
               {s.label}
             </button>
@@ -300,18 +276,10 @@ export const ActivityList = () => {
               <button
                 key={p}
                 onClick={() => setPage(p)}
-<<<<<<< HEAD
                 className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
                   ? "bg-primary text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
                   }`}
-=======
-                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === p
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
-                }`}
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
               >
                 {p}
               </button>

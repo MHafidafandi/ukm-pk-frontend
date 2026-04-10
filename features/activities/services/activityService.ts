@@ -97,19 +97,11 @@ export async function createActivity(
   body: CreateActivityInput | FormData,
 ): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-<<<<<<< HEAD
-  const { data } = await api.post("/activities", payload, {
-=======
   return await api.post("/activities", payload, {
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
     headers: {
       "Content-Type": undefined,
     },
   });
-<<<<<<< HEAD
-  return data;
-=======
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 }
 
 /** PUT /activities/:id */

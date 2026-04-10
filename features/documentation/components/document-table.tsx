@@ -120,13 +120,8 @@ export const DocumentTable = ({ documents }: Props) => {
       <div className="overflow-x-auto w-full">
         <table className="min-w-200 w-full border-collapse text-left">
           <thead>
-<<<<<<< HEAD
-            <tr className="border-b border-gray-100  dark:border-gray-700 bg-slate-50 dark:bg-slate-900">
-              <th className="p-4 w-10 sticky left-0 bg-slate-50 dark:bg-slate-900 z-10">
-=======
             <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
               <th className="sticky left-0 z-10 w-10 bg-slate-50 p-4 dark:bg-slate-950">
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                 <input
                   className="rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-900"
                   type="checkbox"
