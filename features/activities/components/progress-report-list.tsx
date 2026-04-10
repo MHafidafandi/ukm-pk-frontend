@@ -1,6 +1,14 @@
 "use client";
-import { useState } from "react";
-import { Plus, CalendarClock, Edit, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Plus,
+  CalendarClock,
+  Edit,
+  Trash2,
+  FileText,
+  Upload,
+  ExternalLink,
+} from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -21,6 +29,9 @@ import {
   CreateProgressReportInput,
   CreateProgressReportSchema,
 } from "@/lib/validations/activity-schema";
+import { ProgressDocument } from "../services/activityService";
+
+const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
 
 type Props = {
   activityId: string;
@@ -38,6 +49,15 @@ export const ProgressReportList = ({ activityId }: Props) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editing, setEditing] = useState<ProgressReport | null>(null);
   const [deleting, setDeleting] = useState<ProgressReport | null>(null);
+  const [documentsByReport, setDocumentsByReport] = useState<
+    Record<string, ProgressDocument[]>
+  >({});
+  const [uploadingReportId, setUploadingReportId] = useState<string | null>(
+    null,
+  );
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
+    null,
+  );
   const [form, setForm] = useState<CreateProgressReportInput>(
     emptyForm(activityId),
   );
@@ -48,7 +68,50 @@ export const ProgressReportList = ({ activityId }: Props) => {
     createProgressReport: createReport,
     updateProgressReport: updateReport,
     deleteProgressReport: deleteReport,
+    getDocumentsByReport,
+    createDocument,
+    deleteDocument,
   } = useActivityContext();
+
+  const reportIdsKey = useMemo(
+    () =>
+      reports
+        .map((r) => r.id)
+        .sort()
+        .join("|"),
+    [reports],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDocuments = async () => {
+      if (!reports.length) {
+        if (mounted) setDocumentsByReport({});
+        return;
+      }
+
+      try {
+        const entries = await Promise.all(
+          reports.map(async (report) => {
+            const res = await getDocumentsByReport(report.id);
+            return [report.id, res.data.documents || []] as const;
+          }),
+        );
+
+        if (!mounted) return;
+        setDocumentsByReport(Object.fromEntries(entries));
+      } catch {
+        if (!mounted) return;
+        toast.error("Gagal memuat dokumen progress report");
+      }
+    };
+
+    void loadDocuments();
+    return () => {
+      mounted = false;
+    };
+  }, [reportIdsKey, getDocumentsByReport, reports]);
 
   const openAdd = () => {
     setEditing(null);
@@ -111,6 +174,59 @@ export const ProgressReportList = ({ activityId }: Props) => {
     }
   };
 
+  const buildDocumentUrl = (fileUrl: string) =>
+    fileUrl.startsWith("http") ? fileUrl : `${MEDIA_BASE_URL}${fileUrl}`;
+
+  const handleUploadDocument = async (reportId: string, file: File) => {
+    if (file.type !== "application/pdf") {
+      toast.error("Dokumen progress hanya menerima PDF");
+      return;
+    }
+
+    try {
+      setUploadingReportId(reportId);
+
+      const formData = new FormData();
+      formData.append("report_id", reportId);
+      formData.append("file", file);
+      formData.append("tanggal", format(new Date(), "yyyy-MM-dd"));
+
+      await createDocument(formData);
+
+      const refreshed = await getDocumentsByReport(reportId);
+      setDocumentsByReport((prev) => ({
+        ...prev,
+        [reportId]: refreshed.data.documents || [],
+      }));
+
+      toast.success("Dokumen progress berhasil diupload");
+    } catch {
+      toast.error("Gagal upload dokumen progress");
+    } finally {
+      setUploadingReportId(null);
+    }
+  };
+
+  const handleDeleteDocument = async (reportId: string, documentId: string) => {
+    try {
+      setDeletingDocumentId(documentId);
+      await deleteDocument(documentId);
+
+      setDocumentsByReport((prev) => ({
+        ...prev,
+        [reportId]: (prev[reportId] || []).filter(
+          (doc) => doc.id !== documentId,
+        ),
+      }));
+
+      toast.success("Dokumen progress dihapus");
+    } catch {
+      toast.error("Gagal menghapus dokumen progress");
+    } finally {
+      setDeletingDocumentId(null);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between mb-6">
@@ -141,10 +257,10 @@ export const ProgressReportList = ({ activityId }: Props) => {
             ) : (
               reports.map((item) => (
                 <div key={item.id} className="relative pl-8 group">
-                  <div className="absolute left-[11px] top-1.5 size-4 rounded-full border-[3px] border-white dark:border-slate-800 bg-primary ring-2 ring-primary/20" />
+                  <div className="absolute left-2.75 top-1.5 size-4 rounded-full border-[3px] border-white dark:border-slate-800 bg-primary ring-2 ring-primary/20" />
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                      <h4 className="text-base font-bold text-slate-900 dark:text-white flex-1 min-w-[200px] text-wrap">
+                      <h4 className="text-base font-bold text-slate-900 dark:text-white flex-1 min-w-50 text-wrap">
                         {item.judul}
                       </h4>
                       <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded">
@@ -171,6 +287,83 @@ export const ProgressReportList = ({ activityId }: Props) => {
                         <Trash2 className="size-4" />
                         Remove
                       </button>
+                    </div>
+
+                    <div className="mt-3 rounded-lg border border-slate-200/80 dark:border-slate-700/70 bg-slate-50/70 dark:bg-slate-900/40 p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <h5 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Document
+                        </h5>
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                          <Upload className="size-3.5" />
+                          {uploadingReportId === item.id
+                            ? "Uploading..."
+                            : "Upload PDF"}
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            disabled={uploadingReportId === item.id}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              if (!file) return;
+                              void handleUploadDocument(item.id, file);
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      {(documentsByReport[item.id] || []).length === 0 ? (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Belum ada dokumen untuk progress ini.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {(documentsByReport[item.id] || []).map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between gap-3 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
+                                  Document{" "}
+                                  {format(
+                                    new Date(doc.tanggal),
+                                    "dd MMM yyyy",
+                                    { locale: idLocale },
+                                  )}
+                                </p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                  {doc.file_url}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <a
+                                  href={buildDocumentUrl(doc.file_url)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center rounded-md p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                                  title="Lihat dokumen"
+                                >
+                                  <ExternalLink className="size-3.5" />
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleDeleteDocument(item.id, doc.id)
+                                  }
+                                  disabled={deletingDocumentId === doc.id}
+                                  className="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 disabled:opacity-50"
+                                  title="Hapus dokumen"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

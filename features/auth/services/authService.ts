@@ -1,41 +1,55 @@
 import { api } from "@/lib/api/client";
 import { LoginInput } from "@/lib/validations/auth-schema";
 
+type ApiPayload<T> = T | { data: T };
+
+const unwrapPayload = <T>(payload: ApiPayload<T>): T => {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
+};
+
+type AuthTokenResponse = {
+  access_token: string;
+  expires_in?: number;
+};
+
 export const login = async (body: LoginInput) => {
-  const { data } = await api.post("/auth/login", body, {
+  const payload = (await api.post("/auth/login", body, {
     withCredentials: true,
-  });
-  return data; // { access_token, expires_in }
+  })) as ApiPayload<AuthTokenResponse>;
+  return unwrapPayload(payload);
 };
 
 export const getMe = async () => {
-  const { data } = await api.get("/auth/me");
-  return data;
+  const payload = await api.get("/auth/me");
+  return unwrapPayload(payload);
 };
 
 export const refreshToken = async (refresh_token?: string) => {
   const requestBody = refresh_token ? { refresh_token } : undefined;
-  const { data } = await api.post("/auth/refresh", requestBody, {
+  const payload = (await api.post("/auth/refresh", requestBody, {
     withCredentials: true,
-  });
-  return data; // { access_token, expires_in }
+  })) as ApiPayload<AuthTokenResponse>;
+  return unwrapPayload(payload);
 };
 
 export const logout = async () => {
-  const { data } = await api.post("/auth/logout", undefined, {
+  const payload = await api.post("/auth/logout", undefined, {
     withCredentials: true,
   });
-  return data;
+  return unwrapPayload(payload);
 };
 
 export const logoutAll = async (userId: string) => {
-  const { data } = await api.post(`/auth/${userId}/logout-all`);
-  return data;
+  const payload = await api.post(`/auth/${userId}/logout-all`);
+  return unwrapPayload(payload);
 };
 
 export const updateProfile = async (body: any) => {
-  const { data } = await api.put("/users/me", body);
-  return data;
+  const payload = await api.put("/users/me", body);
+  return unwrapPayload(payload);
 };
 
 export const changePassword = async (body: {
@@ -43,20 +57,20 @@ export const changePassword = async (body: {
   new_password: string;
   confirm_password: string;
 }) => {
-  const { data } = await api.put("/users/me/password", body);
-  return data;
+  const payload = await api.put("/users/me/password", body);
+  return unwrapPayload(payload);
 };
 
 export const uploadAvatar = async (file: File) => {
   const formData = new FormData();
   formData.append("avatar", file);
-  const { data } = await api.post("/users/me/avatar", formData, {
+  const payload = await api.post("/users/me/avatar", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return data;
+  return unwrapPayload(payload);
 };
 
 export const deleteAvatar = async () => {
-  const { data } = await api.delete("/users/me/avatar");
-  return data;
+  const payload = await api.delete("/users/me/avatar");
+  return unwrapPayload(payload);
 };

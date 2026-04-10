@@ -1,220 +1,248 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  Archive,
+  Clock3,
+  FolderOpen,
+  Plus,
+  Search,
+  UserRound,
+} from "lucide-react";
+import { PermissionGate } from "@/components/PermissionGate";
+import { PERMISSIONS } from "@/lib/permissions";
 import { useDocumentationContext } from "../contexts/DocumentationContext";
 import { DocumentTable } from "./document-table";
 import { DocumentUploadDialog } from "./document-upload-dialog";
-import { Spinner } from "@/components/ui/spinner";
-import { PermissionGate } from "@/components/PermissionGate";
-import { PERMISSIONS } from "@/lib/permissions";
+import { DocumentCategory } from "../services/documentationService";
 
 export const DocumentationList = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const {
     documents,
+    isFetchingDocuments,
+    statistics,
     search,
     setSearch,
+    typeFilter,
+    setTypeFilter,
+    statusFilter,
+    setStatusFilter,
+    activityFilter,
+    setActivityFilter,
+    creatorFilter,
+    setCreatorFilter,
+    viewScope,
+    setViewScope,
   } = useDocumentationContext();
 
-  // Statistics Calculation
-  const totalDocuments = documents.length;
-  // Based on current DocumentCategory: "laporan_kegiatan" | "surat_keluar" | "surat_masuk" | "proposal" | "lainnya"
-  const totalSOPs = documents.filter(
-    (doc) =>
-      doc.judul.toLowerCase().includes("sop") ||
-      doc.judul.toLowerCase().includes("panduan"),
-  ).length;
-  const totalReports = documents.filter(
-    (doc) => doc.kategori === "laporan_kegiatan",
-  ).length;
+  const summary = useMemo(() => {
+    const total = statistics?.total_documents ?? documents.length;
+    const active =
+      statistics?.by_status?.aktif ??
+      documents.filter((document) => document.status === "aktif").length;
+    const archived =
+      statistics?.by_status?.arsip ??
+      documents.filter((document) => document.status === "arsip").length;
+    const linked = documents.filter((document) =>
+      Boolean(document.activity_id),
+    ).length;
+    return { total, active, archived, linked };
+  }, [documents, statistics]);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-900 text-text-primary-light dark:text-text-primary-dark font-display">
-      {/* Header */}
-      <div className="flex flex-col mb-8">
+    <div className="flex h-full flex-1 flex-col overflow-hidden bg-slate-50 text-text-primary-light dark:bg-slate-900 dark:text-text-primary-dark">
+      <div className="mb-6 flex flex-col gap-2">
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
           Documentation Management
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-          Manage and organize organizational documents with Google Drive
-          integration.
+        <p className="hidden text-sm text-gray-500 dark:text-gray-400 sm:block">
+          Kelola dokumentasi umum, filter berdasarkan tipe/status, lihat dokumen
+          terbaru, dan mass archive/delete.
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-10">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 shrink-0">
-          <div className="bg-card-light dark:bg-card-dark rounded-2xl p-6 shadow-sm flex items-center gap-5 border-l-4 border-primary dark:border-primary-light">
-            <div className="p-4 bg-primary/10 rounded-full shrink-0">
-              <svg
-                className="w-8 h-8 text-primary"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <line x1="10" y1="9" x2="8" y2="9" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-wide">
-                Total Documents
-              </p>
-              <h3 className="text-3xl font-extrabold text-gray-800 dark:text-white mt-1">
-                {totalDocuments}
-              </h3>
-            </div>
-          </div>
-          <div className="bg-card-light dark:bg-card-dark rounded-2xl p-6 shadow-sm flex items-center gap-5 border-l-4 border-blue-500 dark:border-blue-400">
-            <div className="p-4 bg-blue-500/10 rounded-full shrink-0">
-              <svg
-                className="w-8 h-8 text-blue-500"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-wide">
-                SOPs & Guides
-              </p>
-              <h3 className="text-3xl font-extrabold text-gray-800 dark:text-white mt-1">
-                {totalSOPs}
-              </h3>
-            </div>
-          </div>
-          <div className="bg-card-light dark:bg-card-dark rounded-2xl p-6 shadow-sm flex items-center gap-5 border-l-4 border-orange-500 dark:border-orange-400">
-            <div className="p-4 bg-orange-500/10 rounded-full shrink-0">
-              <svg
-                className="w-8 h-8 text-orange-500"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <path d="m9 15 2 2 4-4" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-wide">
-                Activity Reports
-              </p>
-              <h3 className="text-3xl font-extrabold text-gray-800 dark:text-white mt-1">
-                {totalReports}
-              </h3>
-            </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4 mb-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Total</p>
+          <div className="mt-2 flex items-center gap-3">
+            <FolderOpen className="size-5 text-primary" />
+            <span className="text-2xl font-black text-slate-900 dark:text-white">
+              {summary.total}
+            </span>
           </div>
         </div>
-
-        {/* Repository Section */}
-        <div className="bg-card-light dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col flex-1 min-h-[500px]">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 shrink-0">
-            <h3 className="text-lg font-extrabold text-gray-800 dark:text-white">
-              Document Repository
-            </h3>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="relative flex-1 sm:flex-initial">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search by title, creator..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-700/60 rounded-xl text-sm bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary w-full sm:w-64 outline-none transition-all placeholder:text-gray-400"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button className="px-3 py-2 border border-gray-200 dark:border-gray-700/60 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 transition-colors">
-                  <svg
-                    className="w-4 h-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="4" y1="21" x2="4" y2="14" />
-                    <line x1="4" y1="10" x2="4" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12" y2="3" />
-                    <line x1="20" y1="21" x2="20" y2="16" />
-                    <line x1="20" y1="12" x2="20" y2="3" />
-                    <line x1="1" y1="14" x2="7" y2="14" />
-                    <line x1="9" y1="8" x2="15" y2="8" />
-                    <line x1="17" y1="16" x2="23" y2="16" />
-                  </svg>
-                  <span className="hidden sm:inline">Filter</span>
-                </button>
-              </div>
-
-              <PermissionGate permission={PERMISSIONS.CREATE_DOCUMENTS}>
-                <button
-                  onClick={() => setUploadOpen(true)}
-                  className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm shadow-primary/30 transition-colors"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Add Documentation
-                </button>
-              </PermissionGate>
-            </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Aktif</p>
+          <div className="mt-2 flex items-center gap-3">
+            <Clock3 className="size-5 text-emerald-500" />
+            <span className="text-2xl font-black text-slate-900 dark:text-white">
+              {summary.active}
+            </span>
           </div>
-
-          {/* Table Integration */}
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <DocumentTable documents={documents} />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Arsip</p>
+          <div className="mt-2 flex items-center gap-3">
+            <Archive className="size-5 text-amber-500" />
+            <span className="text-2xl font-black text-slate-900 dark:text-white">
+              {summary.archived}
+            </span>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Terkait Activity
+          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <UserRound className="size-5 text-sky-500" />
+            <span className="text-2xl font-black text-slate-900 dark:text-white">
+              {summary.linked}
+            </span>
           </div>
         </div>
       </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {(["all", "recent", "my", "activity", "type", "creator"] as const).map(
+          (scope) => (
+            <button
+              key={scope}
+              type="button"
+              onClick={() => setViewScope(scope)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                viewScope === scope
+                  ? "bg-primary text-white"
+                  : "bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              }`}
+            >
+              {scope === "all"
+                ? "All"
+                : scope === "recent"
+                  ? "Recent"
+                  : scope === "my"
+                    ? "My Docs"
+                    : scope === "activity"
+                      ? "By Activity"
+                      : scope === "type"
+                        ? "By Type"
+                        : "By Creator"}
+            </button>
+          ),
+        )}
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search title, description, file, creator..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={typeFilter ?? ""}
+            onChange={(e) =>
+              setTypeFilter(
+                (e.target.value || undefined) as DocumentCategory | undefined,
+              )
+            }
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-950"
+          >
+            <option value="">All Types</option>
+            <option value="sop">SOP</option>
+            <option value="template">Template</option>
+            <option value="panduan">Panduan</option>
+            <option value="laporan">Laporan</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
+
+          <select
+            value={statusFilter ?? ""}
+            onChange={(e) =>
+              setStatusFilter(
+                (e.target.value || undefined) as "aktif" | "arsip" | undefined,
+              )
+            }
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-950"
+          >
+            <option value="">All Status</option>
+            <option value="aktif">Aktif</option>
+            <option value="arsip">Arsip</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Activity ID"
+            value={activityFilter}
+            onChange={(e) => setActivityFilter(e.target.value)}
+            className="w-44 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-950"
+          />
+
+          <input
+            type="text"
+            placeholder="Creator ID"
+            value={creatorFilter}
+            onChange={(e) => setCreatorFilter(e.target.value)}
+            className="w-44 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-950"
+          />
+
+          <PermissionGate permission={PERMISSIONS.CREATE_DOCUMENTS}>
+            <button
+              onClick={() => setUploadOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
+            >
+              <Plus className="size-4" />
+              Add Documentation
+            </button>
+          </PermissionGate>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {isFetchingDocuments ? (
+          <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+            Loading documentation...
+          </div>
+        ) : (
+          <DocumentTable documents={documents} />
+        )}
+      </div>
+
+      {statistics?.recent_added?.length ? (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="mb-4 text-base font-semibold text-slate-900 dark:text-white">
+            Recent Added
+          </h3>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {statistics.recent_added.map((document) => (
+              <div
+                key={document.id}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-900 dark:text-white">
+                      {document.judul}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {document.deskripsi}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
+                    {document.tipe_dokumen}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <DocumentUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </div>

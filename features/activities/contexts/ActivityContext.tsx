@@ -7,21 +7,26 @@ import {
   getActivity,
   createActivity,
   updateActivity,
+  updateActivityStatus,
   deleteActivity,
   getProgressReports,
+  getProgressReport,
   createProgressReport,
   updateProgressReport,
   deleteProgressReport,
   getLpjByActivity,
   createLpj,
+  updateLpj,
   deleteLpj,
-  getDocumentations,
-  createDocumentation,
-  deleteDocumentation,
+  getDocumentsByReport,
+  getDocument,
+  createDocument,
+  updateDocument,
+  deleteDocument,
   Activity,
   ProgressReport,
   LPJ,
-  Documentation,
+  ProgressDocument,
 } from "@/features/activities/services/activityService";
 
 interface ActivityContextType {
@@ -37,6 +42,7 @@ interface ActivityContextType {
   setStatusFilter: (s: string) => void;
   createActivity: (data: any) => Promise<any>;
   updateActivity: (args: { id: string; data: any }) => Promise<any>;
+  updateActivityStatus: (args: { id: string; data: any }) => Promise<any>;
   deleteActivity: (id: string) => Promise<any>;
   // -- Active Activity --
   activeActivityId: string | null;
@@ -47,23 +53,28 @@ interface ActivityContextType {
   progressReportsPagination: any;
   progressReportPage: number;
   setProgressReportPage: (p: number) => void;
+  getProgressReport: (id: string) => Promise<{ data: ProgressReport }>;
   createProgressReport: (data: any) => Promise<any>;
   updateProgressReport: (args: { id: string; data: any }) => Promise<any>;
   deleteProgressReport: (id: string) => Promise<any>;
   // -- LPJ --
-  lpj: LPJ | null;           // ✅ single object, bukan array
+  lpj: LPJ | null; // ✅ single object, bukan array
   createLpj: (data: any) => Promise<any>;
+  updateLpj: (args: { id: string; data: FormData }) => Promise<any>;
   deleteLpj: (id: string) => Promise<any>;
-  // -- Documentation --
-  documentations: Documentation[];
-  createDocumentation: (data: any) => Promise<any>;
-  deleteDocumentation: (id: string) => Promise<any>;
+  // -- Progress Report Documents --
+  getDocumentsByReport: (
+    reportId: string,
+  ) => Promise<{ data: { count: number; documents: ProgressDocument[] } }>;
+  getDocument: (id: string) => Promise<{ data: ProgressDocument }>;
+  createDocument: (data: FormData) => Promise<any>;
+  updateDocument: (args: { id: string; data: FormData }) => Promise<any>;
+  deleteDocument: (id: string) => Promise<any>;
   // -- Loaders --
   isFetchingActivities: boolean;
   isFetchingActivityDetails: boolean;
   isFetchingProgressReports: boolean;
   isFetchingLpj: boolean;
-  isFetchingDocumentations: boolean;
 }
 
 const ActivityContext = createContext<ActivityContextType | undefined>(
@@ -142,21 +153,14 @@ export const ActivityProvider = ({
     enabled: !!activeActivityId,
   });
 
-  const { data: documentationsData, isLoading: isFetchingDocumentations } =
-    useQuery({
-      queryKey: ["activities", activeActivityId, "documentations"],
-      queryFn: () => getDocumentations(activeActivityId!),
-      enabled: !!activeActivityId,
-    });
-
   // -- Derived Data --
   const activities = activitiesData?.data?.activities || [];
   const pagination = activitiesData?.data?.pagination || null;
   const activeActivityDetails = activeActivityData?.data || null;
   const progressReports = progressReportsData?.data?.reports || [];
-  const progressReportsPagination = progressReportsData?.data?.pagination || null;
-  const lpj = lpjData?.data ?? null;           // ✅ single LPJ | null
-  const documentations = documentationsData?.data || [];
+  const progressReportsPagination =
+    progressReportsData?.data?.pagination || null;
+  const lpj = lpjData?.data ?? null; // ✅ single LPJ | null
 
   // -- Invalidators --
   const invalidateActivities = () =>
@@ -172,11 +176,6 @@ export const ActivityProvider = ({
       queryKey: ["activities", activeActivityId, "lpj"],
     });
 
-  const invalidateDocumentations = () =>
-    queryClient.invalidateQueries({
-      queryKey: ["activities", activeActivityId, "documentations"],
-    });
-
   // -- Mutations --
   const createActivityMutation = useMutation({
     mutationFn: createActivity,
@@ -189,6 +188,17 @@ export const ActivityProvider = ({
     onSuccess: () => {
       invalidateActivities();
       // ✅ Invalidate detail juga supaya ActivityDetail ikut update
+      queryClient.invalidateQueries({
+        queryKey: ["activities", activeActivityId],
+      });
+    },
+  });
+
+  const updateActivityStatusMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      updateActivityStatus(id, data),
+    onSuccess: () => {
+      invalidateActivities();
       queryClient.invalidateQueries({
         queryKey: ["activities", activeActivityId],
       });
@@ -221,20 +231,15 @@ export const ActivityProvider = ({
     onSuccess: invalidateLpj,
   });
 
+  const updateLpjMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
+      updateLpj(id, data),
+    onSuccess: invalidateLpj,
+  });
 
   const deleteLpjMutation = useMutation({
     mutationFn: deleteLpj,
     onSuccess: invalidateLpj,
-  });
-
-  const createDocumentationMutation = useMutation({
-    mutationFn: createDocumentation,
-    onSuccess: invalidateDocumentations,
-  });
-
-  const deleteDocumentationMutation = useMutation({
-    mutationFn: deleteDocumentation,
-    onSuccess: invalidateDocumentations,
   });
 
   const contextValue = useMemo(
@@ -251,6 +256,7 @@ export const ActivityProvider = ({
       setStatusFilter,
       createActivity: createActivityMutation.mutateAsync,
       updateActivity: updateActivityMutation.mutateAsync,
+      updateActivityStatus: updateActivityStatusMutation.mutateAsync,
       deleteActivity: deleteActivityMutation.mutateAsync,
       // Active Context
       activeActivityId,
@@ -261,23 +267,27 @@ export const ActivityProvider = ({
       progressReportsPagination,
       progressReportPage,
       setProgressReportPage,
+      getProgressReport,
       createProgressReport: createProgressReportMutation.mutateAsync,
       updateProgressReport: updateProgressReportMutation.mutateAsync,
       deleteProgressReport: deleteProgressReportMutation.mutateAsync,
       // LPJ
-      lpj,                                          // ✅ ganti lpjList → lpj
+      lpj, // ✅ ganti lpjList → lpj
       createLpj: createLpjMutation.mutateAsync,
+      updateLpj: updateLpjMutation.mutateAsync,
       deleteLpj: deleteLpjMutation.mutateAsync,
-      // Documentations
-      documentations,
-      createDocumentation: createDocumentationMutation.mutateAsync,
-      deleteDocumentation: deleteDocumentationMutation.mutateAsync,
+      // Progress report documents
+      getDocumentsByReport,
+      getDocument,
+      createDocument: createDocument,
+      updateDocument: ({ id, data }: { id: string; data: FormData }) =>
+        updateDocument(id, data),
+      deleteDocument,
       // Loaders
       isFetchingActivities,
       isFetchingActivityDetails,
       isFetchingProgressReports,
       isFetchingLpj,
-      isFetchingDocumentations,
     }),
     [
       activities,
@@ -291,23 +301,21 @@ export const ActivityProvider = ({
       progressReports,
       progressReportsPagination,
       progressReportPage,
-      lpj,                                          // ✅ ganti lpjList → lpj
-      documentations,
+      lpj, // ✅ ganti lpjList → lpj
       createActivityMutation,
       updateActivityMutation,
+      updateActivityStatusMutation,
       deleteActivityMutation,
       createProgressReportMutation,
       updateProgressReportMutation,
       deleteProgressReportMutation,
       createLpjMutation,
+      updateLpjMutation,
       deleteLpjMutation,
-      createDocumentationMutation,
-      deleteDocumentationMutation,
       isFetchingActivities,
       isFetchingActivityDetails,
       isFetchingProgressReports,
       isFetchingLpj,
-      isFetchingDocumentations,
     ],
   );
 
