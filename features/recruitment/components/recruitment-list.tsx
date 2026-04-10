@@ -17,25 +17,18 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
-import { Recruitment } from "@/features/recruitment/services/recruitmentService";
-import { CreateRecruitmentSchema } from "@/lib/validations/recruitment-schema";
-import { z } from "zod";
-
-type CreateRecruitmentInput = z.infer<typeof CreateRecruitmentSchema>;
+import {
+  Recruitment,
+  CreateRecruitmentDTO,
+  UpdateRecruitmentDTO,
+} from "@/features/recruitment/services/recruitmentService";
 import { RecruitmentFormDialog } from "./recruitment-form-dialog";
 import { RecruitmentDeleteDialog } from "./recruitment-delete-dialog";
+import { RecruitmentTable } from "./recruitment-table";
 import { useRouter } from "next/navigation";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
-
-const emptyForm: CreateRecruitmentInput = {
-  title: "",
-  description: "",
-  start_date: new Date(),
-  end_date: new Date(),
-  status: "draft",
-  requirements: [],
-};
+import { getErrorMessage } from "@/lib/api/client";
 
 export const RecruitmentList = () => {
   const router = useRouter();
@@ -45,31 +38,59 @@ export const RecruitmentList = () => {
 
   const [editing, setEditing] = useState<Recruitment | null>(null);
   const [deleting, setDeleting] = useState<Recruitment | null>(null);
-  const [form, setForm] = useState<CreateRecruitmentInput>(emptyForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form state — raw input values (Date objects from Calendar, strings from Input)
+  const [formData, setFormData] = useState({
+    nama_recruitment: "",
+    deskripsi: "",
+    tanggal_buka: new Date(),
+    tanggal_tutup: new Date(),
+    announcement_link: "",
+  });
 
   const {
     recruitments,
     createRecruitment,
     updateRecruitment,
     deleteRecruitment,
+    openRecruitment,
+    closeRecruitment,
+    archiveRecruitment,
     isFetchingRecruitments,
   } = useRecruitmentContext();
 
+  // --- Helpers ---
+
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // --- Handlers ---
+
   const openAdd = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setFormData({
+      nama_recruitment: "",
+      deskripsi: "",
+      tanggal_buka: new Date(),
+      tanggal_tutup: new Date(),
+      announcement_link: "",
+    });
     setFormOpen(true);
   };
 
   const openEdit = (item: Recruitment) => {
     setEditing(item);
-    setForm({
-      title: item.title,
-      description: item.description,
-      start_date: new Date(item.start_date),
-      end_date: new Date(item.end_date),
-      status: item.status,
-      requirements: item.requirements || [],
+    setFormData({
+      nama_recruitment: item.nama_recruitment,
+      deskripsi: item.deskripsi || "",
+      tanggal_buka: new Date(item.tanggal_buka),
+      tanggal_tutup: new Date(item.tanggal_tutup),
+      announcement_link: item.announcement_link || "",
     });
     setFormOpen(true);
   };
@@ -80,31 +101,53 @@ export const RecruitmentList = () => {
   };
 
   const handleViewRegistrants = (item: Recruitment) => {
-    router.push(`/dashboard/recruitment/${item.id}/registrants`);
+    router.push(`/dashboard/recruitment/${item.id}`);
   };
 
   const handleSave = async () => {
-    try {
-      const parsed = CreateRecruitmentSchema.parse(form);
+    // Validation
+    if (!formData.nama_recruitment.trim()) {
+      toast.error("Judul rekrutmen wajib diisi");
+      return;
+    }
+    if (!formData.deskripsi.trim()) {
+      toast.error("Deskripsi rekrutmen wajib diisi");
+      return;
+    }
 
+    setIsSubmitting(true);
+    try {
       if (editing) {
-        await updateRecruitment({
-          id: editing.id,
-          data: parsed,
-        });
+        // UPDATE
+        const payload: UpdateRecruitmentDTO = {
+          nama_recruitment: formData.nama_recruitment,
+          deskripsi: formData.deskripsi,
+          tanggal_buka: formatDateToString(formData.tanggal_buka),
+          tanggal_tutup: formatDateToString(formData.tanggal_tutup),
+        };
+        if (formData.announcement_link) {
+          payload.announcement_link = formData.announcement_link;
+        }
+        await updateRecruitment(editing.id, payload);
+
       } else {
-        await createRecruitment(parsed);
+        // CREATE
+        const payload: CreateRecruitmentDTO = {
+          nama_recruitment: formData.nama_recruitment,
+          deskripsi: formData.deskripsi,
+          tanggal_buka: formatDateToString(formData.tanggal_buka),
+          tanggal_tutup: formatDateToString(formData.tanggal_tutup),
+        };
+        await createRecruitment(payload);
+
       }
 
       setFormOpen(false);
       setEditing(null);
-      setForm(emptyForm);
     } catch (err: any) {
-      if (err.name === "ZodError") {
-        toast.error(err.errors[0].message);
-        return;
-      }
-      toast.error("Gagal menyimpan rekrutmen");
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -113,10 +156,37 @@ export const RecruitmentList = () => {
 
     try {
       await deleteRecruitment(deleting.id);
-      toast.success("Rekrutmen dihapus");
       setDeleteOpen(false);
+      setDeleting(null);
     } catch (err: any) {
-      toast.error(err.response?.error || "Gagal menghapus rekrutmen");
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleOpenStatus = async (item: Recruitment) => {
+    try {
+      await openRecruitment(item.id);
+
+    } catch (err: any) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleCloseStatus = async (item: Recruitment) => {
+    try {
+      await closeRecruitment(item.id);
+
+    } catch (err: any) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  const handleArchiveStatus = async (item: Recruitment) => {
+    try {
+      await archiveRecruitment(item.id);
+
+    } catch (err: any) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -129,14 +199,10 @@ export const RecruitmentList = () => {
   }
 
   const activeRecruitments = recruitments.filter((r) => r.status === "open");
-  const pastRecruitments = recruitments.filter((r) => r.status !== "closed");
-
-  // Custom mock data for dashboard stats
-  const totalApplicants = 342;
-  const pendingReviews = 156;
+  const pastRecruitments = recruitments.filter((r) => r.status !== "open");
 
   return (
-    <div className="p-6 lg:p-8 space-y-8 bg-background-light dark:bg-background-dark min-h-screen text-text-light dark:text-text-dark font-sans">
+    <div className="space-y-8 bg-slate-50 dark:bg-slate-900 min-h-screen text-text-light dark:text-text-dark font-sans">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -174,10 +240,10 @@ export const RecruitmentList = () => {
         <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-subtext-light dark:text-subtext-dark">
-              Total Applicants
+              Total Recruitments
             </p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-              {totalApplicants}
+              {recruitments.length}
             </p>
           </div>
           <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -187,10 +253,10 @@ export const RecruitmentList = () => {
         <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-subtext-light dark:text-subtext-dark">
-              Pending Reviews
+              Draft / Closed
             </p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-              {pendingReviews}
+              {pastRecruitments.length}
             </p>
           </div>
           <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
@@ -221,16 +287,19 @@ export const RecruitmentList = () => {
                       <span className="text-sm text-gray-500 dark:text-gray-400 inline-flex items-center">
                         <Calendar className="w-4 h-4 mr-1" />
                         {new Date(
-                          recruitment.start_date,
+                          recruitment.tanggal_buka
                         ).toLocaleDateString()}{" "}
-                        - {new Date(recruitment.end_date).toLocaleDateString()}
+                        -{" "}
+                        {new Date(
+                          recruitment.tanggal_tutup
+                        ).toLocaleDateString()}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold text-primary dark:text-blue-400 mb-2">
-                      {recruitment.title}
+                      {recruitment.nama_recruitment}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300 text-sm max-w-2xl line-clamp-2">
-                      {recruitment.description || "Tidak ada deskripsi."}
+                      {recruitment.deskripsi || "Tidak ada deskripsi."}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -255,47 +324,15 @@ export const RecruitmentList = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-gray-100 dark:border-gray-800">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">
-                      Applicants
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                      128
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">
-                      Screened
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                      45
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">
-                      Interviewed
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                      12
-                    </p>
-                  </div>
-                  <div className="flex items-end justify-end sm:col-start-4">
-                    <button
-                      onClick={() => handleViewRegistrants(recruitment)}
-                      className="inline-flex items-center text-sm font-medium text-primary hover:text-primary-dark dark:hover:text-blue-300 transition-colors"
-                    >
-                      View Registrants
-                      <ArrowRight className="ml-1 w-4 h-4" />
-                    </button>
-                  </div>
+                <div className="mt-6 flex justify-end pt-6 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    onClick={() => handleViewRegistrants(recruitment)}
+                    className="inline-flex items-center text-sm font-medium text-primary hover:text-primary-dark dark:hover:text-blue-300 transition-colors"
+                  >
+                    View Registrants
+                    <ArrowRight className="ml-1 w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-              <div className="h-1 w-full bg-gray-100 dark:bg-gray-800">
-                <div
-                  className="h-1 bg-green-500"
-                  style={{ width: "65%" }}
-                ></div>
               </div>
             </div>
           ))}
@@ -305,18 +342,24 @@ export const RecruitmentList = () => {
       <div className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            Past Recruitments
+            All Recruitments
           </h3>
           <div className="flex items-center bg-card-light dark:bg-card-dark rounded-lg p-1 border border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-1 rounded-md text-sm font-medium shadow-sm transition-colors ${viewMode === "grid" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium shadow-sm transition-colors ${viewMode === "grid"
+                ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
             >
               Grid
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-1 rounded-md text-sm font-medium shadow-sm transition-colors ${viewMode === "list" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium shadow-sm transition-colors ${viewMode === "list"
+                ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
             >
               List
             </button>
@@ -336,14 +379,18 @@ export const RecruitmentList = () => {
               rekrutmen sedang kosong.
             </p>
           </div>
+        ) : viewMode === "list" ? (
+          <RecruitmentTable
+            recruitments={pastRecruitments}
+            onEdit={openEdit}
+            onDelete={openDelete}
+            onViewRegistrants={handleViewRegistrants}
+            onOpen={handleOpenStatus}
+            onClose={handleCloseStatus}
+            onArchive={handleArchiveStatus}
+          />
         ) : (
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-                : "space-y-4"
-            }
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {pastRecruitments.map((recruitment) => {
               const isDraft = recruitment.status === "draft";
               const badgeBg = isDraft
@@ -353,7 +400,8 @@ export const RecruitmentList = () => {
               return (
                 <div
                   key={recruitment.id}
-                  className={`bg-card-light dark:bg-card-dark rounded-xl border border-gray-200 dark:border-gray-700 ${isDraft ? "border-dashed" : ""} hover:border-primary/50 dark:hover:border-blue-500/50 transition-all duration-200 flex flex-col`}
+                  className={`bg-card-light dark:bg-card-dark rounded-xl border border-gray-200 dark:border-gray-700 ${isDraft ? "border-dashed" : ""
+                    } hover:border-primary/50 dark:hover:border-blue-500/50 transition-all duration-200 flex flex-col`}
                 >
                   <div className="p-5 flex-1">
                     <div className="flex justify-between items-start mb-3">
@@ -363,58 +411,49 @@ export const RecruitmentList = () => {
                         {recruitment.status.charAt(0).toUpperCase() +
                           recruitment.status.slice(1)}
                       </span>
-                      <div className="relative group">
-                        <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
+                      <div className="flex items-center gap-1">
+                        <PermissionGate
+                          permission={PERMISSIONS.EDIT_RECRUITMENTS}
+                        >
+                          <button
+                            onClick={() => openEdit(recruitment)}
+                            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </PermissionGate>
+                        <PermissionGate
+                          permission={PERMISSIONS.DELETE_RECRUITMENTS}
+                        >
+                          <button
+                            onClick={() => openDelete(recruitment)}
+                            className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </PermissionGate>
                       </div>
                     </div>
                     <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1 line-clamp-1">
-                      {recruitment.title}
+                      {recruitment.nama_recruitment}
                     </h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                      {new Date(recruitment.start_date).toLocaleDateString()} -{" "}
-                      {new Date(recruitment.end_date).toLocaleDateString()}
+                      {new Date(
+                        recruitment.tanggal_buka
+                      ).toLocaleDateString()}{" "}
+                      -{" "}
+                      {new Date(
+                        recruitment.tanggal_tutup
+                      ).toLocaleDateString()}
                     </p>
-
-                    {isDraft ? (
-                      <div className="flex items-center justify-center h-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 border-dashed">
-                        <span className="text-xs text-gray-400">
-                          No applicants yet
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex -space-x-2 overflow-hidden">
-                          <img
-                            alt=""
-                            className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800"
-                            src="https://ui-avatars.com/api/?name=User+A&background=random"
-                          />
-                          <img
-                            alt=""
-                            className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800"
-                            src="https://ui-avatars.com/api/?name=User+B&background=random"
-                          />
-                          <img
-                            alt=""
-                            className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800"
-                            src="https://ui-avatars.com/api/?name=User+C&background=random"
-                          />
-                          <div className="h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
-                            +0
-                          </div>
-                        </div>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Applicants
-                        </span>
-                      </div>
-                    )}
+                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                      {recruitment.deskripsi || "Tidak ada deskripsi."}
+                    </p>
                   </div>
 
                   <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 rounded-b-xl flex justify-between items-center">
                     <span className="text-xs text-gray-500">
-                      {isDraft ? "Draft details" : "Archived"}
+                      {isDraft ? "Draft" : "Closed"}
                     </span>
                     {isDraft ? (
                       <button
@@ -443,9 +482,10 @@ export const RecruitmentList = () => {
         open={formOpen}
         onOpenChange={setFormOpen}
         isEdit={!!editing}
-        form={form}
-        setForm={setForm}
+        form={formData}
+        setForm={setFormData}
         onSubmit={handleSave}
+        isSubmitting={isSubmitting}
       />
 
       <RecruitmentDeleteDialog

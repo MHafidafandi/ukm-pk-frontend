@@ -17,6 +17,8 @@ export const api = axios.create({
   withCredentials: true, // untuk httpOnly cookies (refresh_token)
 });
 
+const AUTH_COOKIE_ENDPOINTS = new Set(["/auth/login", "/auth/refresh"]);
+
 // ── Token helpers ──────────────────────────────────────────────────────────
 
 const TOKEN_KEY = "access_token";
@@ -48,6 +50,12 @@ let failedQueue: Array<{
   reject: (err: unknown) => void;
 }> = [];
 
+type RefreshTokenResponse = {
+  data?: {
+    access_token?: string;
+  };
+};
+
 function processQueue(error: unknown, token: string | null = null) {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) {
@@ -64,11 +72,15 @@ function processQueue(error: unknown, token: string | null = null) {
 api.interceptors.request.use(
   (config) => {
     if (typeof globalThis.window !== "undefined") {
+      const requestUrl = config.url ?? "";
       const token = getToken();
-      if (token) {
+      if (token && !AUTH_COOKIE_ENDPOINTS.has(requestUrl)) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
+
+    config.withCredentials = config.withCredentials ?? true;
+
     return config;
   },
   (error) => {
@@ -116,9 +128,15 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const res = (await api.post("/auth/refresh")) as any;
-      console.log(res);
-      const newToken = res.data.data.access_token;
+      const res = (await api.post("/auth/refresh", undefined, {
+        withCredentials: true,
+      })) as RefreshTokenResponse;
+      const newToken = res?.data?.access_token;
+
+      if (!newToken) {
+        throw new Error("Refresh token response did not include access_token");
+      }
+
       setToken(newToken);
 
       // Update header untuk request yang di-retry
@@ -149,15 +167,33 @@ export default api;
 
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
+    // Handle specific HTTP Status Codes
+    if (error.response?.status === 413) {
+      return "File terlalu besar. Silakan upload file dengan ukuran lebih kecil (Maks. limit diserver).";
+    }
+
+    const data = error.response?.data;
+
+    // Jika pesan error berupa array (misal dari validasi payload "request required", "asset code already exists", dll)
+    if (data?.errors && Array.isArray(data.errors)) {
+      return data.errors.map((e: any) => (typeof e === 'string' ? e : (e.msg || e.message || JSON.stringify(e)))).join(", ");
+    }
+
+    if (Array.isArray(data?.message)) {
+      return data.message.join(", ");
+    }
+
     return (
-      error.response?.data?.error ||
-      error.response?.data?.message ||
+      data?.error ||
+      data?.message ||
       error.message ||
       "Terjadi kesalahan pada server"
     );
   }
+
   if (error instanceof Error) {
     return error.message;
   }
+
   return "Terjadi kesalahan tidak dikenal";
 };

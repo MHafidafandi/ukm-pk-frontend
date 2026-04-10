@@ -22,13 +22,13 @@ export type LoanStatus =
 export interface Asset {
   id: string;
   nama: string;
-  judul?: string; // bazcamp compatibility
+  judul?: string;
   kode: string;
   deskripsi: string;
   lokasi: string;
   jumlah: number;
   available: number;
-  tanggal: string; // Tanggal perolehan
+  tanggal: string;
   kondisi: AssetCondition;
   foto_url: string;
   loans?: Loan[];
@@ -53,12 +53,12 @@ export interface Loan {
 export interface CreateAssetInput {
   nama: string;
   kode: string;
+  judul?: string;
   deskripsi?: string;
   lokasi: string;
   jumlah: number;
-  tanggal: string;
   kondisi: AssetCondition;
-  // foto di-upload terpisah
+  foto?: File;
 }
 
 export interface CreateLoanInput {
@@ -68,7 +68,6 @@ export interface CreateLoanInput {
   catatan?: string;
 }
 
-// types
 export interface AssetFilters {
   page?: number;
   limit?: number;
@@ -78,6 +77,12 @@ export interface AssetFilters {
   sort?: string;
   order?: string;
 }
+
+export interface LoanFilters {
+  page?: number;
+  limit?: number;
+}
+
 export interface PaginationMeta {
   total: number;
   page: number;
@@ -86,6 +91,7 @@ export interface PaginationMeta {
   has_next: boolean;
   has_previous: boolean;
 }
+
 export interface AssetsResponse {
   data: {
     assets: Asset[];
@@ -94,82 +100,185 @@ export interface AssetsResponse {
   };
 }
 
-// ── Assets API ─────────────────────────────────────────────────────────────
-
-
-export const getAssets = async (filters?: AssetFilters) => {
-  const params = new URLSearchParams();
-
-  if (filters?.page) params.set("page", String(filters.page));
-  if (filters?.limit) params.set("limit", String(filters.limit));
-  if (filters?.kondisi) params.set("kondisi", filters.kondisi);
-  if (filters?.lokasi) params.set("lokasi", filters.lokasi);
-  if (filters?.search) params.set("search", filters.search);
-  if (filters?.sort) params.set("sort", filters.sort);
-  if (filters?.order) params.set("order", filters.order);
-
-  const response = await api.get(`/api/v1/assets?${params.toString()}`);
-  return response.data;
-};
-
-export async function getAsset(id: string): Promise<{ data: Asset }> {
-  const { data } = await api.get(`/inventory/assets/${id}`);
-  return data;
+export interface LoansResponse {
+  data: {
+    loans: Loan[];
+    pagination: PaginationMeta;
+  };
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/** NOTE: Kalau base URL di api client kamu sudah include "/api/v1",
+ *  ganti PREFIX jadi "" (string kosong). */
+const PREFIX = "/api/v1";
+
+function buildParams(filters?: Record<string, any>): string {
+  if (!filters) return "";
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
+  });
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+// ── Assets API ─────────────────────────────────────────────────────────────
+
+/** GET /assets?page=1&limit=10&kondisi=...&search=... */
+export async function getAssets(filters?: AssetFilters): Promise<AssetsResponse> {
+  const data = await api.get(`/assets${buildParams(filters)}`);
+  return data as any;
+}
+
+/** GET /assets/:id */
+export async function getAsset(id: string): Promise<{ data: Asset }> {
+  const data = await api.get(`/assets/${id}`);
+  return data as any;
+}
+
+/** GET /assets/code/:code */
+export async function getAssetByCode(code: string): Promise<{ data: Asset }> {
+  const data = await api.get(`/assets/code/${code}`);
+  return data as any;
+}
+
+/** GET /assets/available */
+export async function getAvailableAssets(): Promise<AssetsResponse> {
+  const data = await api.get(`/assets/available`);
+  return data as any;
+}
+
+/** GET /assets/condition/:condition */
+export async function getAssetsByCondition(
+  condition: AssetCondition,
+): Promise<AssetsResponse> {
+  const data = await api.get(`/assets/condition/${condition}`);
+  return data as any;
+}
+
+/** POST /assets  (form-data) */
 export async function createAsset(
   body: CreateAssetInput | FormData,
 ): Promise<{ data: Asset }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.post("/inventory/assets", payload);
+  const { data } = await api.post("/assets", payload, {
+    headers: {
+      "Content-Type": undefined,
+    },
+  });
   return data;
 }
 
+/** PUT /assets/:id  (form-data) */
 export async function updateAsset(
   id: string,
   body: Partial<CreateAssetInput> | FormData,
 ): Promise<{ data: Asset }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.put(`/inventory/assets/${id}`, payload);
-  return data;
+  const data = await api.put(`/assets/${id}`, payload, {
+    headers: {
+      "Content-Type": undefined,
+    },
+  });
+  return data as any;
 }
 
+/** PUT /assets/:id/condition */
+export async function updateAssetCondition(
+  id: string,
+  body: { kondisi: AssetCondition; catatan?: string },
+): Promise<{ data: Asset }> {
+  const data = await api.put(`/assets/${id}/condition`, body);
+  return data as any;
+}
+
+/** DELETE /assets/:id */
 export async function deleteAsset(id: string): Promise<void> {
-  await api.delete(`/inventory/assets/${id}`);
+  await api.delete(`/assets/${id}`);
 }
 
+/** POST /assets/:id/image  (file upload) */
 export async function uploadAssetImage(
   id: string,
   file: File,
 ): Promise<{ url: string }> {
   const formData = new FormData();
   formData.append("file", file);
-  const { data } = await api.post(`/inventory/assets/${id}/image`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+  const data = await api.post(`/assets/${id}/image`, formData, {
+    headers: { "Content-Type": undefined },
   });
-  return data;
+  return data as any;
 }
 
 // ── Loans API ──────────────────────────────────────────────────────────────
 
-export async function getLoans(): Promise<{ data: Loan[] }> {
-  const { data } = await api.get("/inventory/loans");
-  return data;
+/** GET /loans?page=1&limit=10 */
+export async function getLoans(filters?: LoanFilters): Promise<LoansResponse> {
+  const data = await api.get(`/loans${buildParams(filters)}`);
+  return data as any;
 }
 
+/** GET /loans/:id */
+export async function getLoan(id: string): Promise<{ data: Loan }> {
+  const data = await api.get(`/loans/${id}`);
+  return data as any;
+}
+
+/** POST /loans */
 export async function createLoan(
   body: CreateLoanInput,
 ): Promise<{ data: Loan }> {
-  const { data } = await api.post("/inventory/loans", body);
-  return data;
+  const data = await api.post(`/loans`, body);
+  return data as any;
 }
 
+/** POST /loans/:id/return */
 export async function returnLoan(
   id: string,
-  body: { tanggal_kembali: string; kondisi_akhir?: string; catatan?: string },
+  body: { tanggal_kembali: string; kondisi?: AssetCondition; catatan?: string },
 ): Promise<{ data: Loan }> {
-  const { data } = await api.post(`/inventory/loans/${id}/return`, body);
-  return data;
+  const data = await api.post(`/loans/${id}/return`, body);
+  return data as any;
+}
+
+/** POST /loans/:id/mark-lost */
+export async function markLoanAsLost(
+  id: string,
+  body: { catatan: string }
+): Promise<{ data: Loan }> {
+  const data = await api.post(`/loans/${id}/mark-lost`, body);
+  return data as any;
+}
+
+/** GET /loans/user/:userId */
+export async function getUserLoans(userId: string): Promise<LoansResponse> {
+  const data = await api.get(`/loans/user/${userId}`);
+  return data as any;
+}
+
+/** GET /loans/asset/:assetId */
+export async function getAssetLoans(assetId: string): Promise<LoansResponse> {
+  const data = await api.get(`/loans/asset/${assetId}`);
+  return data as any;
+}
+
+/** GET /loans/active */
+export async function getActiveLoans(): Promise<LoansResponse> {
+  const data = await api.get(`/loans/active`);
+  return data as any;
+}
+
+/** GET /loans/overdue */
+export async function getOverdueLoans(): Promise<LoansResponse> {
+  const data = await api.get(`/loans/overdue`);
+  return data as any;
+}
+
+/** GET /loans/statistics/summary */
+export async function getLoanStatistics(): Promise<{ data: any }> {
+  const data = await api.get(`/loans/statistics/summary`);
+  return data as any;
 }

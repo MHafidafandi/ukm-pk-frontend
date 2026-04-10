@@ -69,17 +69,6 @@ export const ActivityList = () => {
     setFormOpen(true);
   };
 
-  const removeThumbnail = () => {
-    setForm({ ...form, thumbnail: null as any });  // null = "hapus dari server"
-    if (previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   const openDelete = (item: Activity) => {
     setDeleting(item);
     setDeleteOpen(true);
@@ -92,8 +81,8 @@ export const ActivityList = () => {
   const handleSave = async () => {
     try {
       const parsed = CreateActivitySchema.parse(form);
-      const formData = new FormData();
 
+      const formData = new FormData();
       formData.append("judul", parsed.judul);
       formData.append("deskripsi", parsed.deskripsi);
       formData.append("lokasi", parsed.lokasi);
@@ -110,17 +99,12 @@ export const ActivityList = () => {
         formData.append("thumbnail", "");
       }
 
-      console.log("[handleSave] FormData entries:");
-      for (const [key, value] of formData.entries()) {
-        console.log(` ${key}:`, value);
-      }
-
       if (editing) {
         await updateActivity({ id: editing.id, data: formData });
-        toast.success("Kegiatan berhasil diperbarui");
+        toast.success("Activity successfully updated 🎉");
       } else {
         await createActivity(formData);
-        toast.success("Kegiatan berhasil ditambahkan");
+        toast.success("Activity successfully created 🎉");
       }
 
       setFormOpen(false);
@@ -135,23 +119,24 @@ export const ActivityList = () => {
         err?.response?.data?.message ??
         err?.response?.data?.error ??
         err?.message ??
-        "Gagal menyimpan kegiatan";
+        "Failed to save activity";
       toast.error(message);
       console.error("[handleSave] error:", err);
     }
   };
+
   const handleDelete = async () => {
     if (!deleting) return;
     try {
       await deleteActivity(deleting.id);
-      toast.success("Kegiatan dihapus");
+      toast.success("Activity deleted 🎉");
       setDeleteOpen(false);
     } catch (err: any) {
-      toast.error(err.response?.error || "Gagal menghapus kegiatan");
+      toast.error(err.response?.error || "Failed to delete activity");
     }
   };
 
-  // ── Pagination helpers ──────────────────────────────
+  // Pagination helpers
   const totalPages = pagination?.total_pages ?? 1;
   const currentPage = page;
   const hasPrev = currentPage > 1;
@@ -200,13 +185,13 @@ export const ActivityList = () => {
       </div>
 
       {/* Filters & Search */}
-      <div className="mb-8 flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm dark:bg-[#1e1429] lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-md">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
             <Search className="size-4" />
           </div>
           <input
-            className="block w-full rounded-lg border-0 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-white/5 dark:text-white dark:ring-slate-700 dark:focus:ring-primary sm:text-sm sm:leading-6 transition-all"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
             placeholder="Search activities by name, location..."
             type="text"
             value={search}
@@ -216,9 +201,9 @@ export const ActivityList = () => {
         <div className="flex w-full flex-wrap gap-2 lg:w-auto">
           {[
             { id: "", label: "All Status" },
-            { id: "perencanaan", label: "Perencanaan" },
-            { id: "berjalan", label: "Berjalan" },
-            { id: "selesai", label: "Selesai" },
+            { id: "perencanaan", label: "Planning" },
+            { id: "berjalan", label: "Ongoing" },
+            { id: "selesai", label: "Completed" },
           ].map((s) => (
             <button
               key={s.id}
@@ -279,7 +264,7 @@ export const ActivityList = () => {
               >
                 {p}
               </button>
-            ),
+            )
           )}
 
           <button
@@ -295,8 +280,7 @@ export const ActivityList = () => {
 
       {pagination && (
         <p className="text-center text-xs text-muted-foreground">
-          Halaman {currentPage} dari {totalPages} &middot; Total{" "}
-          {pagination.total} kegiatan
+          Page {page} of {totalPages} · Total {pagination.total} activities
         </p>
       )}
 

@@ -1,6 +1,7 @@
 import { Donation, DonationStatus } from "../services/donationService";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
   donations: Donation[];
@@ -9,28 +10,28 @@ type Props = {
 };
 
 const statusMap: Record<DonationStatus, { label: string; colorClass: string }> =
-  {
-    pending: {
-      label: "Pending",
-      colorClass:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
-    },
-    verified: {
-      label: "Verified",
-      colorClass:
-        "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-    },
-    rejected: {
-      label: "Rejected",
-      colorClass:
-        "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-    },
-    canceled: {
-      label: "Canceled",
-      colorClass:
-        "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-    },
-  };
+{
+  pending: {
+    label: "Pending",
+    colorClass:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
+  },
+  verified: {
+    label: "Verified",
+    colorClass:
+      "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
+  },
+  rejected: {
+    label: "Rejected",
+    colorClass:
+      "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  },
+  canceled: {
+    label: "Canceled",
+    colorClass:
+      "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+  },
+};
 
 const methodMap: Record<string, { label: string; icon: React.ReactNode }> = {
   bank_transfer: {
@@ -191,7 +192,7 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
     <div className="overflow-x-auto w-full">
       <table className="w-full text-left border-collapse min-w-[800px]">
         <thead>
-          <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-border-light dark:border-border-dark">
+          <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700">
             <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
               Donatur Name
             </th>
@@ -226,7 +227,7 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
             donations.map((donation) => {
               const statusInfo = statusMap[donation.status] || {
                 label: donation.status,
-                colorClass: "bg-gray-100 text-gray-800",
+                colorClass: "bg-slate-100 text-slate-800",
               };
               const methodInfo = methodMap[donation.metode] || methodMap.other;
               const isAnonymous =
@@ -237,16 +238,15 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
               return (
                 <tr
                   key={donation.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div
-                        className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
-                          isAnonymous
-                            ? "bg-gray-200 dark:bg-gray-700 text-text-secondary-light dark:text-text-secondary-dark"
-                            : `bg-gradient-to-tr ${getAvatarGradient(donation.nama_donatur)} text-white`
-                        }`}
+                        className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${isAnonymous
+                          ? "bg-slate-200 dark:bg-slate-700 text-text-secondary-light dark:text-text-secondary-dark"
+                          : `bg-gradient-to-tr ${getAvatarGradient(donation.nama_donatur)} text-white`
+                          }`}
                       >
                         {getInitials(donation.nama_donatur)}
                       </div>
@@ -292,6 +292,21 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                      <PermissionGate permission={PERMISSIONS.VIEW_DONATIONS}>
+                        {donation.bukti_pembayaran && (
+                          <button
+                            className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/40 rounded-lg text-green-600 transition-colors mr-1"
+                            title="View Proof"
+                            onClick={() => window.open(donation.bukti_pembayaran.startsWith("http") ? donation.bukti_pembayaran : `${process.env.NEXT_PUBLIC_API_URL}${donation.bukti_pembayaran}`, "_blank")}
+                          >
+                            <svg className="w-5 h-5 block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                              <circle cx="9" cy="9" r="2" />
+                              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                            </svg>
+                          </button>
+                        )}
+                      </PermissionGate>
                       {/* For now we leave Edit to standard view editing flow to handle status or anything else */}
                       <PermissionGate permission={PERMISSIONS.EDIT_DONATIONS}>
                         <button
@@ -316,28 +331,30 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
                       </PermissionGate>
 
                       <PermissionGate permission={PERMISSIONS.DELETE_DONATIONS}>
-                        <button
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors ml-1"
-                          title="Delete"
-                          onClick={() => onDelete(donation)}
-                        >
-                          <svg
-                            className="w-5 h-5 block"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                        {donation.status !== "verified" && (
+                          <button
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors ml-1"
+                            title="Delete"
+                            onClick={() => onDelete(donation)}
                           >
-                            <path d="M3 6h18" />
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                            <line x1="10" x2="10" y1="11" y2="17" />
-                            <line x1="14" x2="14" y1="11" y2="17" />
-                          </svg>
-                        </button>
+                            <svg
+                              className="w-5 h-5 block"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              <line x1="10" x2="10" y1="11" y2="17" />
+                              <line x1="14" x2="14" y1="11" y2="17" />
+                            </svg>
+                          </button>
+                        )}
                       </PermissionGate>
                     </div>
                   </td>
@@ -347,6 +364,8 @@ export const DonationTable = ({ donations, onEdit, onDelete }: Props) => {
           )}
         </tbody>
       </table>
+      {/* Pagination */}
+
     </div>
   );
 };

@@ -1,49 +1,64 @@
+// @/features/recruitment/contexts/RecruitmentContext.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebounce } from "use-debounce";
-
+import React, { createContext, useContext, useMemo, useState } from "react";
 import {
-  getRecruitments,
-  getRecruitment,
-  createRecruitment,
-  updateRecruitment,
-  deleteRecruitment,
-  getRegistrants,
-  updateRegistrantStatus,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useDebounce } from "use-debounce";
+import { getErrorMessage } from "@/lib/api/client";
+import {
   Recruitment,
   Registrant,
-  RegistrantStatus,
+  Pagination,
+  RecruitmentFilters,
+  RegistrantFilters,
+  CreateRecruitmentDTO,
+  UpdateRecruitmentDTO,
+  getRecruitments,
+  getRecruitmentById,
+  createRecruitment as apiCreate,
+  updateRecruitment as apiUpdate,
+  deleteRecruitment as apiDelete,
+  openRecruitment as apiOpen,
+  closeRecruitment as apiClose,
+  archiveRecruitment as apiArchive,
+  acceptRegistrant as apiAccept,
+  rejectRegistrant as apiReject,
+  getRegistrants,
 } from "@/features/recruitment/services/recruitmentService";
 
-interface RecruitmentContextType {
-  // Recruitments Data
+// ========================
+// CONTEXT TYPE
+// ========================
+type RecruitmentContextType = {
+  // Recruitments
   recruitments: Recruitment[];
-  pagination: any;
+  recruitmentPagination: Pagination | null;
+  isFetchingRecruitments: boolean;
 
-  // Filters for Recruitments
-  search: string;
-  setSearch: (s: string) => void;
+  // Search & filter
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+  statusFilter: string;
+  setStatusFilter: (val: string) => void;
   page: number;
   setPage: (p: number) => void;
-  limit: number;
-  statusFilter: string;
-  setStatusFilter: (s: string) => void;
 
-  // Actions for Recruitments
-  createRecruitment: (data: any) => Promise<any>;
-  updateRecruitment: (args: { id: string; data: any }) => Promise<any>;
-  deleteRecruitment: (id: string) => Promise<any>;
-
-  // Registrants State
+  // Single recruitment detail
   activeRecruitmentId: string | null;
   setActiveRecruitmentId: (id: string | null) => void;
-  registrants: Registrant[];
-  registrantsPagination: any;
   activeRecruitmentDetails: Recruitment | null;
+  isFetchingRecruitmentDetails: boolean;
 
-  // Filters for Registrants
+  // Registrants
+  registrants: Registrant[];
+  registrantPagination: Pagination | null;
+  isFetchingRegistrants: boolean;
   registrantSearch: string;
   setRegistrantSearch: (s: string) => void;
   registrantPage: number;
@@ -51,180 +66,245 @@ interface RecruitmentContextType {
   registrantStatusFilter: string;
   setRegistrantStatusFilter: (s: string) => void;
 
-  // Actions for Registrants
-  updateRegistrantStatus: (args: {
-    recruitmentId: string;
-    registrantId: string;
-    status: RegistrantStatus;
-  }) => Promise<any>;
+  // Recruitment CRUD
+  createRecruitment: (data: CreateRecruitmentDTO) => Promise<any>;
+  updateRecruitment: (id: string, data: UpdateRecruitmentDTO) => Promise<any>;
+  deleteRecruitment: (id: string) => Promise<any>;
 
-  // Loaders
-  isFetchingRecruitments: boolean;
-  isFetchingRegistrants: boolean;
-  isFetchingRecruitmentDetails: boolean;
-  isCreating: boolean;
-  isUpdating: boolean;
-  isDeleting: boolean;
-  isUpdatingStatus: boolean;
-}
+  // Status actions
+  openRecruitment: (id: string) => Promise<any>;
+  closeRecruitment: (id: string) => Promise<any>;
+  archiveRecruitment: (id: string) => Promise<any>;
 
-const RecruitmentContext = createContext<RecruitmentContextType | undefined>(
-  undefined,
-);
-
-export const useRecruitmentContext = () => {
-  const context = useContext(RecruitmentContext);
-  if (!context) {
-    throw new Error(
-      "useRecruitmentContext must be used within RecruitmentProvider",
-    );
-  }
-  return context;
+  // Registrant actions
+  acceptRegistrant: (registrantId: string) => Promise<any>;
+  rejectRegistrant: (registrantId: string) => Promise<any>;
 };
 
+const RecruitmentContext = createContext<RecruitmentContextType | null>(null);
+
+export const useRecruitmentContext = () => {
+  const ctx = useContext(RecruitmentContext);
+  if (!ctx)
+    throw new Error(
+      "useRecruitmentContext must be used within RecruitmentProvider"
+    );
+  return ctx;
+};
+
+// ========================
+// PROVIDER
+// ========================
 export const RecruitmentProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
 
-  // -- Recruitments State --
-  const [search, setSearch] = useState("");
+  // --- Recruitment filter states ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [debounceSearch] = useDebounce(search, 500);
+  const [debouncedSearch] = useDebounce(searchQuery, 500);
 
-  // -- Registrants State --
-  const [activeRecruitmentId, setActiveRecruitmentId] = useState<string | null>(
-    null,
-  );
+  // --- Registrant filter states ---
   const [registrantSearch, setRegistrantSearch] = useState("");
   const [registrantPage, setRegistrantPage] = useState(1);
   const [registrantStatusFilter, setRegistrantStatusFilter] = useState("all");
-  const [debounceRegistrantSearch] = useDebounce(registrantSearch, 500);
+  const [debouncedRegistrantSearch] = useDebounce(registrantSearch, 500);
 
-  // Queries for Recruitments
-  const { data: recruitmentsData, isLoading: isFetchingRecruitments } =
-    useQuery({
-      queryKey: [
-        "recruitments",
-        "list",
+  // --- Active recruitment ---
+  const [activeRecruitmentId, setActiveRecruitmentId] = useState<
+    string | null
+  >(null);
+
+  // ========================
+  // QUERIES
+  // ========================
+
+  // Recruitment list
+  const recruitmentsQuery = useQuery({
+    queryKey: ["recruitments", page, limit, debouncedSearch, statusFilter],
+    queryFn: () =>
+      getRecruitments({
         page,
         limit,
-        debounceSearch,
-        statusFilter,
-      ],
-      queryFn: () =>
-        getRecruitments({
-          page,
-          limit,
-          search: debounceSearch || undefined,
-          status: statusFilter !== "all" ? statusFilter : undefined,
-        }),
-    });
+        search: debouncedSearch || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      }),
+    placeholderData: keepPreviousData,
+  });
 
-  const recruitments = recruitmentsData?.data?.recruitments || [];
-  const pagination = recruitmentsData?.data?.pagination || null;
-
-  // Queries for Registrants & Details
-  const {
-    data: activeRecruitmentData,
-    isLoading: isFetchingRecruitmentDetails,
-  } = useQuery({
-    queryKey: ["recruitments", activeRecruitmentId],
-    queryFn: () => getRecruitment(activeRecruitmentId!),
+  // Recruitment detail
+  const recruitmentDetailQuery = useQuery({
+    queryKey: ["recruitment", activeRecruitmentId],
+    queryFn: () => getRecruitmentById(activeRecruitmentId!),
     enabled: !!activeRecruitmentId,
   });
 
-  const { data: registrantsData, isLoading: isFetchingRegistrants } = useQuery({
+  // Registrants (single query — no duplication)
+  const registrantsQuery = useQuery({
     queryKey: [
-      "recruitments",
-      activeRecruitmentId,
       "registrants",
+      activeRecruitmentId,
       registrantPage,
       limit,
-      debounceRegistrantSearch,
+      debouncedRegistrantSearch,
       registrantStatusFilter,
     ],
     queryFn: () =>
-      getRegistrants(activeRecruitmentId!, {
+      getRegistrants({
         page: registrantPage,
         limit,
-        search: debounceRegistrantSearch || undefined,
-        status:
-          registrantStatusFilter !== "all" ? registrantStatusFilter : undefined,
+        search: debouncedRegistrantSearch || undefined,
+        status: registrantStatusFilter !== "all" ? registrantStatusFilter : undefined,
+        recruitment_id: activeRecruitmentId!,
       }),
     enabled: !!activeRecruitmentId,
+    placeholderData: keepPreviousData,
   });
 
-  const activeRecruitmentDetails = activeRecruitmentData?.data || null;
-  const registrants = registrantsData?.data?.registrants || [];
-  const registrantsPagination = registrantsData?.data?.pagination || null;
+  // ========================
+  // DATA EXTRACTION
+  // ========================
+  const recruitments = recruitmentsQuery.data?.data?.recruitments ?? [];
+  const recruitmentPagination =
+    recruitmentsQuery.data?.data?.pagination ?? null;
 
-  // Mutations
-  const invalidateRecruitments = () => {
-    queryClient.invalidateQueries({ queryKey: ["recruitments"] });
-  };
+  const activeRecruitmentDetails =
+    recruitmentDetailQuery.data ?? null;
 
-  const createMutation = useMutation({
-    mutationFn: createRecruitment,
-    onSuccess: () => invalidateRecruitments(),
-  });
+  const registrants = registrantsQuery.data?.data?.registrants ?? [];
+  const registrantPagination =
+    registrantsQuery.data?.data?.pagination ?? null;
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      updateRecruitment(id, data),
-    onSuccess: () => invalidateRecruitments(),
-  });
+  // ========================
+  // INVALIDATION HELPERS
+  // ========================
+  const invalidateRecruitments = () =>
+    qc.invalidateQueries({ queryKey: ["recruitments"] });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteRecruitment,
-    onSuccess: () => invalidateRecruitments(),
-  });
+  const invalidateRegistrants = () =>
+    qc.invalidateQueries({
+      queryKey: ["registrants", activeRecruitmentId],
+    });
 
-  const updateRegistrantStatusMutation = useMutation({
-    mutationFn: ({
-      recruitmentId,
-      registrantId,
-      status,
-    }: {
-      recruitmentId: string;
-      registrantId: string;
-      status: RegistrantStatus;
-    }) => updateRegistrantStatus(recruitmentId, registrantId, status),
+  const invalidateDetail = () =>
+    qc.invalidateQueries({
+      queryKey: ["recruitment", activeRecruitmentId],
+    });
+
+  // ========================
+  // MUTATIONS
+  // ========================
+  const createMut = useMutation({
+    mutationFn: (data: CreateRecruitmentDTO) => apiCreate(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["recruitments", activeRecruitmentId, "registrants"],
-      });
+      invalidateRecruitments();
+      toast.success("Rekrutmen berhasil ditambahkan");
     },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
   });
 
-  const contextValue = useMemo(
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateRecruitmentDTO }) =>
+      apiUpdate(id, data),
+    onSuccess: () => {
+      invalidateRecruitments();
+      invalidateDetail();
+      toast.success("Rekrutmen berhasil diperbarui");
+    },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => apiDelete(id),
+    onSuccess: () => {
+      invalidateRecruitments();
+      toast.success("Rekrutmen berhasil dihapus");
+    },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
+  });
+
+  const openMut = useMutation({
+    mutationFn: (id: string) => apiOpen(id),
+    onSuccess: () => {
+      invalidateRecruitments();
+      invalidateDetail();
+      toast.success("Rekrutmen berhasil dibuka");
+    },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
+  });
+
+  const closeMut = useMutation({
+    mutationFn: (id: string) => apiClose(id),
+    onSuccess: () => {
+      invalidateRecruitments();
+      invalidateDetail();
+      toast.success("Rekrutmen berhasil ditutup");
+    },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
+  });
+
+  const archiveMut = useMutation({
+    mutationFn: (id: string) => apiArchive(id),
+    onSuccess: () => {
+      invalidateRecruitments();
+      invalidateDetail();
+    },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
+  });
+
+  const acceptMut = useMutation({
+    mutationFn: (registrantId: string) => apiAccept(registrantId),
+    onSuccess: () => {
+      invalidateRegistrants();
+      invalidateDetail();
+      toast.success("Registrant has been accepted");
+    },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
+  });
+
+  const rejectMut = useMutation({
+    mutationFn: (registrantId: string) => apiReject(registrantId),
+    onSuccess: () => {
+      invalidateRegistrants();
+      invalidateDetail();
+      toast.success("Registrant has been rejected");
+    },
+    onError: (error: any) => toast.error(getErrorMessage(error)),
+  });
+
+  // ========================
+  // CONTEXT VALUE
+  // ========================
+  const value = useMemo<RecruitmentContextType>(
     () => ({
-      // Recruitments Data
+      // Recruitments
       recruitments,
-      pagination,
-      search,
-      setSearch,
-      page,
-      setPage,
-      limit,
+      recruitmentPagination,
+      isFetchingRecruitments: recruitmentsQuery.isFetching,
+
+      // Search & filter
+      searchQuery,
+      setSearchQuery,
       statusFilter,
       setStatusFilter,
+      page,
+      setPage,
 
-      // Actions for Recruitments
-      createRecruitment: createMutation.mutateAsync,
-      updateRecruitment: updateMutation.mutateAsync,
-      deleteRecruitment: deleteMutation.mutateAsync,
-
-      // Registrants Data
+      // Detail
       activeRecruitmentId,
       setActiveRecruitmentId,
       activeRecruitmentDetails,
+      isFetchingRecruitmentDetails: recruitmentDetailQuery.isFetching,
+
+      // Registrants
       registrants,
-      registrantsPagination,
+      registrantPagination,
+      isFetchingRegistrants: registrantsQuery.isFetching,
       registrantSearch,
       setRegistrantSearch,
       registrantPage,
@@ -232,44 +312,50 @@ export const RecruitmentProvider = ({
       registrantStatusFilter,
       setRegistrantStatusFilter,
 
-      // Actions for Registrants
-      updateRegistrantStatus: updateRegistrantStatusMutation.mutateAsync,
+      // CRUD
+      createRecruitment: createMut.mutateAsync,
+      updateRecruitment: (id: string, data: UpdateRecruitmentDTO) =>
+        updateMut.mutateAsync({ id, data }),
+      deleteRecruitment: deleteMut.mutateAsync,
 
-      // Loaders
-      isFetchingRecruitments,
-      isFetchingRegistrants,
-      isFetchingRecruitmentDetails,
-      isCreating: createMutation.isPending,
-      isUpdating: updateMutation.isPending,
-      isDeleting: deleteMutation.isPending,
-      isUpdatingStatus: updateRegistrantStatusMutation.isPending,
+      // Status
+      openRecruitment: openMut.mutateAsync,
+      closeRecruitment: closeMut.mutateAsync,
+      archiveRecruitment: archiveMut.mutateAsync,
+
+      // Registrant actions
+      acceptRegistrant: acceptMut.mutateAsync,
+      rejectRegistrant: rejectMut.mutateAsync,
     }),
     [
       recruitments,
-      pagination,
-      search,
-      page,
-      limit,
+      recruitmentPagination,
+      recruitmentsQuery.isFetching,
+      searchQuery,
       statusFilter,
+      page,
       activeRecruitmentId,
       activeRecruitmentDetails,
+      recruitmentDetailQuery.isFetching,
       registrants,
-      registrantsPagination,
+      registrantPagination,
+      registrantsQuery.isFetching,
       registrantSearch,
       registrantPage,
       registrantStatusFilter,
-      createMutation,
-      updateMutation,
-      deleteMutation,
-      updateRegistrantStatusMutation,
-      isFetchingRecruitments,
-      isFetchingRegistrants,
-      isFetchingRecruitmentDetails,
-    ],
+      createMut,
+      updateMut,
+      deleteMut,
+      openMut,
+      closeMut,
+      archiveMut,
+      acceptMut,
+      rejectMut,
+    ]
   );
 
   return (
-    <RecruitmentContext.Provider value={contextValue}>
+    <RecruitmentContext.Provider value={value}>
       {children}
     </RecruitmentContext.Provider>
   );

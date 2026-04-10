@@ -5,10 +5,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-
 import { useEffect } from "react";
 import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
-import { Registrant } from "@/features/recruitment/services/recruitmentService";
+import type { Registrant } from "@/features/recruitment/services/recruitmentService";
 import { RegistrantsTable } from "./registrants-table";
 
 type Props = {
@@ -21,35 +20,43 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     setActiveRecruitmentId,
     registrants,
     activeRecruitmentDetails,
-    updateRegistrantStatus,
     isFetchingRegistrants,
     isFetchingRecruitmentDetails,
+    acceptRegistrant,
+    rejectRegistrant,
+    registrantSearch,
+    setRegistrantSearch,
+    recruitments,
+    setRegistrantPage,
+    registrantStatusFilter,
+    setRegistrantStatusFilter,
+    registrantPagination,
   } = useRecruitmentContext();
 
   useEffect(() => {
     setActiveRecruitmentId(recruitmentId);
     return () => setActiveRecruitmentId(null);
-  }, [recruitmentId, setActiveRecruitmentId]);
+  }, [recruitmentId]);
 
   const recruitment = activeRecruitmentDetails;
 
-  const handleUpdateStatus = async (
-    registrant: Registrant,
-    status: Registrant["status"],
-  ) => {
+  const handleAcceptRegistrant = async (registrant: Registrant) => {
     try {
-      await updateRegistrantStatus({
-        recruitmentId,
-        registrantId: registrant.id,
-        status,
-      });
-      toast.success(`Status pendaftar diubah menjadi ${status}`);
+      await acceptRegistrant(registrant.id);
     } catch {
-      toast.error("Gagal mengubah status pendaftar");
+      toast.error("Failed to accept registrant");
     }
   };
 
-  if (isFetchingRegistrants || isFetchingRecruitmentDetails) {
+  const handleRejectRegistrant = async (registrant: Registrant) => {
+    try {
+      await rejectRegistrant(registrant.id);
+    } catch {
+      toast.error("Failed to reject registrant");
+    }
+  };
+
+  if (isFetchingRecruitmentDetails && !recruitment) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -64,17 +71,17 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/administrator/recruitments")}
+            onClick={() => router.push("/dashboard/recruitment")}
             className="hover:bg-muted transition-colors rounded-full h-10 w-10"
           >
             <ArrowLeft className="h-5 w-5 text-muted-foreground" />
           </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Pendaftar: {recruitment?.title}
+              Registrant: {recruitments?.find((r) => r.id === recruitmentId)?.nama_recruitment}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Kelola pendaftar untuk kegiatan rekrutmen ini
+              Manage registrant for this recruitment
             </p>
           </div>
         </div>
@@ -82,7 +89,15 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
 
       <RegistrantsTable
         registrants={registrants}
-        onUpdateStatus={handleUpdateStatus}
+        isLoading={isFetchingRegistrants}
+        pagination={registrantPagination}
+        onPageChange={setRegistrantPage}
+        searchValue={registrantSearch}
+        onSearchChange={setRegistrantSearch}
+        statusFilter={registrantStatusFilter}
+        onStatusFilterChange={setRegistrantStatusFilter}
+        onAcceptRegistrant={handleAcceptRegistrant}
+        onRejectRegistrant={handleRejectRegistrant}
       />
     </div>
   );

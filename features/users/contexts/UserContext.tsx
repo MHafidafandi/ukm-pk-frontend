@@ -51,8 +51,8 @@ interface UserContextType {
   deactivateUser: (id: string) => Promise<any>;
   markAsAlumniUser: (id: string) => Promise<any>;
   bulkUserStatus: (args: { user_ids: string[]; status: any }) => Promise<any>;
-  assignUserRole: (args: { id: string; roleIds: string[] }) => Promise<any>;
-  removeUserRole: (args: { id: string; roleIds: string[] }) => Promise<any>;
+  assignUserRole: (args: { id: string; roleId: string }) => Promise<any>;
+  removeUserRole: (args: { id: string; roleId: string }) => Promise<any>;
   assignUserDivision: (args: {
     id: string;
     divisionId: string;
@@ -217,15 +217,15 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   const assignRoleMutation = useMutation({
-    mutationFn: ({ id, roleIds }: { id: string; roleIds: string[] }) =>
-      assignUserRole(id, roleIds),
+    mutationFn: ({ id, roleId }: { id: string; roleId: string }) =>
+      assignUserRole(id, roleId),
     onSuccess: () => invalidateUsers(),
     onError: (err: any) => handleError(err, "Gagal assign role"),
   });
 
   const removeRoleMutation = useMutation({
-    mutationFn: ({ id, roleIds }: { id: string; roleIds: string[] }) =>
-      removeUserRole(id, roleIds),
+    mutationFn: ({ id, roleId }: { id: string; roleId: string }) =>
+      removeUserRole(id, roleId),
     onSuccess: () => invalidateUsers(),
     onError: (err: any) => handleError(err, "Gagal menghapus role"),
   });

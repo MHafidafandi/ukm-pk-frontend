@@ -12,7 +12,6 @@ export const DocumentationList = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const {
     documents,
-    isFetchingDocuments: isLoading,
     search,
     setSearch,
   } = useDocumentationContext();
@@ -29,19 +28,11 @@ export const DocumentationList = () => {
     (doc) => doc.kategori === "laporan_kegiatan",
   ).length;
 
-  if (isLoading) {
-    return (
-      <div className="flex h-48 w-full items-center justify-center">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-display relative -m-8 p-8">
-      {/* Header Area is handled by standard page layouts, but we add page title styling here if needed */}
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-900 text-text-primary-light dark:text-text-primary-dark font-display">
+      {/* Header */}
       <div className="flex flex-col mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
           Documentation Management
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">

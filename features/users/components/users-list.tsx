@@ -76,6 +76,7 @@ export const UsersList = () => {
   const [assigningDivision, setAssigningDivision] = useState<User | null>(null);
 
   const [form, setForm] = useState(emptyForm);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { divisions: rawDivisions } = useDivisionContext();
   const { roles: rawRoles } = useRoleContext();
@@ -99,6 +100,7 @@ export const UsersList = () => {
   const openAdd = () => {
     setEditing(null);
     setForm(emptyForm);
+    setFormErrors({});
     setFormOpen(true);
   };
 
@@ -118,6 +120,7 @@ export const UsersList = () => {
       role_ids: user.roles?.map((r) => r.id) ?? [],
     });
 
+    setFormErrors({});
     setFormOpen(true);
   };
 
@@ -164,13 +167,23 @@ export const UsersList = () => {
 
       setEditing(null);
       setForm(emptyForm);
+      setFormErrors({});
+      setFormOpen(false);
     } catch (err: any) {
       if (err.name === "ZodError") {
-        console.error(err.message);
+        const fieldErrors: Record<string, string> = {};
+        const issues = err.errors || err.issues || [];
+        issues.forEach((issue: any) => {
+          if (issue.path && issue.path.length > 0) {
+            fieldErrors[issue.path[0]] = issue.message;
+          }
+        });
+        setFormErrors(fieldErrors);
+        toast.error("Mohon periksa kembali isian form");
         return;
       }
 
-      console.error("Gagal menyimpan user");
+      toast.error(err?.response?.data?.message || err?.response?.data?.error || "Gagal menyimpan user");
     }
   };
 
@@ -222,7 +235,7 @@ export const UsersList = () => {
           <PermissionGate permission={PERMISSIONS.CREATE_USERS}>
             <button
               onClick={openAdd}
-              className="bg-primary hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95"
+              className="bg-primary hover:bg-primary/80 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95"
             >
               <Plus className="h-5 w-5" />
               Tambah Anggota
@@ -278,12 +291,16 @@ export const UsersList = () => {
 
       <UserFormDialog
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setFormErrors({});
+        }}
         isEdit={!!editing}
         form={form}
         setForm={setForm}
         divisions={divisions ?? []}
         roles={roles ?? []}
+        errors={formErrors}
         onSubmit={handleSave}
       />
 

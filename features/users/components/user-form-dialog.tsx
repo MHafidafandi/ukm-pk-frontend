@@ -32,6 +32,7 @@ type Props = {
   setForm: React.Dispatch<React.SetStateAction<Omit<CreateUserInput, "id">>>;
   divisions: { id: string; nama: string }[];
   roles: Role[];
+  errors: Record<string, string>;
   onSubmit: () => void;
 };
 
@@ -45,6 +46,7 @@ export const UserFormDialog = ({
   setForm,
   divisions,
   roles,
+  errors,
   onSubmit,
 }: Props) => {
   const update = (field: Partial<typeof form>) =>
@@ -70,7 +72,9 @@ export const UserFormDialog = ({
               value={form.nama}
               onChange={(e) => update({ nama: e.target.value })}
               placeholder="Nama lengkap"
+              className={errors.nama ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {errors.nama && <span className="text-xs text-red-500">{errors.nama}</span>}
           </div>
 
           {/* Username */}
@@ -80,7 +84,9 @@ export const UserFormDialog = ({
               value={form.username}
               onChange={(e) => update({ username: e.target.value })}
               placeholder="username"
+              className={errors.username ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {errors.username && <span className="text-xs text-red-500">{errors.username}</span>}
           </div>
 
           {/* Email */}
@@ -91,7 +97,9 @@ export const UserFormDialog = ({
               value={form.email}
               onChange={(e) => update({ email: e.target.value })}
               placeholder="mail@example.com"
+              className={errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {errors.email && <span className="text-xs text-red-500">{errors.email}</span>}
           </div>
 
           {/* Password — hanya saat tambah */}
@@ -103,7 +111,9 @@ export const UserFormDialog = ({
                 value={form.password}
                 onChange={(e) => update({ password: e.target.value })}
                 placeholder="••••••••"
+                className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.password && <span className="text-xs text-red-500">{errors.password}</span>}
             </div>
           )}
 
@@ -118,7 +128,9 @@ export const UserFormDialog = ({
                   update({ angkatan: parseInt(e.target.value) || 0 })
                 }
                 placeholder="2024"
+                className={errors.angkatan ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.angkatan && <span className="text-xs text-red-500">{errors.angkatan}</span>}
             </div>
 
             <div className="grid gap-2">
@@ -127,7 +139,9 @@ export const UserFormDialog = ({
                 value={form.nomor_telepon}
                 onChange={(e) => update({ nomor_telepon: e.target.value })}
                 placeholder="+628xxxxxx"
+                className={errors.nomor_telepon ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.nomor_telepon && <span className="text-xs text-red-500">{errors.nomor_telepon}</span>}
             </div>
           </div>
 
@@ -138,7 +152,9 @@ export const UserFormDialog = ({
               value={form.alamat}
               onChange={(e) => update({ alamat: e.target.value })}
               placeholder="Alamat lengkap"
+              className={errors.alamat ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {errors.alamat && <span className="text-xs text-red-500">{errors.alamat}</span>}
           </div>
 
           {/* Divisi + Role */}
@@ -166,6 +182,7 @@ export const UserFormDialog = ({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.division_id && <span className="text-xs text-red-500">{errors.division_id}</span>}
             </div>
 
             <div className="grid gap-2">
@@ -191,6 +208,7 @@ export const UserFormDialog = ({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.role_ids && <span className="text-xs text-red-500">{errors.role_ids}</span>}
             </div>
           </div>
 

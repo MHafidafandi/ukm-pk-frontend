@@ -24,32 +24,32 @@ type Props = {
 
 const conditionColor: Record<string, { label: string; colorClass: string }> = {
   baik: {
-    label: "Baik",
+    label: "Good",
     colorClass:
       "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
   },
   rusak_ringan: {
-    label: "Rusak Ringan",
+    label: "Minor Damage",
     colorClass:
       "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
   },
   rusak_berat: {
-    label: "Rusak Berat",
+    label: "Major Damage",
     colorClass:
       "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
   },
   hilang: {
-    label: "Hilang",
+    label: "Lost",
     colorClass:
       "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
   },
   dipinjam: {
-    label: "Dipinjam",
+    label: "Borrowed",
     colorClass:
       "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
   },
   dalam_perbaikan: {
-    label: "Perbaikan",
+    label: "Maintenance",
     colorClass:
       "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
   },

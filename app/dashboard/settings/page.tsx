@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/features/auth/contexts/AuthContext";
+import { useState, useRef } from "react";
 import {
   Camera,
   UserCircle,
@@ -12,20 +13,133 @@ import {
   KeyRound,
   Key,
   Lock,
+  Eye,
   EyeOff,
+  Loader2,
+  Phone,
+  MapPin,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { currentUser } = useAuth();
+  const {
+    currentUser,
+    updateProfile,
+    changePassword,
+    uploadAvatar,
+    deleteAvatar,
+    isUpdatingProfile,
+    isChangingPassword,
+    isUploadingAvatar,
+    isDeletingAvatar,
+    refreshUser,
+  } = useAuth();
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  // Profile form state
+  const [nama, setNama] = useState(currentUser?.nama ?? "");
+  const [nomorTelepon, setNomorTelepon] = useState(currentUser?.nomor_telepon ?? "");
+  const [alamat, setAlamat] = useState(currentUser?.alamat ?? "");
+  const [angkatan, setAngkatan] = useState(String(currentUser?.angkatan ?? ""));
+
+  // Password form state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Avatar
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Profile save logic
+    try {
+      await updateProfile({
+        nama,
+        nomor_telepon: nomorTelepon || undefined,
+        alamat: alamat || undefined,
+        angkatan: angkatan ? Number(angkatan) : undefined,
+      });
+      refreshUser();
+    } catch {
+      // Error handled by AuthContext mutation
+    }
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Password save logic
+    if (newPassword !== confirmPassword) {
+      toast.error("Password baru dan konfirmasi tidak cocok");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Password minimal 8 karakter");
+      return;
+    }
+    try {
+      await changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      // Error handled by AuthContext mutation
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input
+    e.target.value = "";
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file gambar yang diperbolehkan");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5MB");
+      return;
+    }
+
+    try {
+      await uploadAvatar(file);
+      refreshUser();
+    } catch {
+      // Error handled by AuthContext mutation
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    try {
+      await deleteAvatar();
+      refreshUser();
+    } catch {
+      // Error handled by AuthContext mutation
+    }
+  };
+
+  const getDivisionName = () => {
+    if (
+      currentUser?.division &&
+      typeof currentUser.division === "object" &&
+      "nama_divisi" in currentUser.division
+    ) {
+      return currentUser.division.nama_divisi;
+    }
+    if (
+      currentUser?.division &&
+      typeof currentUser.division === "object" &&
+      "name" in currentUser.division
+    ) {
+      return (currentUser.division as any).name;
+    }
+    return "Tanpa Divisi";
   };
 
   return (
@@ -68,25 +182,49 @@ export default function SettingsPage() {
                       alt="User Profile Picture"
                       className="w-full h-full object-cover"
                       src={
-                        currentUser?.avatar_url ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.nama || "User")}&background=random`
+                        currentUser?.avatar_url
+                          ? `${process.env.NEXT_PUBLIC_API_URL || ""}${currentUser.avatar_url}`
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.nama || "User")}&background=random`
                       }
                     />
                   </div>
                   <button
-                    className="absolute bottom-1 right-1 bg-primary text-white rounded-full p-2 shadow-lg hover:bg-primary-hover transition-colors flex items-center justify-center h-8 w-8"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="absolute bottom-1 right-1 bg-primary text-white rounded-full p-2 shadow-lg hover:bg-primary-hover transition-colors flex items-center justify-center h-8 w-8 disabled:opacity-50"
                     title="Change Avatar"
                   >
-                    <Camera className="w-4 h-4" />
+                    {isUploadingAvatar ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
 
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+
                 <div className="flex flex-wrap gap-3 flex-1 w-full sm:w-auto">
-                  <button className="flex-1 sm:flex-none items-center justify-center px-4 py-2.5 rounded-lg bg-background-light dark:bg-background-dark/50 text-text-primary-light dark:text-text-primary-dark text-sm font-bold border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                    Upload Foto Baru
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="flex-1 sm:flex-none items-center justify-center px-4 py-2.5 rounded-lg bg-background-light dark:bg-background-dark/50 text-text-primary-light dark:text-text-primary-dark text-sm font-bold border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                  >
+                    {isUploadingAvatar ? "Uploading..." : "Upload Foto Baru"}
                   </button>
-                  <button className="flex-1 sm:flex-none items-center justify-center px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold border border-transparent hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                    Hapus Foto
+                  <button
+                    onClick={handleDeleteAvatar}
+                    disabled={isDeletingAvatar || !currentUser?.avatar_url}
+                    className="flex-1 sm:flex-none items-center justify-center px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold border border-transparent hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                  >
+                    {isDeletingAvatar ? "Menghapus..." : "Hapus Foto"}
                   </button>
                 </div>
               </div>
@@ -111,7 +249,8 @@ export default function SettingsPage() {
                         id="fullName"
                         placeholder="Masukkan nama lengkap"
                         type="text"
-                        defaultValue={currentUser?.nama}
+                        value={nama}
+                        onChange={(e) => setNama(e.target.value)}
                       />
                     </div>
                   </div>
@@ -119,18 +258,16 @@ export default function SettingsPage() {
                   <div className="flex flex-col gap-2">
                     <label
                       className="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark"
-                      htmlFor="username"
+                      htmlFor="role"
                     >
                       Role
                     </label>
                     <div className="relative">
                       <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark w-5 h-5" />
                       <input
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
-                        id="username"
-                        placeholder="Role Pengguna"
-                        type="text"
-                        defaultValue={currentUser?.roles?.[0]?.name || "-"}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-800/50 text-text-secondary-light dark:text-text-secondary-dark cursor-not-allowed"
+                        id="role"
+                        defaultValue={currentUser?.roles?.map((r) => r.name).join(", ") || "-"}
                         readOnly
                       />
                     </div>
@@ -146,10 +283,8 @@ export default function SettingsPage() {
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark w-5 h-5" />
                       <input
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-800/50 text-text-secondary-light dark:text-text-secondary-dark cursor-not-allowed"
                         id="email"
-                        placeholder="Masukkan email"
-                        type="email"
                         defaultValue={currentUser?.email}
                         readOnly
                       />
@@ -169,8 +304,49 @@ export default function SettingsPage() {
                         className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
                         id="angkatan"
                         placeholder="Tahun angkatan"
+                        type="number"
+                        value={angkatan}
+                        onChange={(e) => setAngkatan(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark"
+                      htmlFor="phone"
+                    >
+                      Nomor Telepon
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark w-5 h-5" />
+                      <input
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
+                        id="phone"
+                        placeholder="Masukkan nomor telepon"
                         type="text"
-                        defaultValue={currentUser?.angkatan || ""}
+                        value={nomorTelepon}
+                        onChange={(e) => setNomorTelepon(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-sm font-semibold text-text-primary-light dark:text-text-primary-dark"
+                      htmlFor="address"
+                    >
+                      Alamat
+                    </label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark w-5 h-5" />
+                      <input
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
+                        id="address"
+                        placeholder="Masukkan alamat"
+                        type="text"
+                        value={alamat}
+                        onChange={(e) => setAlamat(e.target.value)}
                       />
                     </div>
                   </div>
@@ -187,11 +363,7 @@ export default function SettingsPage() {
                     <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                       <Users className="w-4 h-4 mr-1.5" />
                       <span className="text-xs font-bold uppercase tracking-wide">
-                        {currentUser?.division &&
-                        typeof currentUser.division === "object" &&
-                        "nama_divisi" in currentUser.division
-                          ? currentUser.division.nama_divisi
-                          : "Tanpa Divisi"}
+                        {getDivisionName()}
                       </span>
                     </div>
                     <div className="inline-flex items-center px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
@@ -205,10 +377,12 @@ export default function SettingsPage() {
 
                 <div className="flex justify-end pt-4">
                   <button
-                    className="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition-all focus:ring-4 focus:ring-primary/30"
+                    className="px-6 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition-all focus:ring-4 focus:ring-primary/30 disabled:opacity-50 flex items-center gap-2"
                     type="submit"
+                    disabled={isUpdatingProfile}
                   >
-                    Simpan Perubahan
+                    {isUpdatingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {isUpdatingProfile ? "Menyimpan..." : "Simpan Perubahan"}
                   </button>
                 </div>
               </form>
@@ -248,13 +422,16 @@ export default function SettingsPage() {
                       className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
                       id="currentPassword"
                       placeholder="••••••••"
-                      type="password"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
                     />
                     <button
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"
                       type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     >
-                      <EyeOff className="w-5 h-5" />
+                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
@@ -272,13 +449,16 @@ export default function SettingsPage() {
                       className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
                       id="newPassword"
                       placeholder="Minimal 8 karakter"
-                      type="password"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                     />
                     <button
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"
                       type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
                     >
-                      <EyeOff className="w-5 h-5" />
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                   <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
@@ -299,23 +479,28 @@ export default function SettingsPage() {
                       className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-secondary-light/50"
                       id="confirmPassword"
                       placeholder="Ulangi password baru"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
                     />
                     <button
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"
                       type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      <EyeOff className="w-5 h-5" />
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
 
                 <div className="pt-4 mt-auto">
                   <button
-                    className="w-full px-6 py-2.5 bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark border border-border-light dark:border-border-dark hover:border-primary dark:hover:border-primary hover:text-primary dark:hover:text-primary rounded-lg font-bold text-sm transition-all focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-6 py-2.5 bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark border border-border-light dark:border-border-dark hover:border-primary dark:hover:border-primary hover:text-primary dark:hover:text-primary rounded-lg font-bold text-sm transition-all focus:ring-2 focus:ring-primary/30 disabled:opacity-50 flex items-center justify-center gap-2"
                     type="submit"
+                    disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
                   >
-                    Update Password
+                    {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {isChangingPassword ? "Mengupdate..." : "Update Password"}
                   </button>
                 </div>
               </form>

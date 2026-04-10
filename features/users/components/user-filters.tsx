@@ -37,7 +37,7 @@ export const UsersFilters = ({
   };
 
   return (
-    <div className="p-5 border-b border-border-light dark:border-border-dark flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-gray-50/50 dark:bg-gray-800/20">
+    <div className="p-5 border-b border-border-light dark:border-border-dark flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-slate-50/50 dark:bg-slate-900">
       <div className="relative w-full lg:w-96">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="text-gray-400 h-5 w-5" />

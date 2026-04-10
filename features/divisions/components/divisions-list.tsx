@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
@@ -52,7 +53,7 @@ const StatCard = ({
   color: string;
   bg: string;
 }) => (
-  <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-800 p-5 flex items-center gap-4 shadow-sm">
+  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-800 p-5 flex items-center gap-4 shadow-sm">
     <div className={`p-3 rounded-xl ${bg}`}>
       <Icon className={`w-5 h-5 ${color}`} />
     </div>
@@ -143,7 +144,7 @@ export const DivisionsList = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background-light dark:bg-background-dark min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark">
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background-light dark:bg-slate-900 min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark">
       <div className="max-w-7xl mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -178,7 +179,7 @@ export const DivisionsList = () => {
                 label="Total Divisi"
                 value={stats?.total_divisions ?? 0}
                 icon={LayoutGrid}
-                color="text-primary"
+                color="text-purple-600"
                 bg="bg-purple-50 dark:bg-purple-900/20"
               />
               <StatCard
@@ -193,9 +194,9 @@ export const DivisionsList = () => {
                 value={
                   (stats?.total_divisions ?? 0) > 0
                     ? Math.round(
-                      (stats?.total_users ?? 0) /
-                      (stats?.total_divisions ?? 1),
-                    )
+                        (stats?.total_users ?? 0) /
+                          (stats?.total_divisions ?? 1),
+                      )
                     : 0
                 }
                 icon={TrendingUp}
@@ -214,7 +215,7 @@ export const DivisionsList = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 block w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary text-sm py-2.5 shadow-sm outline-none transition-shadow"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
             placeholder="Cari divisi..."
             type="text"
           />
@@ -230,9 +231,7 @@ export const DivisionsList = () => {
             <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
               <LayoutGrid className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="font-semibold text-lg ...">
-              Belum Ada Divisi
-            </p>
+            <p className="font-semibold text-lg ...">Belum Ada Divisi</p>
             <p className="text-sm mt-1">
               {search
                 ? "Tidak ada divisi yang cocok dengan pencarian."
@@ -241,15 +240,26 @@ export const DivisionsList = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {divisions.map((division, index) => (
-              <DivisionCard
-                key={division.id}
-                division={division}
-                index={index}
-                onEdit={openEdit}
-                onDelete={openDelete}
-              />
-            ))}
+            {divisions.map((division, index) => {
+              const statEntry = stats?.divisions?.find(
+                (s) => s.division_id === division.id,
+              );
+
+              return (
+                <DivisionCard
+                  key={division.id}
+                  division={{
+                    division_id: division.id,
+                    nama_divisi: division.nama_divisi,
+                    user_count: statEntry?.user_count ?? 0,
+                    percentage: statEntry?.percentage ?? 0,
+                  }}
+                  index={index}
+                  onEdit={openEdit}
+                  onDelete={openDelete}
+                />
+              );
+            })}
           </div>
         )}
       </div>

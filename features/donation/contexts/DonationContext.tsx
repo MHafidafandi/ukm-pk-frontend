@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useDebounce } from "use-debounce";
 import {
   getDonations,
   getDonationStats,
@@ -13,16 +14,18 @@ import {
   Donation,
   DonationStats,
   CreateDonationInput,
+  PaginationMeta,
 } from "@/features/donation/services/donationService";
 import { getErrorMessage } from "@/lib/api/client";
 
 interface DonationContextType {
-  donations: { data: Donation[] } | undefined;
+  donations: Donation[];
   stats: { data: DonationStats } | undefined;
   isLoadingDonations: boolean;
   isLoadingStats: boolean;
-
-  searchQuery: string;
+  pagination: PaginationMeta | null;
+  page: number;
+  setPage: (p: number) => void; searchQuery: string;
   setSearchQuery: (val: string) => void;
   activeFilter: string;
   setActiveFilter: (val: string) => void;
@@ -56,10 +59,19 @@ export const DonationProvider = ({
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [debounceSearch] = useDebounce(searchQuery, 500);
 
-  const { data: donations, isLoading: isLoadingDonations } = useQuery({
-    queryKey: ["donations", "list"],
-    queryFn: getDonations,
+  const { data: donationsData, isLoading: isLoadingDonations } = useQuery({
+    queryKey: ["donations", "list", page, limit, debounceSearch, activeFilter],
+    queryFn: () => getDonations({
+      page,
+      limit,
+      search: debounceSearch || undefined,
+      status: activeFilter !== "all" ? activeFilter : undefined,
+    }),
+    placeholderData: keepPreviousData,
   });
 
   const { data: stats, isLoading: isLoadingStats } = useQuery({
@@ -67,11 +79,13 @@ export const DonationProvider = ({
     queryFn: getDonationStats,
   });
 
+  const donations = donationsData?.data?.donations || [];
+  const pagination = donationsData?.data?.pagination || null;
+
   const createDonationMutation = useMutation({
     mutationFn: createDonation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
-      toast.success("Donasi berhasil dicatat");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
@@ -88,7 +102,6 @@ export const DonationProvider = ({
     }) => updateDonation(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
-      toast.success("Donasi berhasil diperbarui");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
@@ -99,7 +112,6 @@ export const DonationProvider = ({
     mutationFn: deleteDonation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
-      toast.success("Donasi berhasil dihapus");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
@@ -124,7 +136,10 @@ export const DonationProvider = ({
       stats,
       isLoadingDonations,
       isLoadingStats,
-
+      pagination,
+      page,
+      setPage,
+      limit,
       searchQuery,
       setSearchQuery,
       activeFilter,
@@ -140,6 +155,10 @@ export const DonationProvider = ({
       stats,
       isLoadingDonations,
       isLoadingStats,
+      pagination,
+      page,
+      setPage,
+      limit,
       searchQuery,
       activeFilter,
       createDonationMutation,

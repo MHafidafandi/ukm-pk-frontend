@@ -8,6 +8,14 @@ export const createDonationSchema = z.object({
   status: z
     .enum(["pending", "verified", "rejected", "canceled"])
     .default("pending"),
+  tanggal: z.string().optional(),
+  file: z.any().optional(),
 });
+
+export type CreateDonationInput = z.infer<typeof createDonationSchema>;
+
+export const UpdateDonationSchema = createDonationSchema.partial();
+export type UpdateDonationInput = z.infer<typeof UpdateDonationSchema>;
+
 
 export type DonationSchema = z.infer<typeof createDonationSchema>;

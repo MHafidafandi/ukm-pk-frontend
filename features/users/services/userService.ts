@@ -108,7 +108,7 @@ export async function markAsAlumniUser(
 
 export async function bulkUserStatus(body: {
   user_ids: string[];
-  status: "active" | "inactive" | "alumni";
+  status: "aktif" | "nonaktif" | "alumni";
 }): Promise<{ message: string; updated_count?: number }> {
   const { data } = await api.post("/users/bulk/status", body);
   return data;
@@ -116,21 +116,21 @@ export async function bulkUserStatus(body: {
 
 export async function assignUserRole(
   id: string,
-  roleIds: string[],
+  roleId: string,
 ): Promise<{ message: string }> {
   const { data } = await api.post(`/users/${id}/roles/assign`, {
-    role_ids: roleIds,
+    role_id: roleId,
   });
   return data;
 }
 
 export async function removeUserRole(
   id: string,
-  roleIds: string[],
+  roleId: string,
 ): Promise<{ message: string }> {
-  const { data } = await api.delete(
-    `/users/${id}/roles/remove?role_ids=${roleIds.join(",")}`,
-  );
+  const { data } = await api.delete(`/users/${id}/roles/remove`, {
+    data: { role_id: roleId },
+  });
   return data;
 }
 

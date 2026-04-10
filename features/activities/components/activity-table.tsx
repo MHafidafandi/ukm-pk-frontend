@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Eye, Calendar, LocateIcon, Pencil } from "lucide-react";
 import { Activity } from "../services/activityService";
@@ -21,8 +23,8 @@ export const ActivityGrid = ({
 
   if (activities.length === 0) {
     return (
-      <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/50 text-muted-foreground">
-        <p>Tidak ada data kegiatan.</p>
+      <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl border border-dashed border-border text-muted-foreground">
+        <p>No activity data available.</p>
       </div>
     );
   }
@@ -40,13 +42,13 @@ export const ActivityGrid = ({
           colorClass: "bg-gray-500/90",
         };
         if (isOngoing)
-          statusConfig = { label: "Berjalan", colorClass: "bg-blue-500/90" };
+          statusConfig = { label: "Ongoing", colorClass: "bg-blue-500/90" };
         else if (isCompleted)
-          statusConfig = { label: "Selesai", colorClass: "bg-emerald-500/90" };
+          statusConfig = { label: "Completed", colorClass: "bg-emerald-500/90" };
         else if (isPending)
-          statusConfig = { label: "Perencanaan", colorClass: "bg-amber-500/90" };
+          statusConfig = { label: "Planning", colorClass: "bg-amber-500/90" };
         else
-          statusConfig = { label: "Dibatalkan", colorClass: "bg-rose-500/90" };
+          statusConfig = { label: "Cancelled", colorClass: "bg-rose-500/90" };
 
         const imgUrl = item.thumbnail
           ? `${process.env.NEXT_PUBLIC_MEDIA_URL ?? ""}${item.thumbnail}`
@@ -57,10 +59,10 @@ export const ActivityGrid = ({
         return (
           <div
             key={item.id}
-            className="group relative flex flex-col overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md dark:bg-[#1e1429]"
+            className="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-transform hover:scale-[1.02]"
           >
-            {/* ── Gambar ── */}
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+            {/* ── Image ── */}
+            <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 rounded-t-xl">
               {!showFallback ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -75,7 +77,7 @@ export const ActivityGrid = ({
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
                   <Calendar className="size-10 text-slate-300 dark:text-slate-600" />
                   <span className="text-xs text-slate-400 dark:text-slate-500">
-                    Tidak ada thumbnail
+                    No thumbnail
                   </span>
                 </div>
               )}
@@ -88,7 +90,7 @@ export const ActivityGrid = ({
               </div>
             </div>
 
-            {/* ── Konten ── */}
+            {/* ── Content ── */}
             <div className="flex flex-1 flex-col p-5">
               <div className="mb-4 flex-1">
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -113,7 +115,7 @@ export const ActivityGrid = ({
               <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   onClick={() => onEdit(item)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-transparent dark:text-slate-300 dark:hover:bg-white/5 transition-colors"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-white/5 transition-colors"
                 >
                   <Pencil className="size-4" />
                   Edit
