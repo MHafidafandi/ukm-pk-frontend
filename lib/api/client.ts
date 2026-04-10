@@ -51,10 +51,6 @@ let failedQueue: Array<{
 }> = [];
 
 type RefreshTokenResponse = {
-<<<<<<< HEAD
-=======
-  access_token?: string;
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
   data?: {
     access_token?: string;
   };
@@ -135,11 +131,7 @@ api.interceptors.response.use(
       const res = (await api.post("/auth/refresh", undefined, {
         withCredentials: true,
       })) as RefreshTokenResponse;
-<<<<<<< HEAD
       const newToken = res?.data?.access_token;
-=======
-      const newToken = res?.access_token ?? res?.data?.access_token;
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 
       if (!newToken) {
         throw new Error("Refresh token response did not include access_token");
@@ -192,13 +184,8 @@ export const getErrorMessage = (error: unknown): string => {
     }
 
     return (
-<<<<<<< HEAD
       data?.error ||
       data?.message ||
-=======
-      error.response?.data?.message ||
-      error.response?.data?.error ||
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
       error.message ||
       "Terjadi kesalahan pada server"
     );

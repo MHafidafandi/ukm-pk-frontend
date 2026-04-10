@@ -107,7 +107,6 @@ export interface LoansResponse {
   };
 }
 
-<<<<<<< HEAD
 export interface AssetsStatsResponse {
   data: {
     total_assets: number;
@@ -126,8 +125,6 @@ export interface AssetsStatsResponse {
 }
 
 
-=======
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /** NOTE: Kalau base URL di api client kamu sudah include "/api/v1",
@@ -154,14 +151,11 @@ export async function getAssets(filters?: AssetFilters): Promise<AssetsResponse>
   return data as any;
 }
 
-<<<<<<< HEAD
 export async function getAssetStats(): Promise<{ data: any }> {
   const data = await api.get(`/assets/statistics/summary`);
   return data as any;
 }
 
-=======
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 /** GET /assets/:id */
 export async function getAsset(id: string): Promise<{ data: Asset }> {
   const data = await api.get(`/assets/${id}`);
@@ -197,55 +191,10 @@ export async function createAsset(
     headers: {
       "Content-Type": undefined,
     },
-<<<<<<< HEAD
-=======
-  });
-  return data;
-}
-
-/** PUT /assets/:id  (form-data) */
-export async function updateAsset(
-  id: string,
-  body: Partial<CreateAssetInput> | FormData,
-): Promise<{ data: Asset }> {
-  const payload = body instanceof FormData ? body : objectToFormData(body);
-  const data = await api.put(`/assets/${id}`, payload, {
-    headers: {
-      "Content-Type": undefined,
-    },
   });
   return data as any;
 }
 
-/** PUT /assets/:id/condition */
-export async function updateAssetCondition(
-  id: string,
-  body: { kondisi: AssetCondition; catatan?: string },
-): Promise<{ data: Asset }> {
-  const data = await api.put(`/assets/${id}/condition`, body);
-  return data as any;
-}
-
-/** DELETE /assets/:id */
-export async function deleteAsset(id: string): Promise<void> {
-  await api.delete(`/assets/${id}`);
-}
-
-/** POST /assets/:id/image  (file upload) */
-export async function uploadAssetImage(
-  id: string,
-  file: File,
-): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const data = await api.post(`/assets/${id}/image`, formData, {
-    headers: { "Content-Type": undefined },
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
-  });
-  return data as any;
-}
-
-<<<<<<< HEAD
 /** PUT /assets/:id  (form-data) */
 export async function updateAsset(
   id: string,
@@ -282,16 +231,6 @@ export async function getLoans(filters?: LoanFilters): Promise<LoansResponse> {
   return data as any;
 }
 
-=======
-// ── Loans API ──────────────────────────────────────────────────────────────
-
-/** GET /loans?page=1&limit=10 */
-export async function getLoans(filters?: LoanFilters): Promise<LoansResponse> {
-  const data = await api.get(`/loans${buildParams(filters)}`);
-  return data as any;
-}
-
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 /** GET /loans/:id */
 export async function getLoan(id: string): Promise<{ data: Loan }> {
   const data = await api.get(`/loans/${id}`);
@@ -349,11 +288,7 @@ export async function getOverdueLoans(): Promise<LoansResponse> {
 }
 
 /** GET /loans/statistics/summary */
-<<<<<<< HEAD
 export async function getLoanStats(): Promise<{ data: any }> {
-=======
-export async function getLoanStatistics(): Promise<{ data: any }> {
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
   const data = await api.get(`/loans/statistics/summary`);
   return data as any;
 }

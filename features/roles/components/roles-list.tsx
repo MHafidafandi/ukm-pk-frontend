@@ -385,29 +385,29 @@ export const RolesList = () => {
 
   const statsCards = stats?.data
     ? [
-        {
-          label: "Total Roles",
-          value: stats.data.total_roles ?? 0,
-          icon: Shield,
-          color: "text-violet-600",
-          bg: "bg-violet-50 dark:bg-violet-900/20",
-        },
-        {
-          label: "Most Popular",
-          value: stats.data.most_popular?.role_name ?? "—",
-          sub: `${stats.data.most_popular?.user_count ?? 0} users`,
-          icon: Users,
-          color: "text-primary",
-          bg: "bg-purple-50 dark:bg-purple-900/20",
-        },
-        {
-          label: "Unassigned Roles",
-          value: stats.data.unassigned_roles?.length ?? 0,
-          icon: Settings,
-          color: "text-orange-600",
-          bg: "bg-orange-50 dark:bg-orange-900/20",
-        },
-      ]
+      {
+        label: "Total Roles",
+        value: stats.data.total_roles ?? 0,
+        icon: Shield,
+        color: "text-violet-600",
+        bg: "bg-violet-50 dark:bg-violet-900/20",
+      },
+      {
+        label: "Most Popular",
+        value: stats.data.most_popular?.role_name ?? "—",
+        sub: `${stats.data.most_popular?.user_count ?? 0} users`,
+        icon: Users,
+        color: "text-primary",
+        bg: "bg-purple-50 dark:bg-purple-900/20",
+      },
+      {
+        label: "Unassigned Roles",
+        value: stats.data.unassigned_roles?.length ?? 0,
+        icon: Settings,
+        color: "text-orange-600",
+        bg: "bg-orange-50 dark:bg-orange-900/20",
+      },
+    ]
     : [];
 
   return (
@@ -575,11 +575,7 @@ export const RolesList = () => {
                             </th>
                           );
                         })}
-<<<<<<< HEAD
                         <th className="px-4 py-4 text-center min-w-[120px]">
-=======
-                        <th className="px-4 py-4 text-center min-w-30">
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                           Extra
                         </th>
                         <th className="px-4 py-4 text-center w-24">All</th>

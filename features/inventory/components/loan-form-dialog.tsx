@@ -93,20 +93,12 @@ export const LoanFormDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-<<<<<<< HEAD
                       {assets.length === 0 ? (
-=======
-                      {availableAssets.length === 0 ? (
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                         <SelectItem value="_none" disabled>
                           No available assets
                         </SelectItem>
                       ) : (
-<<<<<<< HEAD
                         assets.map((asset) => (
-=======
-                        availableAssets.map((asset) => (
->>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                           <SelectItem key={asset.id} value={asset.id}>
                             {asset.nama}
                             <span className="ml-2 text-xs text-muted-foreground">
