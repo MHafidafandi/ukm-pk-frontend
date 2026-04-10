@@ -31,6 +31,7 @@ export const PERMISSIONS = {
   EDIT_DOCUMENTS: "edit-documents",
   DELETE_DOCUMENTS: "delete-documents",
 
+  VIEW_ALL_DOCUMENTATIONS: "view-all-documentations",
   VIEW_DOCUMENTATIONS: "view-documentations",
   CREATE_DOCUMENTATIONS: "create-documentations",
   EDIT_DOCUMENTATIONS: "edit-documentations",

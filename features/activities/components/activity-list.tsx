@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { getErrorMessage } from "@/lib/api/client";
 
 import { useActivityContext } from "../contexts/ActivityContext";
 import { Activity } from "../services/activityService";
@@ -93,16 +94,31 @@ export const ActivityList = () => {
           : String(parsed.tanggal),
       );
 
-      if (form.thumbnail instanceof File) {
-        formData.append("thumbnail", form.thumbnail);
-      } else if (form.thumbnail === null) {
-        formData.append("thumbnail", "");
-      }
-
       if (editing) {
+        const existingThumbnailUrl = editing.thumbnail || "";
+
+        // Rule update thumbnail:
+        // 1) thumbnail_url kosong + thumbnail file ada => ganti ke file baru
+        // 2) thumbnail_url kosong + thumbnail kosong => hapus thumbnail
+        // 3) thumbnail_url ada + thumbnail kosong => pertahankan thumbnail lama
+        if (form.thumbnail instanceof File) {
+          formData.append("thumbnail", form.thumbnail);
+          formData.append("thumbnail_url", "");
+        } else if (form.thumbnail === null) {
+          formData.append("thumbnail", "");
+          formData.append("thumbnail_url", "");
+        } else if (existingThumbnailUrl) {
+          formData.append("thumbnail_url", existingThumbnailUrl);
+        } else {
+          formData.append("thumbnail_url", "");
+        }
+
         await updateActivity({ id: editing.id, data: formData });
         toast.success("Activity successfully updated 🎉");
       } else {
+        if (form.thumbnail instanceof File) {
+          formData.append("thumbnail", form.thumbnail);
+        }
         await createActivity(formData);
         toast.success("Activity successfully created 🎉");
       }
@@ -110,17 +126,20 @@ export const ActivityList = () => {
       setFormOpen(false);
       setEditing(null);
       setForm(emptyForm);
-    } catch (err: any) {
-      if (err.name === "ZodError") {
-        toast.error(err.errors[0].message);
+    } catch (err: unknown) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "name" in err &&
+        err.name === "ZodError" &&
+        "errors" in err &&
+        Array.isArray(err.errors) &&
+        err.errors[0]?.message
+      ) {
+        toast.error(err.errors[0].message as string);
         return;
       }
-      const message =
-        err?.response?.data?.message ??
-        err?.response?.data?.error ??
-        err?.message ??
-        "Failed to save activity";
-      toast.error(message);
+      toast.error(getErrorMessage(err) || "Failed to save activity");
       console.error("[handleSave] error:", err);
     }
   };
@@ -131,8 +150,8 @@ export const ActivityList = () => {
       await deleteActivity(deleting.id);
       toast.success("Activity deleted 🎉");
       setDeleteOpen(false);
-    } catch (err: any) {
-      toast.error(err.response?.error || "Failed to delete activity");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || "Failed to delete activity");
     }
   };
 
@@ -208,10 +227,11 @@ export const ActivityList = () => {
             <button
               key={s.id}
               onClick={() => setStatusFilter(s.id)}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${statusFilter === s.id
-                ? "bg-primary text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
-                }`}
+              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                statusFilter === s.id
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
+              }`}
             >
               {s.label}
             </button>
@@ -257,14 +277,15 @@ export const ActivityList = () => {
               <button
                 key={p}
                 onClick={() => setPage(p)}
-                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
-                  }`}
+                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === p
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+                }`}
               >
                 {p}
               </button>
-            )
+            ),
           )}
 
           <button

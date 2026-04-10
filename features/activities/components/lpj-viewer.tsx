@@ -13,8 +13,10 @@ import {
 import { useActivityContext } from "../contexts/ActivityContext";
 import { useRef, useState } from "react";
 import { FileCheck, ExternalLink, Trash2, Upload, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, Locale } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+
+const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
 
 type Props = {
   activityId: string;
@@ -23,7 +25,7 @@ type Props = {
 function safeFormatDate(
   value: string | null | undefined,
   fmt: string,
-  options?: { locale?: typeof idLocale }
+  options?: { locale?: Locale },
 ): string {
   if (!value) return "-";
   const d = new Date(value);
@@ -131,10 +133,11 @@ export const LpjViewer = ({ activityId }: Props) => {
           <>
             <div
               onClick={!isUploading ? handleClickUpload : undefined}
-              className={`flex-1 min-h-[200px] border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center p-6 text-center group
-                ${isUploading
-                  ? "border-primary/50 bg-primary/5 dark:bg-primary/10 cursor-wait"
-                  : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
+              className={`flex-1 min-h-50 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center p-6 text-center group
+                ${
+                  isUploading
+                    ? "border-primary/50 bg-primary/5 dark:bg-primary/10 cursor-wait"
+                    : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
                 }`}
             >
               {isUploading ? (
@@ -197,7 +200,7 @@ export const LpjViewer = ({ activityId }: Props) => {
 
             {lpj.file_url && (
               <a
-                href={lpj.file_url}
+                href={MEDIA_BASE_URL + lpj.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 mb-4 bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 transition-colors text-sm font-medium rounded-lg"

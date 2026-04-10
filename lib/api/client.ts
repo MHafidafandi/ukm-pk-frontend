@@ -51,6 +51,7 @@ let failedQueue: Array<{
 }> = [];
 
 type RefreshTokenResponse = {
+  access_token?: string;
   data?: {
     access_token?: string;
   };
@@ -131,7 +132,7 @@ api.interceptors.response.use(
       const res = (await api.post("/auth/refresh", undefined, {
         withCredentials: true,
       })) as RefreshTokenResponse;
-      const newToken = res?.data?.access_token;
+      const newToken = res?.access_token ?? res?.data?.access_token;
 
       if (!newToken) {
         throw new Error("Refresh token response did not include access_token");
@@ -168,8 +169,8 @@ export default api;
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     return (
-      error.response?.data?.error ||
       error.response?.data?.message ||
+      error.response?.data?.error ||
       error.message ||
       "Terjadi kesalahan pada server"
     );
