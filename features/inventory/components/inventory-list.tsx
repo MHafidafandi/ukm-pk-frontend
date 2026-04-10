@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -14,6 +14,8 @@ import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { AssetsStats } from "./assets-stats";
+import { LoanStats } from "./loan-stats";
 
 const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
 
@@ -22,7 +24,7 @@ export const InventoryList = () => {
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const [loanFormOpen, setLoanFormOpen] = useState(false);
   const [isSubmittingLoan, setIsSubmittingLoan] = useState(false);
-
+  const [activeLoanFilter, setActiveLoanFilter] = useState("all");
   // Asset split-screen state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCondition, setFilterCondition] = useState("all");
@@ -35,13 +37,17 @@ export const InventoryList = () => {
 
   const {
     assets,
+    availableAssets,
     loans,
     isFetchingAssets,
     isFetchingLoans,
     createAsset,
+    activeLoans,
+    overdueLoans,
     updateAsset,
     deleteAsset,
-    uploadAssetImage,
+    stats: statsData,
+    loanStatsData,
     createLoan,
     returnLoan,
     markLoanAsLost,
@@ -69,6 +75,29 @@ export const InventoryList = () => {
     }
   }, [assets, selectedAsset]);
 
+  const stats = useMemo(() => {
+    const s = statsData;
+
+    return {
+      total_assets: s?.total_assets ?? 0,
+      total_loans: s?.total_loans ?? 0,
+      active_loans: s?.active_loans ?? 0,
+      available_assets: s?.available_assets ?? 0,
+      condition_summary: s?.condition_summary ?? [],
+      loan_status_summary: s?.loan_status_summary ?? [],
+    };
+  }, [statsData]);
+
+  const loanStats = useMemo(() => {
+    const s = loanStatsData;
+    return {
+      total_all: s?.total_all ?? 0,
+      total_dipinjam: s?.total_dipinjam ?? 0,
+      total_overdue: s?.total_overdue ?? 0,
+      total_rusak: s?.total_rusak ?? 0,
+    };
+  }, [loanStatsData]);
+
   const handleDeleteAsset = async (asset: Asset) => {
     const confirmed = window.confirm(
       `Hapus aset "${asset.nama}"? Tindakan ini tidak dapat dibatalkan.`
@@ -86,7 +115,7 @@ export const InventoryList = () => {
     const file = e.target.files?.[0];
     if (!file || !selectedAsset) return;
     try {
-      await uploadAssetImage({ id: selectedAsset.id, file });
+      await updateAsset({ id: selectedAsset.id, data: { foto: file } });
     } catch {
       // Error sudah ditangani di context
     } finally {
@@ -184,6 +213,18 @@ export const InventoryList = () => {
     return matchesSearch && matchesCondition;
   });
 
+  const filteredLoans = useMemo(() => {
+    let base = loans ?? [];
+    if (activeLoanFilter === "active") base = activeLoans ?? [];
+    else if (activeLoanFilter === "overdue") base = overdueLoans ?? [];
+
+    return base.filter(
+      (loan) =>
+        loan.asset?.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        loan.user?.nama.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [loans, activeLoans, overdueLoans, searchQuery, activeLoanFilter]);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (isFetchingAssets || isFetchingLoans) {
@@ -197,7 +238,7 @@ export const InventoryList = () => {
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-8rem)]">
       {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2 shrink-0">
+      <div className="flex mb-8 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Asset Inventory
@@ -206,6 +247,7 @@ export const InventoryList = () => {
             Manage organization assets, equipment, and track loans.
           </p>
         </div>
+
         <div className="flex gap-2">
           {activeTab === "assets" && (
             <PermissionGate permission={PERMISSIONS.CREATE_ASSETS}>
@@ -228,6 +270,16 @@ export const InventoryList = () => {
             </PermissionGate>
           )}
         </div>
+
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        {activeTab === "assets" && (
+          <AssetsStats stats={stats} />
+        )}
+        {activeTab === "loans" && (
+          <LoanStats loanStats={loanStats} />
+        )}
       </div>
 
       {/* Main Tabs */}
@@ -255,9 +307,38 @@ export const InventoryList = () => {
         </div>
 
         {/* LOANS TAB */}
+        {/* LOANS TAB with search + Active/Overdue filters */}
         <TabsContent value="loans" className="flex-1 mt-0 outline-none overflow-y-auto">
-          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden p-1">
-            <LoanTable loans={loans} onReturn={handleReturn} onMarkLost={handleMarkLost} />
+          <div className="flex flex-col gap-4 p-4">
+            {/* Search + Filter Buttons */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <input
+                type="text"
+                placeholder="Search loans..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="px-3 py-2 border rounded-lg w-full sm:w-1/3"
+              />
+              <div className="flex gap-2">
+                {["all", "active", "overdue"].map((f) => (
+                  <Button
+                    key={f}
+                    variant={activeLoanFilter === f ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveLoanFilter(f as any)}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Loan Table */}
+            <LoanTable
+              loans={filteredLoans}
+              onReturn={handleReturn}
+              onMarkLost={handleMarkLost}
+            />
           </div>
         </TabsContent>
 
@@ -600,7 +681,7 @@ export const InventoryList = () => {
       <LoanFormDialog
         open={loanFormOpen}
         onOpenChange={setLoanFormOpen}
-        assets={assets}
+        assets={availableAssets}
         onSubmit={handleLoanSubmit}
         isLoading={isSubmittingLoan}
       />

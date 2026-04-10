@@ -14,7 +14,7 @@ export default function RecruitmentDetailPage({
     const { id } = use(params);
 
     return (
-        <PermissionGuard permission={PERMISSIONS.VIEW_ACTIVITIES}>
+        <PermissionGuard permission={PERMISSIONS.VIEW_RECRUITMENTS}>
             <div className="flex-1 space-y-4 p-8 pt-6">
                 <RecruitmentProvider>
                     <RegistrantsList recruitmentId={id} />

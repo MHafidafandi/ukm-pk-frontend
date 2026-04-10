@@ -8,7 +8,6 @@ import {
   createAsset,
   updateAsset,
   deleteAsset,
-  uploadAssetImage,
   getLoans,
   createLoan,
   returnLoan,
@@ -17,44 +16,38 @@ import {
   Loan,
   CreateAssetInput,
   CreateLoanInput,
+  getAssetStats,
+  AssetsResponse,
+  AssetsStatsResponse,
+  AssetFilters,
+  getAvailableAssets,
+  getLoanStats,
+  getActiveLoans,
+  getOverdueLoans,
 } from "@/features/inventory/services/assetService";
 import { getErrorMessage } from "@/lib/api/client";
-
-// ✅ Tambah types baru
-export interface AssetFilters {
-  page?: number;
-  limit?: number;
-  kondisi?: string;
-  lokasi?: string;
-  search?: string;
-  sort?: string;
-  order?: string;
-}
-
-export interface PaginationMeta {
-  total: number;
-  page: number;
-  total_pages: number;
-  page_size: number;
-  has_next: boolean;
-  has_previous: boolean;
-}
+import { getUserById } from "@/features/users/services/userService";
 
 interface AssetContextType {
-  assets: Asset[];
   isFetchingAssets: boolean;
-  pagination: PaginationMeta | null;      // ✅ tambah
-  filters: AssetFilters;                  // ✅ tambah
-  setFilters: (filters: AssetFilters) => void; // ✅ tambah
+  assets: AssetsResponse["data"]["assets"];
+  pagination: AssetsResponse["data"]["pagination"] | null;
+  filters: AssetsResponse["data"]["filters"] | null;
+  stats: AssetsStatsResponse["data"] | null;
+  setFilters: (filters: AssetFilters) => void;
   createAsset: (data: CreateAssetInput) => Promise<any>;
   updateAsset: (args: {
     id: string;
     data: Partial<CreateAssetInput>;
   }) => Promise<any>;
   deleteAsset: (id: string) => Promise<any>;
-  uploadAssetImage: (args: { id: string; file: File }) => Promise<any>;
   loans: Loan[];
+  loanStatsData: any;
+  isFetchingLoanStats: boolean;
+  availableAssets: Asset[];
   isFetchingLoans: boolean;
+  activeLoans: Loan[];
+  overdueLoans: Loan[];
   createLoan: (data: CreateLoanInput) => Promise<any>;
   returnLoan: (args: { id: string; data: any }) => Promise<any>;
   markLoanAsLost: (args: { id: string; catatan: string }) => Promise<any>;
@@ -73,29 +66,84 @@ export const useAssetContext = () => {
 export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   const queryClient = useQueryClient();
 
-  // ✅ Filter state
   const [filters, setFilters] = useState<AssetFilters>({
     page: 1,
     limit: 10,
   });
-
-  // -- Queries --
   const { data: assetsData, isLoading: isFetchingAssets } = useQuery({
-    queryKey: ["inventory", "assets", filters], // ✅ include filters agar re-fetch otomatis
-    queryFn: () => getAssets(filters),          // ✅ pass filters ke service
+    queryKey: ["inventory", "assets", filters],
+    queryFn: () => getAssets(filters),
   });
 
-  const { data: loansData, isLoading: isFetchingLoans } = useQuery({
+  const { data: availableAssetsData, isLoading: isFetchingAvailableAssets } = useQuery({
+    queryKey: ["inventory", "assets"],
+    queryFn: () => getAvailableAssets(),
+  });
+
+  const { data: statsData, isLoading: isFetchingStats } = useQuery({
+    queryKey: ["inventory", "assets", "stats"],
+    queryFn: () => getAssetStats(),
+  });
+
+  const { data: loanStatsData, isLoading: isFetchingLoanStats } = useQuery({
+    queryKey: ["inventory", "loans", "stats"],
+    queryFn: () => getLoanStats(),
+  });
+
+  const { data: activeLoans } = useQuery({
+    queryKey: ["loans", "active"],
+    queryFn: async () => {
+      const res = await getActiveLoans();
+      return await Promise.all(
+        res.data.loans.map(async (loan) => {
+          const [user, asset] = await Promise.all([
+            getUserById(loan.user_id),
+            getAsset(loan.asset_id)
+          ]);
+          return { ...loan, user: user.data, asset: asset.data };
+        })
+      );
+    },
+  });
+  const { data: overdueLoans } = useQuery({
+    queryKey: ["loans", "overdue"],
+    queryFn: async () => {
+      const res = await getOverdueLoans();
+      return await Promise.all(
+        res.data.loans.map(async (loan) => {
+          const [user, asset] = await Promise.all([
+            getUserById(loan.user_id),
+            getAsset(loan.asset_id)
+          ]);
+          return { ...loan, user: user.data, asset: asset.data };
+        })
+      );
+    },
+  });
+
+
+
+  // ── Loans Query + map user & asset
+  const { data: loans, isLoading: isFetchingLoans } = useQuery({
     queryKey: ["inventory", "loans"],
-    queryFn: () => getLoans(),
+    queryFn: async () => {
+      const loansResponse = await getLoans();
+      return await Promise.all(
+        loansResponse.data.loans.map(async (loan) => {
+          const [user, asset] = await Promise.all([
+            getUserById(loan.user_id),
+            getAsset(loan.asset_id)
+          ]);
+          return { ...loan, user: user.data, asset: asset.data };
+        })
+      );
+    },
   });
 
-  // ✅ Fix: ambil dari nested response sesuai struktur API
   const assets = assetsData?.data?.assets || [];
   const pagination = assetsData?.data?.pagination || null;
-  const loans = loansData?.data?.loans || [];
+  const availableAssets = availableAssetsData?.data?.assets || [];
 
-  // -- Mutations (Assets) --
   const createAssetMutation = useMutation({
     mutationFn: createAsset,
     onSuccess: () => {
@@ -113,7 +161,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
       data,
     }: {
       id: string;
-      data: Partial<CreateAssetInput>;
+      data: any;
     }) => updateAsset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
@@ -129,18 +177,6 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
       toast.success("Asset successfully deleted");
-    },
-    onError: (error: any) => {
-      toast.error(getErrorMessage(error));
-    },
-  });
-
-  const uploadAssetImageMutation = useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      uploadAssetImage(id, file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
-      toast.success("Photo asset successfully uploaded");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error));
@@ -180,16 +216,23 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
 
   const contextValue = useMemo(
     () => ({
-      assets,
+      assets: assetsData?.data?.assets ?? [],
+      pagination: assetsData?.data?.pagination ?? null,
+      filters: assetsData?.data?.filters ?? null,
+      stats: statsData?.data ?? null,
+      loanStatsData: loanStatsData?.data ?? null,
+      isFetchingLoanStats,
+      activeLoans: activeLoans ?? [],
+      overdueLoans: overdueLoans ?? [],
       isFetchingAssets,
-      pagination,      // ✅ expose pagination
-      filters,         // ✅ expose filters
-      setFilters,      // ✅ expose setFilters
+      isFetchingAvailableAssets,
+      availableAssets: availableAssetsData?.data?.assets ?? [],
+      isFetchingStats,
+      setFilters,
       createAsset: createAssetMutation.mutateAsync,
       updateAsset: updateAssetMutation.mutateAsync,
       deleteAsset: deleteAssetMutation.mutateAsync,
-      uploadAssetImage: uploadAssetImageMutation.mutateAsync,
-      loans,
+      loans: loans ?? [],
       isFetchingLoans,
       createLoan: createLoanMutation.mutateAsync,
       returnLoan: returnLoanMutation.mutateAsync,
@@ -197,13 +240,20 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     }),
     [
       assets,
+      availableAssets,
+      loanStatsData,
+      isFetchingLoanStats,
       isFetchingAssets,
+      isFetchingAvailableAssets,
+      statsData,
+      isFetchingStats,
       pagination,
       filters,
+      activeLoans,
+      overdueLoans,
       createAssetMutation,
       updateAssetMutation,
       deleteAssetMutation,
-      uploadAssetImageMutation,
       loans,
       isFetchingLoans,
       createLoanMutation,
