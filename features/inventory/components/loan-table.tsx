@@ -49,6 +49,10 @@ const statusColor: Record<string, { label: string; colorClass: string }> = {
 
 export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
   const [returningId, setReturningId] = useState<string | null>(null);
+<<<<<<< HEAD
+=======
+
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
   const [markingLostId, setMarkingLostId] = useState<string | null>(null);
 
   const formatDate = (date?: string) => {
@@ -83,10 +87,17 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
   return (
     <div className="w-full">
       <Table>
+<<<<<<< HEAD
         <TableHeader className="bg-muted/50 rounded-t-xl">
           <TableRow className="hover:bg-transparent">
             <TableHead className="font-semibold text-foreground rounded-tl-xl h-11 text-center">
               Asset
+=======
+        <TableHeader className="bg-muted/50 rounded-t-xl border-b-0">
+          <TableRow className="border-b-0 hover:bg-transparent">
+            <TableHead className="font-semibold text-foreground rounded-tl-xl h-11 text-center">
+              Assets
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
             </TableHead>
             <TableHead className="font-semibold text-foreground h-11 text-center">
               Borrower
@@ -130,11 +141,19 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
                 >
                   <TableCell>
                     <div className="font-semibold text-foreground">
+<<<<<<< HEAD
                       {loan.asset?.nama || "Unknown"}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium text-muted-foreground">
                     {loan.user?.nama || "Unknown"}
+=======
+                      {loan.asset_id}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-medium text-muted-foreground">
+                    {loan.user_id || "Unknown"}
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                   </TableCell>
                   <TableCell className="text-sm font-medium">
                     {formatDate(loan.tanggal_pinjam)}
@@ -165,11 +184,15 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
                           })
                         }
                       >
+<<<<<<< HEAD
                         {isReturning ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
                           "Return"
                         )}
+=======
+                        {isReturning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Return"}
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                       </Button>
                     )}
                     {loan.status === "dipinjam" && onMarkLost && (
@@ -185,11 +208,15 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
                           })
                         }
                       >
+<<<<<<< HEAD
                         {markingLostId === loan.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
                           "Mark Lost"
                         )}
+=======
+                        {markingLostId === loan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark Lost"}
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                       </Button>
                     )}
                   </TableCell>

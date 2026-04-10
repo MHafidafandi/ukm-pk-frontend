@@ -126,6 +126,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   // ── Loans Query + map user & asset
   const { data: loans, isLoading: isFetchingLoans } = useQuery({
     queryKey: ["inventory", "loans"],
+<<<<<<< HEAD
     queryFn: async () => {
       const loansResponse = await getLoans();
       return await Promise.all(
@@ -138,11 +139,18 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
         })
       );
     },
+=======
+    queryFn: () => getLoans(),
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
   });
 
   const assets = assetsData?.data?.assets || [];
   const pagination = assetsData?.data?.pagination || null;
+<<<<<<< HEAD
   const availableAssets = availableAssetsData?.data?.assets || [];
+=======
+  const loans = loansData?.data?.loans || [];
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 
   const createAssetMutation = useMutation({
     mutationFn: createAsset,
@@ -183,6 +191,21 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     },
   });
 
+<<<<<<< HEAD
+=======
+  const uploadAssetImageMutation = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) =>
+      uploadAssetImage(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
+      toast.success("Photo asset successfully uploaded");
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
   const createLoanMutation = useMutation({
     mutationFn: (data: CreateLoanInput) => createLoan(data),
     onSuccess: () => {

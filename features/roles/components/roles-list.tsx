@@ -1,7 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Plus,
@@ -135,7 +135,10 @@ const PERMISSION_GROUPS = [
       create: PERMISSIONS.CREATE_DOCUMENTATIONS,
       update: PERMISSIONS.EDIT_DOCUMENTATIONS,
       delete: PERMISSIONS.DELETE_DOCUMENTATIONS,
-      extra: [{ label: "Archive", value: PERMISSIONS.ARCHIVE_DOCUMENTATIONS }],
+      extra: [
+        { label: "View Admin", value: PERMISSIONS.VIEW_ALL_DOCUMENTATIONS },
+        { label: "Archive", value: PERMISSIONS.ARCHIVE_DOCUMENTATIONS },
+      ],
     },
   },
   {
@@ -255,17 +258,17 @@ export const RolesList = () => {
   const { roles, stats, createRole, updateRole, deleteRole, isFetchingRoles } =
     useRoleContext();
 
-  useEffect(() => {
-    if (roles.length > 0 && !activeRole) {
-      handleSelectRole(roles[0]);
-    }
-  }, [roles]);
-
-  const handleSelectRole = (role: Role) => {
+  const handleSelectRole = useCallback((role: Role) => {
     setActiveRole(role);
     setCurrentPermissions(new Set(role.permissions || []));
     setIsMatrixModified(false);
-  };
+  }, []);
+
+  // Initialize activeRole when roles first become available
+  const shouldInitialize = roles.length > 0 && !activeRole;
+  if (shouldInitialize) {
+    handleSelectRole(roles[0]);
+  }
 
   const openAdd = () => {
     setEditing(null);
@@ -298,9 +301,11 @@ export const RolesList = () => {
       setFormOpen(false);
       setEditing(null);
       setForm(emptyForm);
-    } catch (err: any) {
-      if (err.name === "ZodError") {
-        toast.error(err.errors[0].message);
+    } catch (err: unknown) {
+      const errObj = err as Record<string, unknown>;
+      if (errObj?.name === "ZodError" && "errors" in errObj) {
+        const errors = errObj.errors as Array<{ message: string }>;
+        toast.error(errors[0]?.message || "Validasi gagal");
         return;
       }
       toast.error("Gagal menyimpan role");
@@ -314,8 +319,12 @@ export const RolesList = () => {
       toast.success("Role dihapus");
       setDeleteOpen(false);
       if (activeRole?.id === deleting.id) setActiveRole(null);
-    } catch (err: any) {
-      toast.error(err.response?.error || "Gagal menghapus role");
+    } catch (err: unknown) {
+      const errorMsg =
+        err && typeof err === "object" && "response" in err
+          ? (err.response as { error?: string }).error || "Gagal menghapus role"
+          : "Gagal menghapus role";
+      toast.error(errorMsg);
     }
   };
 
@@ -551,7 +560,7 @@ export const RolesList = () => {
                   <table className="w-full text-left text-sm">
                     <thead className="bg-slate-100 dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 text-text-secondary-light dark:text-text-secondary-dark uppercase font-semibold text-xs tracking-wider">
                       <tr>
-                        <th className="px-6 py-4 min-w-[220px]">Feature</th>
+                        <th className="px-6 py-4 min-w-55">Feature</th>
                         {ACTIONS.map((action) => {
                           const Icon = ACTION_ICONS[action];
                           return (
@@ -566,7 +575,11 @@ export const RolesList = () => {
                             </th>
                           );
                         })}
+<<<<<<< HEAD
                         <th className="px-4 py-4 text-center min-w-[120px]">
+=======
+                        <th className="px-4 py-4 text-center min-w-30">
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
                           Extra
                         </th>
                         <th className="px-4 py-4 text-center w-24">All</th>

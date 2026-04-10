@@ -3,23 +3,21 @@ import { objectToFormData } from "@/lib/utils";
 import {
   CreateActivityInput,
   UpdateActivityInput,
+  UpdateActivityStatusInput,
   CreateProgressReportInput,
   UpdateProgressReportInput,
   CreateLpjInput,
-  CreateDocumentationInput,
   ActivityStatus,
-  DocumentationType,
 } from "@/lib/validations/activity-schema";
 
 export type {
   CreateActivityInput,
   UpdateActivityInput,
+  UpdateActivityStatusInput,
   CreateProgressReportInput,
   UpdateProgressReportInput,
   CreateLpjInput,
-  CreateDocumentationInput,
   ActivityStatus,
-  DocumentationType,
 };
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -49,21 +47,17 @@ export interface ProgressReport {
 export interface LPJ {
   id: string;
   activity_id: string;
+  file_url: string;
   tanggal: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface Documentation {
+export interface ProgressDocument {
   id: string;
-  activity_id: string;
-  judul: string;
-  deskripsi?: string;
-  tipe_dokumen: DocumentationType;
-  link_gdrive?: string;
-  nama_file?: string;
-  ukuran_file?: number;
-  tipe_file?: string;
+  report_id: string;
+  file_url: string;
+  tanggal: string;
   created_at: string;
   updated_at: string;
 }
@@ -103,12 +97,19 @@ export async function createActivity(
   body: CreateActivityInput | FormData,
 ): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
+<<<<<<< HEAD
   const { data } = await api.post("/activities", payload, {
+=======
+  return await api.post("/activities", payload, {
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
     headers: {
       "Content-Type": undefined,
     },
   });
+<<<<<<< HEAD
   return data;
+=======
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 }
 
 /** PUT /activities/:id */
@@ -117,18 +118,24 @@ export async function updateActivity(
   body: UpdateActivityInput | FormData,
 ): Promise<{ message: string; id?: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.put(`/activities/${id}`, payload, {
+  return await api.put(`/activities/${id}`, payload, {
     headers: {
       "Content-Type": undefined,
     },
   });
-  return data;
+}
+
+/** PATCH /activities/:id/status */
+export async function updateActivityStatus(
+  id: string,
+  body: UpdateActivityStatusInput,
+): Promise<{ message: string }> {
+  return await api.patch(`/activities/${id}/status`, body);
 }
 
 /** DELETE /activities/:id */
 export async function deleteActivity(id: string): Promise<{ message: string }> {
-  const { data } = await api.delete(`/activities/${id}`);
-  return data;
+  return await api.delete(`/activities/${id}`);
 }
 
 // ── Progress Report API ───────────────────────────────────────────────────
@@ -137,44 +144,41 @@ export async function getProgressReports(params?: {
   activity_id?: string;
   page?: number;
   limit?: number;
-}): Promise<{ data: { reports: ProgressReport[]; pagination: PaginationMeta } }> {
+}): Promise<{
+  data: { reports: ProgressReport[]; pagination: PaginationMeta };
+}> {
   const data = await api.get("/progress-reports", { params }); // ✅ TANPA destructure
   return data;
 }
+
+/** GET /progress-reports/:id */
+export async function getProgressReport(
+  id: string,
+): Promise<{ data: ProgressReport }> {
+  return await api.get(`/progress-reports/${id}`);
+}
+
 /** POST /progress-reports */
 export async function createProgressReport(
   body: CreateProgressReportInput,
 ): Promise<{ message: string; id?: string }> {
-  const { data } = await api.post("/progress-reports", body);
-  return data;
+  return await api.post("/progress-reports", body);
 }
 /** PUT /progress-reports/:id */
 export async function updateProgressReport(
   id: string,
   body: UpdateProgressReportInput,
 ): Promise<{ message: string; id?: string }> {
-  const { data } = await api.put(`/progress-reports/${id}`, body);
-  return data;
+  return await api.put(`/progress-reports/${id}`, body);
 }
 /** DELETE /progress-reports/:id */
 export async function deleteProgressReport(
   id: string,
 ): Promise<{ message: string }> {
-  const { data } = await api.delete(`/progress-reports/${id}`);
-  return data;
+  return await api.delete(`/progress-reports/${id}`);
 }
-
 
 // ── LPJ API ───────────────────────────────────────────────────────────────
-
-export interface LPJ {
-  id: string;
-  activity_id: string;
-  file_url: string;       // ← field baru dari API
-  tanggal: string;
-  created_at: string;
-  updated_at: string;
-}
 
 /** GET /lpj/activity/:activity_id */
 export async function getLpjByActivity(
@@ -192,41 +196,62 @@ export async function getLpjByActivity(
 export async function createLpj(
   formData: FormData,
 ): Promise<{ message: string; id?: string }> {
-  const { data } = await api.post("/lpj", formData, {
+  return await api.post("/lpj", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return data;
 }
 
+/** PUT /lpj/:id */
+export async function updateLpj(
+  id: string,
+  formData: FormData,
+): Promise<{ message: string; id?: string }> {
+  return await api.put(`/lpj/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
 
 /** DELETE /lpj/:id */
 export async function deleteLpj(id: string): Promise<{ message: string }> {
-  const { data } = await api.delete(`/lpj/${id}`);
-  return data;
+  return await api.delete(`/lpj/${id}`);
 }
 
-// ── Documentation API ─────────────────────────────────────────────────────
+// ── Progress Report Document API (/documents/*) ───────────────────────────
 
-/** GET /documentations/activity/:activity_id */
-export async function getDocumentations(
-  activityId: string,
-): Promise<{ data: Documentation[] }> {
-  const data = await api.get(`/documentations/activity/${activityId}`); // ✅ TANPA destructure
-  return data;
+/** GET /documents/report/:report_id */
+export async function getDocumentsByReport(
+  reportId: string,
+): Promise<{ data: { count: number; documents: ProgressDocument[] } }> {
+  return await api.get(`/documents/report/${reportId}`);
 }
-/** POST /documentations */
-export async function createDocumentation(
-  body: CreateDocumentationInput | FormData,
-): Promise<{ message: string; id?: string }> {
-  const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.post("/documentations", payload);
-  return data;
-}
-/** DELETE /documentations/:id */
-export async function deleteDocumentation(
+
+/** GET /documents/:id */
+export async function getDocument(
   id: string,
-): Promise<{ message: string }> {
-  const { data } = await api.delete(`/documentations/${id}`);
-  return data;
+): Promise<{ data: ProgressDocument }> {
+  return await api.get(`/documents/${id}`);
 }
 
+/** POST /documents */
+export async function createDocument(
+  formData: FormData,
+): Promise<{ message: string; id?: string }> {
+  return await api.post("/documents", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
+
+/** PUT /documents/:id */
+export async function updateDocument(
+  id: string,
+  formData: FormData,
+): Promise<{ message: string; id?: string }> {
+  return await api.put(`/documents/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
+
+/** DELETE /documents/:id */
+export async function deleteDocument(id: string): Promise<{ message: string }> {
+  return await api.delete(`/documents/${id}`);
+}

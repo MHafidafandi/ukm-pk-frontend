@@ -39,29 +39,27 @@ export const ActivityDetail = ({ id }: Props) => {
   } = useActivityContext();
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<CreateActivityInput>({
-    judul: "",
-    deskripsi: "",
-    tanggal: new Date(),
-    lokasi: "",
+  const [editForm, setEditForm] = useState<CreateActivityInput>(() => {
+    if (activity) {
+      return {
+        judul: activity.judul,
+        deskripsi: activity.deskripsi,
+        tanggal: new Date(activity.tanggal),
+        lokasi: activity.lokasi,
+      };
+    }
+    return {
+      judul: "",
+      deskripsi: "",
+      tanggal: new Date(),
+      lokasi: "",
+    };
   });
 
   useEffect(() => {
     setActiveActivityId(id);
     return () => setActiveActivityId(null);
   }, [id, setActiveActivityId]);
-
-  // Sync edit form when activity data loads
-  useEffect(() => {
-    if (activity) {
-      setEditForm({
-        judul: activity.judul,
-        deskripsi: activity.deskripsi,
-        tanggal: new Date(activity.tanggal),
-        lokasi: activity.lokasi,
-      });
-    }
-  }, [activity]);
 
   const handleEditSave = async () => {
     try {
@@ -71,19 +69,29 @@ export const ActivityDetail = ({ id }: Props) => {
       formData.append(
         "tanggal",
         editForm.tanggal instanceof Date
-          ? editForm.tanggal.toISOString()
+          ? editForm.tanggal.toISOString().split("T")[0]
           : String(editForm.tanggal),
       );
       formData.append("lokasi", editForm.lokasi);
 
+      const existingThumbnailUrl = activity?.thumbnail || "";
+
       if (editForm.thumbnail instanceof File) {
         formData.append("thumbnail", editForm.thumbnail);
+        formData.append("thumbnail_url", "");
+      } else if (editForm.thumbnail === null) {
+        formData.append("thumbnail", "");
+        formData.append("thumbnail_url", "");
+      } else if (existingThumbnailUrl) {
+        formData.append("thumbnail_url", existingThumbnailUrl);
+      } else {
+        formData.append("thumbnail_url", "");
       }
 
       await updateActivity({ id, data: formData });
       toast.success("Kegiatan berhasil diperbarui");
       setEditOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       toast.error("Gagal memperbarui kegiatan");
     }

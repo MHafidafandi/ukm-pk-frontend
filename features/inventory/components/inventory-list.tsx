@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import { useRef, useState, useMemo } from "react";
+=======
+import { useRef, useState } from "react";
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -14,8 +18,11 @@ import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
 import { toast } from "sonner";
 import { useEffect } from "react";
+<<<<<<< HEAD
 import { AssetsStats } from "./assets-stats";
 import { LoanStats } from "./loan-stats";
+=======
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
 
 const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
 
@@ -24,7 +31,11 @@ export const InventoryList = () => {
   const [assetFormOpen, setAssetFormOpen] = useState(false);
   const [loanFormOpen, setLoanFormOpen] = useState(false);
   const [isSubmittingLoan, setIsSubmittingLoan] = useState(false);
+<<<<<<< HEAD
   const [activeLoanFilter, setActiveLoanFilter] = useState("all");
+=======
+
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
   // Asset split-screen state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCondition, setFilterCondition] = useState("all");
@@ -37,17 +48,26 @@ export const InventoryList = () => {
 
   const {
     assets,
+<<<<<<< HEAD
     availableAssets,
+=======
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
     loans,
     isFetchingAssets,
     isFetchingLoans,
     createAsset,
+<<<<<<< HEAD
     activeLoans,
     overdueLoans,
     updateAsset,
     deleteAsset,
     stats: statsData,
     loanStatsData,
+=======
+    updateAsset,
+    deleteAsset,
+    uploadAssetImage,
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
     createLoan,
     returnLoan,
     markLoanAsLost,
@@ -75,6 +95,7 @@ export const InventoryList = () => {
     }
   }, [assets, selectedAsset]);
 
+<<<<<<< HEAD
   const stats = useMemo(() => {
     const s = statsData;
 
@@ -98,6 +119,8 @@ export const InventoryList = () => {
     };
   }, [loanStatsData]);
 
+=======
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
   const handleDeleteAsset = async (asset: Asset) => {
     const confirmed = window.confirm(
       `Hapus aset "${asset.nama}"? Tindakan ini tidak dapat dibatalkan.`
@@ -115,7 +138,11 @@ export const InventoryList = () => {
     const file = e.target.files?.[0];
     if (!file || !selectedAsset) return;
     try {
+<<<<<<< HEAD
       await updateAsset({ id: selectedAsset.id, data: { foto: file } });
+=======
+      await uploadAssetImage({ id: selectedAsset.id, file });
+>>>>>>> d1006d5a3f81168775557fa0498b538d3dcbbd83
     } catch {
       // Error sudah ditangani di context
     } finally {
@@ -306,7 +333,6 @@ export const InventoryList = () => {
           </TabsList>
         </div>
 
-        {/* LOANS TAB */}
         {/* LOANS TAB with search + Active/Overdue filters */}
         <TabsContent value="loans" className="flex-1 mt-0 outline-none overflow-y-auto">
           <div className="flex flex-col gap-4 p-4">

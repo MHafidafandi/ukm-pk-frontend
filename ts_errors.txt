@@ -1,0 +1,35 @@
+features/activities/components/lpj-viewer.tsx(26,24): error TS2304: Cannot find name 'Locale'.
+features/divisions/components/divisions-list.tsx(247,17): error TS2739: Type 'Division' is missing the following properties from type 'DivisionsStatRes': division_id, user_count, percentage
+features/donation/components/donation-list.tsx(19,3): error TS2322: Type 'Date' is not assignable to type 'string'.
+features/donation/components/donation-list.tsx(79,48): error TS2559: Type 'FormData' has no properties in common with type 'Partial<CreateDonationInput> & { status?: string | undefined; }'.
+features/donation/components/donation-list.tsx(82,30): error TS2345: Argument of type 'FormData' is not assignable to parameter of type 'CreateDonationInput'.
+  Type 'FormData' is missing the following properties from type 'CreateDonationInput': nama_donatur, jumlah, metode, deskripsi
+features/inventory/contexts/AssetContext.tsx(90,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<unknown, Error, unknown, string[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<unknown, Error>', gave the following error.
+    Type '(filters?: LoanFilters | undefined) => Promise<LoansResponse>' is not assignable to type 'QueryFunction<unknown, string[]>'.
+      Types of parameters 'filters' and 'context' are incompatible.
+        Type '{ client: QueryClient; queryKey: string[]; signal: AbortSignal; meta: Record<string, unknown> | undefined; pageParam?: unknown; direction?: unknown; }' has no properties in common with type 'LoanFilters'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<LoansResponse, Error, LoansResponse, string[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '(filters?: LoanFilters | undefined) => Promise<LoansResponse>' is not assignable to type 'unique symbol | QueryFunction<LoansResponse, string[], never> | undefined'.
+      Type '(filters?: LoanFilters | undefined) => Promise<LoansResponse>' is not assignable to type 'QueryFunction<LoansResponse, string[], never>'.
+        Types of parameters 'filters' and 'context' are incompatible.
+          Type '{ client: QueryClient; queryKey: string[]; signal: AbortSignal; meta: Record<string, unknown> | undefined; pageParam?: unknown; direction?: unknown; }' has no properties in common with type 'LoanFilters'.
+  Overload 3 of 3, '(options: UseQueryOptions<LoansResponse, Error, LoansResponse, string[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '(filters?: LoanFilters | undefined) => Promise<LoansResponse>' is not assignable to type 'unique symbol | QueryFunction<LoansResponse, string[], never> | undefined'.
+      Type '(filters?: LoanFilters | undefined) => Promise<LoansResponse>' is not assignable to type 'QueryFunction<LoansResponse, string[], never>'.
+        Types of parameters 'filters' and 'context' are incompatible.
+          Type '{ client: QueryClient; queryKey: string[]; signal: AbortSignal; meta: Record<string, unknown> | undefined; pageParam?: unknown; direction?: unknown; }' has no properties in common with type 'LoanFilters'.
+features/inventory/contexts/AssetContext.tsx(96,28): error TS2339: Property 'data' does not exist on type '{}'.
+features/recruitment/contexts/RecruitmentContext.tsx(153,44): error TS2554: Expected 0-1 arguments, but got 2.
+features/recruitment/contexts/RecruitmentContext.tsx(187,9): error TS2451: Cannot redeclare block-scoped variable 'registrants'.
+features/recruitment/contexts/RecruitmentContext.tsx(190,9): error TS2451: Cannot redeclare block-scoped variable 'registrants'.
+lib/validations/recruitment-schema.ts(34,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; } | undefined): ZodString', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; }'.
+  Overload 2 of 2, '(params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; } | undefined): $ZodType<...>', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; }'.
+lib/validations/recruitment-schema.ts(37,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; } | undefined): ZodString', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; }'.
+  Overload 2 of 2, '(params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; } | undefined): $ZodType<...>', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; }'.
