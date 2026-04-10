@@ -89,6 +89,13 @@ export async function getDocumentations(
   return data;
 }
 
+export async function getAdminDocumentations(
+  params?: DocumentationQueryParams,
+): Promise<{ data: DocumentationListResponse }> {
+  const { data } = await api.get(`${DOC_URL}/admin`, { params });
+  return data;
+}
+
 export async function getDocumentation(
   id: string,
 ): Promise<{ data: Documentation }> {
@@ -147,43 +154,6 @@ export async function bulkDeleteDocumentations(
   const { data } = await api.post(`${DOC_URL}/bulk/delete`, {
     documentation_ids: documentationIds,
   });
-  return data;
-}
-
-export async function getDocumentationsByActivity(
-  activityId: string,
-): Promise<{ data: Documentation[] }> {
-  const { data } = await api.get(`${DOC_URL}/activity/${activityId}`);
-  return data;
-}
-
-export async function getDocumentationsByType(
-  type: DocumentCategory,
-): Promise<{ data: Documentation[] }> {
-  const { data } = await api.get(`${DOC_URL}/type/${type}`);
-  return data;
-}
-
-export async function getDocumentationsByCreator(
-  creatorId: string,
-): Promise<{ data: Documentation[] }> {
-  const { data } = await api.get(`${DOC_URL}/creator/${creatorId}`);
-  return data;
-}
-
-export async function getRecentDocumentations(
-  limit = 5,
-): Promise<{ data: Documentation[] }> {
-  const { data } = await api.get(`${DOC_URL}/recent`, {
-    params: { limit },
-  });
-  return data;
-}
-
-export async function getMyDocumentations(): Promise<{
-  data: Documentation[];
-}> {
-  const { data } = await api.get(`${DOC_URL}/my`);
   return data;
 }
 

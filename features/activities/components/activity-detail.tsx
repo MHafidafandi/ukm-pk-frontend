@@ -39,29 +39,27 @@ export const ActivityDetail = ({ id }: Props) => {
   } = useActivityContext();
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<CreateActivityInput>({
-    judul: "",
-    deskripsi: "",
-    tanggal: new Date(),
-    lokasi: "",
+  const [editForm, setEditForm] = useState<CreateActivityInput>(() => {
+    if (activity) {
+      return {
+        judul: activity.judul,
+        deskripsi: activity.deskripsi,
+        tanggal: new Date(activity.tanggal),
+        lokasi: activity.lokasi,
+      };
+    }
+    return {
+      judul: "",
+      deskripsi: "",
+      tanggal: new Date(),
+      lokasi: "",
+    };
   });
 
   useEffect(() => {
     setActiveActivityId(id);
     return () => setActiveActivityId(null);
   }, [id, setActiveActivityId]);
-
-  // Sync edit form when activity data loads
-  useEffect(() => {
-    if (activity) {
-      setEditForm({
-        judul: activity.judul,
-        deskripsi: activity.deskripsi,
-        tanggal: new Date(activity.tanggal),
-        lokasi: activity.lokasi,
-      });
-    }
-  }, [activity]);
 
   const handleEditSave = async () => {
     try {
@@ -76,7 +74,7 @@ export const ActivityDetail = ({ id }: Props) => {
       );
       formData.append("lokasi", editForm.lokasi);
 
-      const existingThumbnailUrl = activity.thumbnail || "";
+      const existingThumbnailUrl = activity?.thumbnail || "";
 
       if (editForm.thumbnail instanceof File) {
         formData.append("thumbnail", editForm.thumbnail);

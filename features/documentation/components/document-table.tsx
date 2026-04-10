@@ -258,22 +258,33 @@ export const DocumentTable = ({ documents }: Props) => {
                     </td>
                     <td className="p-4 pr-8">
                       <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button
-                          type="button"
-                          className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
-                          title={active ? "Archive" : "Activate"}
-                          onClick={() =>
-                            active
-                              ? archiveDocument(document.id)
-                              : activateDocument(document.id)
-                          }
-                        >
-                          {active ? (
-                            <Archive className="size-4" />
-                          ) : (
-                            <CheckCircle2 className="size-4" />
-                          )}
-                        </button>
+                        {active ? (
+                          <PermissionGate
+                            permission={PERMISSIONS.ARCHIVE_DOCUMENTATIONS}
+                          >
+                            <button
+                              type="button"
+                              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
+                              title="Archive"
+                              onClick={() => archiveDocument(document.id)}
+                            >
+                              <Archive className="size-4" />
+                            </button>
+                          </PermissionGate>
+                        ) : (
+                          <PermissionGate
+                            permission={PERMISSIONS.EDIT_DOCUMENTATIONS}
+                          >
+                            <button
+                              type="button"
+                              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
+                              title="Activate"
+                              onClick={() => activateDocument(document.id)}
+                            >
+                              <CheckCircle2 className="size-4" />
+                            </button>
+                          </PermissionGate>
+                        )}
 
                         <PermissionGate
                           permission={PERMISSIONS.DELETE_DOCUMENTS}

@@ -31,7 +31,7 @@ import { useDocumentationContext } from "../contexts/DocumentationContext";
 
 const documentSchema = z.object({
   judul: z.string().min(1, "Judul dokumen wajib diisi"),
-  deskripsi: z.string().default(""),
+  deskripsi: z.string(),
   tipe_dokumen: z.enum(["sop", "template", "panduan", "laporan", "lainnya"]),
   link_gdrive: z
     .string()
@@ -39,12 +39,7 @@ const documentSchema = z.object({
     .optional()
     .or(z.literal("")),
   nama_file: z.string().optional().or(z.literal("")),
-  ukuran_file: z.coerce
-    .number()
-    .int()
-    .nonnegative()
-    .optional()
-    .or(z.literal("")),
+  ukuran_file: z.string().optional().or(z.literal("")),
   tipe_file: z.string().optional().or(z.literal("")),
   activity_id: z.string().optional().or(z.literal("")),
   status: z.enum(["aktif", "arsip"]),
@@ -77,18 +72,17 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
 
   const onSubmit: SubmitHandler<DocumentSchema> = (data) => {
     void createMutation({
-      judul: data.judul,
-      deskripsi: data.deskripsi,
-      tipe_dokumen: data.tipe_dokumen,
-      link_gdrive: data.link_gdrive || undefined,
-      nama_file: data.nama_file || undefined,
-      ukuran_file:
-        data.ukuran_file === "" || data.ukuran_file === undefined
-          ? undefined
-          : Number(data.ukuran_file),
-      tipe_file: data.tipe_file || undefined,
-      activity_id: data.activity_id || undefined,
-      status: data.status,
+      data: {
+        judul: data.judul,
+        deskripsi: data.deskripsi,
+        tipe_dokumen: data.tipe_dokumen,
+        link_gdrive: data.link_gdrive || undefined,
+        nama_file: data.nama_file || undefined,
+        ukuran_file: undefined,
+        tipe_file: data.tipe_file || undefined,
+        activity_id: data.activity_id || undefined,
+        status: data.status,
+      },
     }).then(() => {
       form.reset();
       onOpenChange(false);

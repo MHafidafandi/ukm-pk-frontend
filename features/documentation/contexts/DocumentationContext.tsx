@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import {
   getDocumentations,
+  getAdminDocumentations,
   getDocumentation,
   createDocumentation,
   updateDocumentation,
@@ -14,11 +15,6 @@ import {
   activateDocumentation,
   bulkArchiveDocumentations,
   bulkDeleteDocumentations,
-  getDocumentationsByActivity,
-  getDocumentationsByType,
-  getDocumentationsByCreator,
-  getRecentDocumentations,
-  getMyDocumentations,
   getDocumentationStatistics,
   Documentation,
   CreateDocumentationInput,
@@ -29,6 +25,8 @@ import {
   DocumentationStatistics,
 } from "@/features/documentation/services/documentationService";
 import { getErrorMessage } from "@/lib/api/client";
+import { usePermission } from "@/hooks/usePermission";
+import { PERMISSIONS } from "@/lib/permissions";
 
 interface DocumentationContextType {
   documents: Documentation[];
@@ -47,28 +45,25 @@ interface DocumentationContextType {
   setActivityFilter: (activityId: string) => void;
   creatorFilter: string;
   setCreatorFilter: (creatorId: string) => void;
-  viewScope: "all" | "recent" | "my" | "activity" | "type" | "creator";
-  setViewScope: (
-    scope: "all" | "recent" | "my" | "activity" | "type" | "creator",
-  ) => void;
   refreshDocuments: () => Promise<void>;
 
-  createDocument: (args: { data: CreateDocumentationInput }) => Promise<any>;
+  createDocument: (args: { data: CreateDocumentationInput }) => Promise<{
+    message: string;
+    id?: string;
+  }>;
   updateDocument: (args: {
     id: string;
     data: UpdateDocumentationInput;
-  }) => Promise<any>;
-  deleteDocument: (id: string) => Promise<any>;
-  archiveDocument: (id: string) => Promise<any>;
-  activateDocument: (id: string) => Promise<any>;
-  bulkArchiveDocuments: (ids: string[]) => Promise<any>;
-  bulkDeleteDocuments: (ids: string[]) => Promise<any>;
-  getDocumentationById: (id: string) => Promise<any>;
-  getDocumentsByActivity: (activityId: string) => Promise<any>;
-  getDocumentsByType: (type: DocumentCategory) => Promise<any>;
-  getDocumentsByCreator: (creatorId: string) => Promise<any>;
-  getRecentDocuments: (limit?: number) => Promise<any>;
-  getMyDocuments: () => Promise<any>;
+  }) => Promise<{
+    message: string;
+    id?: string;
+  }>;
+  deleteDocument: (id: string) => Promise<{ message: string }>;
+  archiveDocument: (id: string) => Promise<{ message: string }>;
+  activateDocument: (id: string) => Promise<{ message: string }>;
+  bulkArchiveDocuments: (ids: string[]) => Promise<{ message: string }>;
+  bulkDeleteDocuments: (ids: string[]) => Promise<{ message: string }>;
+  getDocumentationById: (id: string) => Promise<{ data: Documentation }>;
 }
 
 const DocumentationContext = createContext<
@@ -90,6 +85,8 @@ export const DocumentationProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { can } = usePermission();
+
   const extractDocuments = (payload: unknown): Documentation[] => {
     if (Array.isArray(payload)) {
       return payload as Documentation[];
@@ -170,10 +167,10 @@ export const DocumentationProvider = ({
   >();
   const [activityFilter, setActivityFilter] = useState("");
   const [creatorFilter, setCreatorFilter] = useState("");
-  const [viewScope, setViewScope] = useState<
-    "all" | "recent" | "my" | "activity" | "type" | "creator"
-  >("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const canViewDocumentations = can(PERMISSIONS.VIEW_DOCUMENTATIONS);
+  const canViewAllDocumentations = can(PERMISSIONS.VIEW_ALL_DOCUMENTATIONS);
 
   const queryParams = useMemo<DocumentationQueryParams>(() => {
     const params: DocumentationQueryParams = {};
@@ -190,36 +187,19 @@ export const DocumentationProvider = ({
     isLoading: isFetchingDocuments,
     refetch,
   } = useQuery({
-    queryKey: ["documentations", viewScope, queryParams],
+    queryKey: [
+      "documentations",
+      queryParams,
+      canViewDocumentations,
+      canViewAllDocumentations,
+    ],
     queryFn: async () => {
-      if (viewScope === "recent") {
-        const response = await getRecentDocumentations(5);
-        return extractDocuments(response);
-      }
-
-      if (viewScope === "my") {
-        const response = await getMyDocumentations();
-        return extractDocuments(response);
-      }
-
-      if (viewScope === "activity" && activityFilter) {
-        const response = await getDocumentationsByActivity(activityFilter);
-        return extractDocuments(response);
-      }
-
-      if (viewScope === "type" && typeFilter) {
-        const response = await getDocumentationsByType(typeFilter);
-        return extractDocuments(response);
-      }
-
-      if (viewScope === "creator" && creatorFilter) {
-        const response = await getDocumentationsByCreator(creatorFilter);
-        return extractDocuments(response);
-      }
-
-      const response = await getDocumentations(queryParams);
+      const response = canViewAllDocumentations
+        ? await getAdminDocumentations(queryParams)
+        : await getDocumentations();
       return extractDocuments(response);
     },
+    enabled: canViewDocumentations || canViewAllDocumentations,
   });
 
   const documents = documentsData ?? [];
@@ -227,6 +207,7 @@ export const DocumentationProvider = ({
   const { data: statisticsData, isLoading: isFetchingStatistics } = useQuery({
     queryKey: ["documentations", "statistics"],
     queryFn: () => getDocumentationStatistics(),
+    enabled: canViewAllDocumentations,
   });
 
   const statistics = extractStatistics(statisticsData);
@@ -313,74 +294,52 @@ export const DocumentationProvider = ({
   });
 
   const getDocumentationById = async (id: string) => getDocumentation(id);
-  const getDocumentsByActivity = async (activityId: string) =>
-    getDocumentationsByActivity(activityId);
-  const getDocumentsByType = async (type: DocumentCategory) =>
-    getDocumentationsByType(type);
-  const getDocumentsByCreator = async (creatorId: string) =>
-    getDocumentationsByCreator(creatorId);
-  const getRecentDocuments = async (limit?: number) =>
-    getRecentDocumentations(limit);
-  const getMyDocuments = async () => getMyDocumentations();
 
-  const contextValue = useMemo(
-    () => ({
-      documents,
-      isFetchingDocuments,
-      statistics,
-      isFetchingStatistics,
-      search,
-      setSearch,
-      selectedIds,
-      setSelectedIds,
-      typeFilter,
-      setTypeFilter,
-      statusFilter,
-      setStatusFilter,
-      activityFilter,
-      setActivityFilter,
-      creatorFilter,
-      setCreatorFilter,
-      viewScope,
-      setViewScope,
-      refreshDocuments,
+  const createDocument = async (args: { data: CreateDocumentationInput }) =>
+    createDocumentMutation.mutateAsync(args.data);
+  const updateDocument = async (args: {
+    id: string;
+    data: UpdateDocumentationInput;
+  }) => updateDocumentMutation.mutateAsync(args);
+  const deleteDocument = async (id: string) =>
+    deleteDocumentMutation.mutateAsync(id);
+  const archiveDocument = async (id: string) =>
+    archiveDocumentMutation.mutateAsync(id);
+  const activateDocument = async (id: string) =>
+    activateDocumentMutation.mutateAsync(id);
+  const bulkArchiveDocuments = async (ids: string[]) =>
+    bulkArchiveDocumentsMutation.mutateAsync(ids);
+  const bulkDeleteDocuments = async (ids: string[]) =>
+    bulkDeleteDocumentsMutation.mutateAsync(ids);
 
-      createDocument: createDocumentMutation.mutateAsync,
-      updateDocument: updateDocumentMutation.mutateAsync,
-      deleteDocument: deleteDocumentMutation.mutateAsync,
-      archiveDocument: archiveDocumentMutation.mutateAsync,
-      activateDocument: activateDocumentMutation.mutateAsync,
-      bulkArchiveDocuments: bulkArchiveDocumentsMutation.mutateAsync,
-      bulkDeleteDocuments: bulkDeleteDocumentsMutation.mutateAsync,
-      getDocumentationById,
-      getDocumentsByActivity,
-      getDocumentsByType,
-      getDocumentsByCreator,
-      getRecentDocuments,
-      getMyDocuments,
-    }),
-    [
-      documents,
-      isFetchingDocuments,
-      statistics,
-      isFetchingStatistics,
-      search,
-      selectedIds,
-      typeFilter,
-      statusFilter,
-      activityFilter,
-      creatorFilter,
-      viewScope,
-      refreshDocuments,
-      createDocumentMutation,
-      updateDocumentMutation,
-      deleteDocumentMutation,
-      archiveDocumentMutation,
-      activateDocumentMutation,
-      bulkArchiveDocumentsMutation,
-      bulkDeleteDocumentsMutation,
-    ],
-  );
+  const contextValue = {
+    documents,
+    isFetchingDocuments,
+    statistics,
+    isFetchingStatistics,
+    search,
+    setSearch,
+    selectedIds,
+    setSelectedIds,
+    typeFilter,
+    setTypeFilter,
+    statusFilter,
+    setStatusFilter,
+    activityFilter,
+    setActivityFilter,
+    creatorFilter,
+    setCreatorFilter,
+    refreshDocuments,
+
+    createDocument,
+    updateDocument,
+    deleteDocument,
+    archiveDocument,
+    activateDocument,
+    bulkArchiveDocuments,
+    bulkDeleteDocuments,
+    getDocumentationById,
+  };
 
   return (
     <DocumentationContext.Provider value={contextValue}>

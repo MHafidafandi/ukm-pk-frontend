@@ -17,24 +17,7 @@ export const api = axios.create({
   withCredentials: true, // untuk httpOnly cookies (refresh_token)
 });
 
-const AUTH_NO_BEARER_EXACT = new Set([
-  "/auth/login",
-  "/auth/refresh",
-  "/auth/logout",
-]);
-
-const isAuthNoBearerEndpoint = (url: string): boolean => {
-  if (AUTH_NO_BEARER_EXACT.has(url)) {
-    return true;
-  }
-
-  // /auth/:userId/logout-all
-  if (/^\/auth\/[^/]+\/logout-all$/.test(url)) {
-    return true;
-  }
-
-  return false;
-};
+const AUTH_COOKIE_ENDPOINTS = new Set(["/auth/login", "/auth/refresh"]);
 
 // ── Token helpers ──────────────────────────────────────────────────────────
 
@@ -51,24 +34,6 @@ export function setToken(token: string): void {
 
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
-}
-
-export function clearClientAuthArtifacts(): void {
-  removeToken();
-
-  if (typeof globalThis.document === "undefined") {
-    return;
-  }
-
-  // Best-effort cleanup for non-httpOnly cookies if they exist.
-  const cookieNames = ["refresh_token", "access_token", "token"];
-  const paths = ["/", "/api", "/api/v1"];
-
-  for (const name of cookieNames) {
-    for (const path of paths) {
-      document.cookie = `${name}=; Path=${path}; Max-Age=0; SameSite=Lax`;
-    }
-  }
 }
 
 // ── Refresh token state ────────────────────────────────────────────────────
@@ -110,7 +75,7 @@ api.interceptors.request.use(
     if (typeof globalThis.window !== "undefined") {
       const requestUrl = config.url ?? "";
       const token = getToken();
-      if (token && !isAuthNoBearerEndpoint(requestUrl)) {
+      if (token && !AUTH_COOKIE_ENDPOINTS.has(requestUrl)) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
@@ -204,8 +169,8 @@ export default api;
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     return (
-      error.response?.data?.error ||
       error.response?.data?.message ||
+      error.response?.data?.error ||
       error.message ||
       "Terjadi kesalahan pada server"
     );

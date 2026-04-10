@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { createContext, useContext, useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
+import { refreshToken } from "@/features/auth/services/authService";
+import { setToken } from "@/lib/api/client";
 
 import {
   getRoles,
@@ -82,20 +85,43 @@ export const RoleProvider = ({ children }: { children: React.ReactNode }) => {
     queryClient.invalidateQueries({ queryKey: ["roles"] });
   };
 
+  const syncAuthAfterRoleChange = async () => {
+    try {
+      const refreshed = await refreshToken();
+      if (refreshed?.access_token) {
+        setToken(refreshed.access_token);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+    } catch {
+      toast.warning(
+        "Perubahan role tersimpan, sesi akan diperbarui saat login ulang.",
+      );
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: createRole,
-    onSuccess: () => invalidateRoles(),
+    onSuccess: async () => {
+      invalidateRoles();
+      await syncAuthAfterRoleChange();
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       updateRole(id, data),
-    onSuccess: () => invalidateRoles(),
+    onSuccess: async () => {
+      invalidateRoles();
+      await syncAuthAfterRoleChange();
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteRole,
-    onSuccess: () => invalidateRoles(),
+    onSuccess: async () => {
+      invalidateRoles();
+      await syncAuthAfterRoleChange();
+    },
   });
 
   const contextValue = useMemo(
