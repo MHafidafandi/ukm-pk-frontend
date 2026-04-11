@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
@@ -9,27 +10,15 @@ import { DonationFormDialog } from "./donation-form-dialog";
 import { DonationDeleteDialog } from "./donation-delete-dialog";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
-import {
-  CreateDonationInput,
-  createDonationSchema,
-} from "@/lib/validations/donation-schema";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-const emptyForm: CreateDonationInput = {
-  nama_donatur: "",
-  jumlah: 0,
-  tanggal: new Date().toISOString().split("T")[0],
-  metode: "qris",
-  status: "pending",
-  deskripsi: "",
-};
 
 export const DonationList = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editing, setEditing] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState<Donation | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const {
     donations,
     stats,
@@ -45,6 +34,15 @@ export const DonationList = () => {
     setSearchQuery,
     activeFilter,
     setActiveFilter,
+    methodFilter,
+    setMethodFilter,
+    startDateFilter,
+    setStartDateFilter,
+    endDateFilter,
+    setEndDateFilter,
+    verifyDonation,
+    rejectDonation,
+    cancelDonation,
   } = useDonationContext();
 
   const donationStats = stats?.data;
@@ -76,42 +74,27 @@ export const DonationList = () => {
     setDeleteOpen(true);
   };
 
+  const resetFilters = () => {
+    setSearchQuery("");
+    setActiveFilter("all");
+    setMethodFilter("all");
+    setStartDateFilter("");
+    setEndDateFilter("");
+  };
+
   const handleSave = async (formData: FormData) => {
     try {
-      const parsed = createDonationSchema.parse({
-        nama_donatur: String(formData.get("nama_donatur") ?? ""),
-        jumlah: Number(formData.get("jumlah") ?? 0),
-        tanggal: String(formData.get("tanggal") ?? ""),
-        metode:
-          (formData.get("metode") as CreateDonationInput["metode"]) ?? "qris",
-        status:
-          (formData.get("status") as CreateDonationInput["status"]) ??
-          "pending",
-        deskripsi: String(formData.get("deskripsi") ?? ""),
-      });
-
-      // Ensure optional fields default to strings for CreateDonationInput compatibility
-      const payload = {
-        ...parsed,
-        deskripsi: parsed.deskripsi ?? "",
-        tanggal: parsed.tanggal ?? new Date().toISOString().split("T")[0],
-      };
-
       if (editing) {
-        await updateDonation({ id: editing.id, data: payload });
+        await updateDonation({ id: editing.id, data: formData });
         toast.success("Donation successfully updated");
       } else {
-        await createDonation(payload as any);
+        await createDonation(formData);
         toast.success("Donation successfully created");
       }
 
       setFormOpen(false);
       setEditing(null);
     } catch (err: any) {
-      if (err.name === "ZodError") {
-        toast.error(err.errors[0].message);
-        return;
-      }
       const message =
         err?.response?.data?.message ??
         err?.response?.data?.error ??
@@ -130,6 +113,48 @@ export const DonationList = () => {
       setDeleteOpen(false);
     } catch (err: any) {
       toast.error(err.response?.error || "Failed to delete donation");
+    }
+  };
+
+  const handleVerifyDonation = async (donation: Donation, catatan?: string) => {
+    try {
+      await verifyDonation({ id: donation.id, catatan });
+      toast.success("Donation verified successfully");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        err?.message ??
+        "Failed to verify donation";
+      toast.error(message);
+    }
+  };
+
+  const handleRejectDonation = async (donation: Donation, catatan: string) => {
+    try {
+      await rejectDonation({ id: donation.id, catatan });
+      toast.success("Donation rejected successfully");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        err?.message ??
+        "Failed to reject donation";
+      toast.error(message);
+    }
+  };
+
+  const handleCancelDonation = async (donation: Donation) => {
+    try {
+      await cancelDonation(donation.id);
+      toast.success("Donation canceled successfully");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        err?.message ??
+        "Failed to cancel donation";
+      toast.error(message);
     }
   };
 
@@ -216,18 +241,18 @@ export const DonationList = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-display relative -m-8 p-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div className="flex-1 relative -m-8 flex h-full flex-col overflow-hidden bg-slate-50 p-8 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
           Donation Management
         </h1>
         <PermissionGate permission={PERMISSIONS.CREATE_DONATIONS}>
           <button
             onClick={openAdd}
-            className="px-4 py-2.5 bg-primary hover:bg-indigo-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm shadow-primary/20 transition-all"
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 transition-all hover:bg-indigo-600"
           >
             <svg
-              className="w-5 h-5"
+              className="h-5 w-5"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
@@ -244,13 +269,13 @@ export const DonationList = () => {
         </PermissionGate>
       </div>
 
-      <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 shrink-0">
-          <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-300 dark:border-slate-700">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+      <div className="flex-1 overflow-y-auto pb-10 no-scrollbar">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="rounded-xl border border-slate-300 bg-slate-100 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900/30">
                 <svg
-                  className="w-6 h-6 text-green-600 dark:text-green-400"
+                  className="h-6 w-6 text-green-600 dark:text-green-400"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="none"
@@ -263,22 +288,22 @@ export const DonationList = () => {
                   <path d="m9 12 2 2 4-4" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
+              <span className="rounded-full bg-green-50 px-2 py-1 text-sm font-medium text-green-600 dark:bg-green-900/20 dark:text-green-400">
                 {donationStats?.total_donations || 0} Total
               </span>
             </div>
-            <h3 className="text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium">
+            <h3 className="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
               Total Verified Funds
             </h3>
-            <p className="text-2xl font-bold mt-1 text-gray-800 dark:text-white">
+            <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white">
               {formatRupiah(donationStats?.verified_amount || 0)}
             </p>
           </div>
-          <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-300 dark:border-slate-700">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+          <div className="rounded-xl border border-slate-300 bg-slate-100 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="rounded-lg bg-yellow-100 p-3 dark:bg-yellow-900/30">
                 <svg
-                  className="w-6 h-6 text-yellow-600 dark:text-yellow-400"
+                  className="h-6 w-6 text-yellow-600 dark:text-yellow-400"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="none"
@@ -293,22 +318,22 @@ export const DonationList = () => {
                   <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
+              <span className="rounded-full bg-yellow-50 px-2 py-1 text-sm font-medium text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400">
                 Pending Auth
               </span>
             </div>
-            <h3 className="text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium">
+            <h3 className="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
               Pending Verification
             </h3>
-            <p className="text-2xl font-bold mt-1 text-gray-800 dark:text-white">
+            <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white">
               {formatRupiah(donationStats?.pending_amount || 0)}
             </p>
           </div>
-          <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-300 dark:border-slate-700">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+          <div className="rounded-xl border border-slate-300 bg-slate-100 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
                 <svg
-                  className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                  className="h-6 w-6 text-blue-600 dark:text-blue-400"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="none"
@@ -329,111 +354,202 @@ export const DonationList = () => {
                   <path d="M16 18h.01" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
+              <span className="rounded-full bg-blue-50 px-2 py-1 text-sm font-medium text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
                 {todaysDonations.length} New
               </span>
             </div>
-            <h3 className="text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium">
+            <h3 className="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
               Today&apos;s Donations
             </h3>
-            <p className="text-2xl font-bold mt-1 text-gray-800 dark:text-white">
+            <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white">
               {formatRupiah(todayAmount)}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 shrink-0">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <svg
-                className="absolute left-3 top-2.5 text-text-secondary-light dark:text-text-secondary-dark w-5 h-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-              <input
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
-                placeholder="Search donor or ID..."
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg transition-colors shadow-sm">
-              <svg
-                className="w-5 h-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="21" x2="14" y1="4" y2="4" />
-                <line x1="10" x2="3" y1="4" y2="4" />
-                <line x1="21" x2="12" y1="12" y2="12" />
-                <line x1="8" x2="3" y1="12" y2="12" />
-                <line x1="21" x2="16" y1="20" y2="20" />
-                <line x1="12" x2="3" y1="20" y2="20" />
-                <line x1="14" x2="14" y1="2" y2="6" />
-                <line x1="8" x2="8" y1="10" y2="14" />
-                <line x1="16" x2="16" y1="18" y2="22" />
-              </svg>
-              Filter
-            </button>
-          </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
-              {["all", "verified", "pending", "rejected"].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setActiveFilter(status)}
-                  className={`capitalize px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    activeFilter === status
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
+        <div className="mb-6 flex flex-col gap-4 shrink-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <svg
+                  className="absolute left-3 top-2.5 h-5 w-5 text-text-secondary-light dark:text-text-secondary-dark"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  {status}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-indigo-600 transition-colors shadow-sm whitespace-nowrap"
-            >
-              <svg
-                className="w-5 h-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  className="w-full rounded-xl border border-gray-200 bg-white px-10 pr-4 py-2 text-sm outline-none transition-all placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-900"
+                  placeholder="Search donor or ID..."
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setFilterOpen((current) => !current)}
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" x2="12" y1="15" y2="3" />
-              </svg>
-              Export CSV
-            </button>
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="21" x2="14" y1="4" y2="4" />
+                  <line x1="10" x2="3" y1="4" y2="4" />
+                  <line x1="21" x2="12" y1="12" y2="12" />
+                  <line x1="8" x2="3" y1="12" y2="12" />
+                  <line x1="21" x2="16" y1="20" y2="20" />
+                  <line x1="12" x2="3" y1="20" y2="20" />
+                  <line x1="14" x2="14" y1="2" y2="6" />
+                  <line x1="8" x2="8" y1="10" y2="14" />
+                  <line x1="16" x2="16" y1="18" y2="22" />
+                </svg>
+                Filter
+              </button>
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+                {["all", "verified", "pending", "rejected", "canceled"].map(
+                  (status) => (
+                    <button
+                      key={status}
+                      onClick={() => setActiveFilter(status)}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-all ${
+                        activeFilter === status
+                          ? "bg-primary text-white shadow-sm"
+                          : "text-text-secondary-light hover:bg-gray-100 dark:text-text-secondary-dark dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ),
+                )}
+              </div>
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-600"
+              >
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" x2="12" y1="15" y2="3" />
+                </svg>
+                Export CSV
+              </button>
+            </div>
           </div>
+
+          {filterOpen && (
+            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 lg:grid-cols-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark">
+                  Status
+                </label>
+                <select
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900"
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="verified">Verified</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="canceled">Canceled</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark">
+                  Metode
+                </label>
+                <select
+                  value={methodFilter}
+                  onChange={(e) => setMethodFilter(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900"
+                >
+                  <option value="all">Semua Metode</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                  <option value="e_wallet">E-Wallet</option>
+                  <option value="qris">QRIS</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark">
+                  Dari Tanggal
+                </label>
+                <input
+                  type="date"
+                  value={startDateFilter}
+                  onChange={(e) => setStartDateFilter(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark">
+                  Sampai Tanggal
+                </label>
+                <input
+                  type="date"
+                  value={endDateFilter}
+                  onChange={(e) => setEndDateFilter(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2 lg:col-span-4 lg:justify-end">
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen(false)}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-600"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-[500px]">
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-125">
           <DonationTable
             donations={donations}
             onEdit={openEdit}
             onDelete={openDelete}
+            onVerify={handleVerifyDonation}
+            onReject={handleRejectDonation}
+            onCancel={handleCancelDonation}
           />
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-1 pt-4">

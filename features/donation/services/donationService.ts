@@ -1,6 +1,9 @@
 import { api } from "@/lib/api/client";
 import { objectToFormData } from "@/lib/utils";
+import axios from "axios";
+import { env } from "@/configs/env";
 import { UpdateDonationInput } from "@/lib/validations/donation-schema";
+import { CreateDonationInput } from "@/lib/validations/donation-schema";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -10,7 +13,12 @@ export type DonationMethod =
   | "cash"
   | "e_wallet"
   | "qris"
-  | "other";
+  | "other"
+  | "Transfer Bank"
+  | "Tunai"
+  | "E-Wallet"
+  | "QRIS"
+  | "Other";
 
 export interface Donation {
   id: string;
@@ -18,28 +26,41 @@ export interface Donation {
   jumlah: number;
   tanggal: string; // ISO 8601 date string
   metode: DonationMethod;
-  deskripsi: string;
+  deskripsi?: string;
   status: DonationStatus;
-  bukti_pembayaran: string; // URL to image/file
+  bukti_pembayaran?: string; // URL to image/file
+  catatan?: string;
+  verified_by?: string;
+  verified_at?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateDonationInput {
-  nama_donatur: string;
-  jumlah: number;
-  metode: DonationMethod;
-  deskripsi: string;
-  status?: DonationStatus;
-  // Bukti pembayaran di-upload terpisah atau via multipart
-  // Untuk data input, kita asumsikan file di-handle terpisah
-}
+export type CreateDonationPayload = CreateDonationInput;
+export type { CreateDonationInput };
 
 export interface DonationStats {
   total_donations: number;
   total_amount: number;
-  pending_amount: number;
   verified_amount: number;
+  pending_amount: number;
+  rejected_amount: number;
+  monthly_breakdown: Array<{
+    month: string;
+    year: number;
+    amount: number;
+    count: number;
+  }>;
+  status_summary: Array<{
+    status: string;
+    count: number;
+    amount: number;
+  }>;
+  method_summary: Array<{
+    method: string;
+    count: number;
+    amount: number;
+  }>;
 }
 
 export type DonationParams = {
@@ -47,6 +68,9 @@ export type DonationParams = {
   limit?: number;
   search?: string;
   status?: string;
+  metode?: string;
+  start_date?: string;
+  end_date?: string;
 };
 
 export interface PaginationMeta {
@@ -54,54 +78,56 @@ export interface PaginationMeta {
   page: number;
   total_pages: number;
   page_size: number;
+  has_next?: boolean;
+  has_previous?: boolean;
 }
 
 // ── API Functions ──────────────────────────────────────────────────────────
 
 const BASE_URL = "/donations";
+const publicApi = axios.create({
+  baseURL: env.API_URL,
+  withCredentials: false,
+});
 
 export async function getDonations(
   params?: DonationParams,
 ): Promise<{ data: { donations: Donation[]; pagination: PaginationMeta } }> {
-  const data = await api.get("/donations", { params });
-  return data;
+  return api.get(BASE_URL, { params });
 }
 
 export async function getDonation(id: string): Promise<{ data: Donation }> {
-  const data = await api.get(`/donations/${id}`);
-  return data;
+  return api.get(`${BASE_URL}/${id}`);
 }
 
 export async function createDonation(
-  body: CreateDonationInput | FormData,
-): Promise<{ message: string; id?: string }> {
+  body: CreateDonationPayload | FormData,
+): Promise<{ message: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.post("/donations", payload, {
+  const response = await publicApi.post(BASE_URL, payload, {
     headers: {
       "Content-Type": undefined,
+      Authorization: undefined,
     },
   });
-  return data;
+  return response.data;
 }
 
 export async function deleteDonation(id: string): Promise<{ message: string }> {
-  const { data } = await api.delete(`/donations/${id}`);
-  return data;
+  return api.delete(`${BASE_URL}/${id}`);
 }
 
 export async function updateDonation(
   id: string,
   body: UpdateDonationInput | FormData,
-): Promise<{ message: string; id?: string }> {
+): Promise<{ message: string }> {
   const payload = body instanceof FormData ? body : objectToFormData(body);
-  const { data } = await api.put(`/donations/${id}`, payload, {
+  return api.put(`${BASE_URL}/${id}`, payload, {
     headers: {
       "Content-Type": undefined,
     },
   });
-  return data;
 }
-
 
 export async function uploadProof(
   id: string,
@@ -114,10 +140,54 @@ export async function uploadProof(
       "Content-Type": "multipart/form-data",
     },
   })) as any;
-  return response.data; // assuming API returns { data: { url: "..." } } => response.data has { url }
+  return response.data;
 }
 
 export async function getDonationStats(): Promise<{ data: DonationStats }> {
-  const response = (await api.get(`${BASE_URL}/statistics/summary`)) as any;
-  return { data: response.data };
+  return api.get(`${BASE_URL}/statistics/summary`);
+}
+
+export async function verifyDonation(
+  id: string,
+  payload: { catatan?: string },
+): Promise<{ message: string }> {
+  return api.patch(`${BASE_URL}/${id}/verify`, payload);
+}
+
+export async function rejectDonation(
+  id: string,
+  payload: { catatan: string },
+): Promise<{ message: string }> {
+  return api.patch(`${BASE_URL}/${id}/reject`, payload);
+}
+
+export async function cancelDonation(id: string): Promise<{ message: string }> {
+  return api.patch(`${BASE_URL}/${id}/cancel`);
+}
+
+export async function bulkVerifyDonations(payload: {
+  donation_ids: string[];
+  catatan?: string;
+}): Promise<{ message: string }> {
+  return api.post(`${BASE_URL}/bulk/verify`, payload);
+}
+
+export async function bulkRejectDonations(payload: {
+  donation_ids: string[];
+  catatan: string;
+}): Promise<{ message: string }> {
+  return api.post(`${BASE_URL}/bulk/reject`, payload);
+}
+
+export async function getDonationReport(params: {
+  start_date: string;
+  end_date: string;
+}): Promise<{ data: DonationStats }> {
+  return api.get(`${BASE_URL}/statistics/report`, { params });
+}
+
+export async function getDonationMonthly(params: { year: number }): Promise<{
+  data: Array<{ month: string; year: number; amount: number; count: number }>;
+}> {
+  return api.get(`${BASE_URL}/statistics/monthly`, { params });
 }

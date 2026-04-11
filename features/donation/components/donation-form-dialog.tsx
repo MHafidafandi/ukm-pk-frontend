@@ -34,6 +34,34 @@ import {
 } from "@/lib/validations/donation-schema";
 import { Donation } from "../services/donationService";
 
+const normalizeDonationMethod = (
+  method: Donation["metode"],
+): DonationSchema["metode"] => {
+  if (
+    method === "bank_transfer" ||
+    method === "cash" ||
+    method === "e_wallet" ||
+    method === "qris" ||
+    method === "other"
+  ) {
+    return method;
+  }
+
+  const normalized = method.toLowerCase().replace(/\s+/g, "_");
+
+  if (
+    normalized === "bank_transfer" ||
+    normalized === "cash" ||
+    normalized === "e_wallet" ||
+    normalized === "qris" ||
+    normalized === "other"
+  ) {
+    return normalized;
+  }
+
+  return "other";
+};
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -58,25 +86,26 @@ export const DonationFormDialog = ({
       jumlah: 0,
       metode: "cash",
       deskripsi: "",
-      status: "pending",
       tanggal: new Date().toISOString().split("T")[0],
+      bukti_pembayaran: undefined,
     },
   });
 
   // Reset form when dialog opens/closes or baseData changes
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedFile(null);
       if (isEdit && baseData) {
         form.reset({
           nama_donatur: baseData.nama_donatur,
           jumlah: baseData.jumlah,
-          metode: baseData.metode,
+          metode: normalizeDonationMethod(baseData.metode),
           deskripsi: baseData.deskripsi ?? "",
-          status: baseData.status,
           tanggal: baseData.tanggal
             ? new Date(baseData.tanggal).toISOString().split("T")[0]
             : new Date().toISOString().split("T")[0],
+          bukti_pembayaran: undefined,
         });
       } else {
         form.reset({
@@ -84,20 +113,27 @@ export const DonationFormDialog = ({
           jumlah: 0,
           metode: "cash",
           deskripsi: "",
-          status: "pending",
           tanggal: new Date().toISOString().split("T")[0],
+          bukti_pembayaran: undefined,
         });
       }
     }
   }, [open, isEdit, baseData, form]);
 
   const handleSubmit: SubmitHandler<DonationSchema> = (values) => {
+    if (!isEdit && !selectedFile) {
+      form.setError("bukti_pembayaran", {
+        type: "manual",
+        message: "Bukti pembayaran wajib diunggah untuk donasi baru",
+      });
+      return;
+    }
+
     const formData = new FormData();
     formData.append("nama_donatur", values.nama_donatur);
     formData.append("jumlah", values.jumlah.toString());
     formData.append("metode", values.metode);
     if (values.deskripsi) formData.append("deskripsi", values.deskripsi);
-    formData.append("status", values.status);
     if (values.tanggal) formData.append("tanggal", values.tanggal);
     if (selectedFile) formData.append("bukti_pembayaran", selectedFile);
 
@@ -106,7 +142,7 @@ export const DonationFormDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit Donasi" : "Catat Donasi Baru"}
@@ -198,34 +234,6 @@ export const DonationFormDialog = ({
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="pending">Menunggu</SelectItem>
-                        <SelectItem value="verified">Terverifikasi</SelectItem>
-                        <SelectItem value="rejected">Ditolak</SelectItem>
-                        <SelectItem value="canceled">Dibatalkan</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <FormField
@@ -246,7 +254,9 @@ export const DonationFormDialog = ({
             />
 
             <FormItem>
-              <FormLabel>Bukti Pembayaran (Opsional)</FormLabel>
+              <FormLabel>
+                Bukti Pembayaran {isEdit ? "(Opsional)" : "(Wajib)"}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="file"
@@ -258,8 +268,11 @@ export const DonationFormDialog = ({
                 />
               </FormControl>
               <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-1">
-                Upload bukti pembayaran donasi jika ada (PNG, JPG, PDF)
+                Upload bukti pembayaran donasi (PNG, JPG, PDF, maks 5MB)
               </p>
+              <FormMessage>
+                {form.formState.errors.bukti_pembayaran?.message as string}
+              </FormMessage>
             </FormItem>
 
             <DialogFooter>
