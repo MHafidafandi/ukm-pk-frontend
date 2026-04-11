@@ -227,11 +227,10 @@ export const ActivityList = () => {
             <button
               key={s.id}
               onClick={() => setStatusFilter(s.id)}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                statusFilter === s.id
-                  ? "bg-primary text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
-              }`}
+              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${statusFilter === s.id
+                ? "bg-primary text-white shadow-sm"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
+                }`}
             >
               {s.label}
             </button>
@@ -277,15 +276,14 @@ export const ActivityList = () => {
               <button
                 key={p}
                 onClick={() => setPage(p)}
-                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === p
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
-                }`}
+                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+                  }`}
               >
                 {p}
               </button>
-            ),
+            )
           )}
 
           <button

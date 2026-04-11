@@ -49,7 +49,6 @@ const statusColor: Record<string, { label: string; colorClass: string }> = {
 
 export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
   const [returningId, setReturningId] = useState<string | null>(null);
-
   const [markingLostId, setMarkingLostId] = useState<string | null>(null);
 
   const formatDate = (date?: string) => {
@@ -84,10 +83,10 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
   return (
     <div className="w-full">
       <Table>
-        <TableHeader className="bg-muted/50 rounded-t-xl border-b-0">
-          <TableRow className="border-b-0 hover:bg-transparent">
+        <TableHeader className="bg-muted/50 rounded-t-xl">
+          <TableRow className="hover:bg-transparent">
             <TableHead className="font-semibold text-foreground rounded-tl-xl h-11 text-center">
-              Assets
+              Asset
             </TableHead>
             <TableHead className="font-semibold text-foreground h-11 text-center">
               Borrower
@@ -131,11 +130,11 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
                 >
                   <TableCell>
                     <div className="font-semibold text-foreground">
-                      {loan.asset_id}
+                      {loan.asset?.nama || "Unknown"}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium text-muted-foreground">
-                    {loan.user_id || "Unknown"}
+                    {loan.user?.nama || "Unknown"}
                   </TableCell>
                   <TableCell className="text-sm font-medium">
                     {formatDate(loan.tanggal_pinjam)}
@@ -166,7 +165,11 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
                           })
                         }
                       >
-                        {isReturning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Return"}
+                        {isReturning ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          "Return"
+                        )}
                       </Button>
                     )}
                     {loan.status === "dipinjam" && onMarkLost && (
@@ -182,7 +185,11 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
                           })
                         }
                       >
-                        {markingLostId === loan.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark Lost"}
+                        {markingLostId === loan.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          "Mark Lost"
+                        )}
                       </Button>
                     )}
                   </TableCell>

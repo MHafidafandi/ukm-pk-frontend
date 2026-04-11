@@ -107,6 +107,24 @@ export interface LoansResponse {
   };
 }
 
+export interface AssetsStatsResponse {
+  data: {
+    total_assets: number;
+    total_loans: number;
+    active_loans: number;
+    available_assets: number;
+    condition_summary: {
+      kondisi: AssetCondition;
+      count: number;
+    }[];
+    loan_status_summary: {
+      status: LoanStatus;
+      count: number;
+    }[];
+  };
+}
+
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /** NOTE: Kalau base URL di api client kamu sudah include "/api/v1",
@@ -130,6 +148,11 @@ function buildParams(filters?: Record<string, any>): string {
 /** GET /assets?page=1&limit=10&kondisi=...&search=... */
 export async function getAssets(filters?: AssetFilters): Promise<AssetsResponse> {
   const data = await api.get(`/assets${buildParams(filters)}`);
+  return data as any;
+}
+
+export async function getAssetStats(): Promise<{ data: any }> {
+  const data = await api.get(`/assets/statistics/summary`);
   return data as any;
 }
 
@@ -169,7 +192,7 @@ export async function createAsset(
       "Content-Type": undefined,
     },
   });
-  return data;
+  return data as any;
 }
 
 /** PUT /assets/:id  (form-data) */
@@ -198,19 +221,6 @@ export async function updateAssetCondition(
 /** DELETE /assets/:id */
 export async function deleteAsset(id: string): Promise<void> {
   await api.delete(`/assets/${id}`);
-}
-
-/** POST /assets/:id/image  (file upload) */
-export async function uploadAssetImage(
-  id: string,
-  file: File,
-): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const data = await api.post(`/assets/${id}/image`, formData, {
-    headers: { "Content-Type": undefined },
-  });
-  return data as any;
 }
 
 // ── Loans API ──────────────────────────────────────────────────────────────
@@ -278,7 +288,7 @@ export async function getOverdueLoans(): Promise<LoansResponse> {
 }
 
 /** GET /loans/statistics/summary */
-export async function getLoanStatistics(): Promise<{ data: any }> {
+export async function getLoanStats(): Promise<{ data: any }> {
   const data = await api.get(`/loans/statistics/summary`);
   return data as any;
 }

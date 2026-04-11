@@ -93,12 +93,12 @@ export const LoanFormDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {availableAssets.length === 0 ? (
+                      {assets.length === 0 ? (
                         <SelectItem value="_none" disabled>
                           No available assets
                         </SelectItem>
                       ) : (
-                        availableAssets.map((asset) => (
+                        assets.map((asset) => (
                           <SelectItem key={asset.id} value={asset.id}>
                             {asset.nama}
                             <span className="ml-2 text-xs text-muted-foreground">
@@ -113,6 +113,7 @@ export const LoanFormDialog = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="user_id"

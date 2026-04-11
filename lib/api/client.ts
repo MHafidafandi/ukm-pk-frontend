@@ -1,12 +1,16 @@
 /**
  * Axios instance dengan konfigurasi base URL dan interceptors.
- * - Request interceptor: inject Authorization header dari localStorage
- * - Response interceptor: auto-refresh token on 401, redirect ke login jika refresh gagal
  *
- * Menggunakan failed queue untuk menangani multiple concurrent request yang 401
- * secara bersamaan — semua request akan di-retry setelah token berhasil di-refresh.
+ * Arsitektur Token:
+ * - Access token disimpan di MEMORY (bukan localStorage) → aman dari XSS
+ * - Refresh token disimpan di HttpOnly cookie yang di-set oleh backend
+ * - Request interceptor: inject Authorization header dari memory
+ * - Response interceptor: auto-refresh on 401 dengan single-flight pattern
+ *
+ * Single-flight pattern: jika ada banyak request yang 401 bersamaan,
+ * hanya 1 request refresh yang dikirim. Yang lain menunggu di queue.
  */
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
 import { env } from "@/configs/env";
 
 export const api = axios.create({
@@ -14,47 +18,48 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // untuk httpOnly cookies (refresh_token)
+  withCredentials: true, // selalu kirim HttpOnly cookie (refresh_token)
 });
 
-const AUTH_COOKIE_ENDPOINTS = new Set(["/auth/login", "/auth/refresh"]);
+// ── In-Memory Token Store (XSS-safe) ──────────────────────────────────────
+// Tidak pakai localStorage. Token hilang saat tab ditutup.
+// Re-hydration otomatis via refresh token cookie saat app load.
 
-// ── Token helpers ──────────────────────────────────────────────────────────
-
-const TOKEN_KEY = "access_token";
+let _accessToken: string | null = null;
 
 export function getToken(): string | null {
-  if (typeof globalThis.window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+  return _accessToken;
 }
 
 export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+  _accessToken = token;
+  if (typeof document !== "undefined") {
+    document.cookie = "is_authenticated=true; path=/; max-age=86400; SameSite=Lax";
+  }
 }
 
 export function removeToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  _accessToken = null;
+  if (typeof document !== "undefined") {
+    document.cookie = "is_authenticated=; path=/; max-age=0; SameSite=Lax";
+  }
 }
 
-// ── Refresh token state ────────────────────────────────────────────────────
+// ── Endpoints yang tidak perlu Authorization header ────────────────────────
+const NO_AUTH_ENDPOINTS = new Set(["/auth/login", "/auth/refresh", "/auth/logout"]);
 
-/** Apakah sedang dalam proses refresh token */
+// ── Refresh token state (single-flight) ───────────────────────────────────
+
 let isRefreshing = false;
 
-/**
- * Antrian request yang gagal karena 401 saat refresh sedang berjalan.
- * Setelah refresh selesai, semua request di antrian akan di-retry.
- */
 let failedQueue: Array<{
   resolve: (token: string) => void;
   reject: (err: unknown) => void;
 }> = [];
 
-type RefreshTokenResponse = {
-  access_token?: string;
-  data?: {
-    access_token?: string;
-  };
+type AccessTokenResponse = {
+  access_token: string;
+  expires_in?: number;
 };
 
 function processQueue(error: unknown, token: string | null = null) {
@@ -71,16 +76,16 @@ function processQueue(error: unknown, token: string | null = null) {
 // ── Request interceptor ────────────────────────────────────────────────────
 
 api.interceptors.request.use(
-  (config) => {
-    if (typeof globalThis.window !== "undefined") {
-      const requestUrl = config.url ?? "";
-      const token = getToken();
-      if (token && !AUTH_COOKIE_ENDPOINTS.has(requestUrl)) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+  (config: InternalAxiosRequestConfig) => {
+    const requestUrl = config.url ?? "";
+    const token = getToken();
+
+    if (token && !NO_AUTH_ENDPOINTS.has(requestUrl)) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
-    config.withCredentials = config.withCredentials ?? true;
+    // Pastikan cookie selalu dikirim
+    config.withCredentials = true;
 
     return config;
   },
@@ -89,7 +94,10 @@ api.interceptors.request.use(
   },
 );
 
-// ── Response interceptor (auto-refresh) ───────────────────────────────────
+// ── Response interceptor ───────────────────────────────────────────────────
+// PENTING: response.data di-unwrap di sini supaya caller langsung dapat data body.
+// Ini berarti di refresh handler kita harus akses langsung ke property,
+// bukan .data.access_token.
 
 api.interceptors.response.use(
   (response) => response.data,
@@ -98,49 +106,56 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // Hanya handle 401, dan jangan retry request refresh itu sendiri
+    const status = error.response?.status;
+    const requestUrl = originalRequest.url ?? "";
+
+    // Jangan handle jika:
+    // - bukan 401
+    // - sudah pernah di-retry
+    // - request dari endpoint /auth/refresh itu sendiri (hindari infinite loop)
     if (
-      error.response?.status !== 401 ||
+      status !== 401 ||
       originalRequest._retry ||
-      originalRequest.url === "/auth/refresh"
+      requestUrl === "/auth/refresh"
     ) {
       throw error;
     }
 
     // Jika sudah ada proses refresh berjalan, masukkan ke antrian
     if (isRefreshing) {
-      return new Promise((resolve, reject) => {
+      return new Promise<string>((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      })
-        .then((token) => {
-          originalRequest.headers = {
-            ...originalRequest.headers,
-            Authorization: `Bearer ${token}`,
-          };
-          return api(originalRequest);
-        })
-        .catch((err) => {
-          throw err;
-        });
+      }).then((token) => {
+        originalRequest.headers = {
+          ...originalRequest.headers,
+          Authorization: `Bearer ${token}`,
+        };
+        return api(originalRequest);
+      });
     }
 
-    // Mulai proses refresh
+    // Mulai proses refresh (single-flight)
     originalRequest._retry = true;
     isRefreshing = true;
 
     try {
+      // Response interceptor sudah unwrap .data, jadi kita langsung dapat object
       const res = (await api.post("/auth/refresh", undefined, {
         withCredentials: true,
-      })) as RefreshTokenResponse;
-      const newToken = res?.access_token ?? res?.data?.access_token;
+      })) as AccessTokenResponse | { data: AccessTokenResponse };
+
+      // Handle kedua kemungkinan format response: langsung atau nested {data: ...}
+      const newToken =
+        (res as AccessTokenResponse).access_token ??
+        (res as { data: AccessTokenResponse }).data?.access_token;
 
       if (!newToken) {
-        throw new Error("Refresh token response did not include access_token");
+        throw new Error("Refresh response tidak mengandung access_token");
       }
 
       setToken(newToken);
 
-      // Update header untuk request yang di-retry
+      // Retry original request dengan token baru
       originalRequest.headers = {
         ...originalRequest.headers,
         Authorization: `Bearer ${newToken}`,
@@ -151,7 +166,7 @@ api.interceptors.response.use(
 
       return api(originalRequest);
     } catch (refreshError) {
-      // Refresh gagal → logout paksa
+      // Refresh gagal → force logout
       processQueue(refreshError, null);
       removeToken();
       if (typeof globalThis.window !== "undefined") {
@@ -166,17 +181,45 @@ api.interceptors.response.use(
 
 export default api;
 
+// ── Error message helper ───────────────────────────────────────────────────
+
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
+    if (error.response?.status === 413) {
+      return "File terlalu besar. Silakan upload file dengan ukuran lebih kecil (Maks. limit di server).";
+    }
+
+    const data = error.response?.data;
+
+    if (data?.errors && Array.isArray(data.errors)) {
+      return data.errors
+        .map((e: unknown) =>
+          typeof e === "string"
+            ? e
+            : typeof e === "object" && e !== null
+              ? (e as Record<string, string>).msg ??
+                (e as Record<string, string>).message ??
+                JSON.stringify(e)
+              : String(e),
+        )
+        .join(", ");
+    }
+
+    if (Array.isArray(data?.message)) {
+      return (data.message as string[]).join(", ");
+    }
+
     return (
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
+      data?.error ??
+      data?.message ??
+      error.message ??
       "Terjadi kesalahan pada server"
     );
   }
+
   if (error instanceof Error) {
     return error.message;
   }
+
   return "Terjadi kesalahan tidak dikenal";
 };

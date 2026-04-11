@@ -1,11 +1,10 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { usePermission } from "@/hooks/usePermission";
+import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { Permission } from "@/lib/permissions";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/features/auth/contexts/AuthContext";
 
 interface PermissionGuardProps {
   readonly children: ReactNode;
@@ -14,40 +13,46 @@ interface PermissionGuardProps {
   readonly showLoading?: boolean;
 }
 
+/**
+ * PermissionGuard — proteksi halaman berdasarkan permission.
+ *
+ * Alur:
+ * 1. Selama auth masih "loading" (silent refresh / fetch /me) → tampilkan spinner
+ * 2. Setelah selesai:
+ *    - Tidak login → redirect ke fallbackPath (default: /login)
+ *    - Login tapi tidak punya permission → redirect ke fallbackPath
+ *    - Login dan punya permission → render children
+ */
 export function PermissionGuard({
   children,
   permission,
-  fallbackPath = "/",
+  fallbackPath = "/login",
   showLoading = true,
 }: PermissionGuardProps) {
-  const { can } = usePermission();
-  const { loading: authLoading, isLoggedIn } = useAuth();
+  const { loading, isLoggedIn, hasPermission } = useAuth();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+
+  const isAllowed = isLoggedIn && hasPermission(permission);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (mounted && !authLoading && isLoggedIn && !can(permission)) {
+    if (!loading && !isAllowed) {
       router.replace(fallbackPath);
     }
-  }, [mounted, authLoading, isLoggedIn, can, permission, router, fallbackPath]);
+  }, [loading, isAllowed, router, fallbackPath]);
 
-  // To prevent hydration errors completely, we shouldn't render complex authenticated trees on the server
-  // where localStorage and tokens aren't immediately available, since we rely heavily on client-side state.
-  if (!mounted) {
+  // Selama loading (termasuk silent refresh), tampilkan spinner
+  if (loading) {
     return showLoading ? (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     ) : null;
   }
 
-  if (authLoading || (isLoggedIn && !can(permission))) {
+  // Tidak diizinkan → null (redirect sedang berjalan via useEffect)
+  if (!isAllowed) {
     return showLoading ? (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     ) : null;

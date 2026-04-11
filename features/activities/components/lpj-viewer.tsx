@@ -134,10 +134,9 @@ export const LpjViewer = ({ activityId }: Props) => {
             <div
               onClick={!isUploading ? handleClickUpload : undefined}
               className={`flex-1 min-h-50 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center p-6 text-center group
-                ${
-                  isUploading
-                    ? "border-primary/50 bg-primary/5 dark:bg-primary/10 cursor-wait"
-                    : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
+                ${isUploading
+                  ? "border-primary/50 bg-primary/5 dark:bg-primary/10 cursor-wait"
+                  : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
                 }`}
             >
               {isUploading ? (

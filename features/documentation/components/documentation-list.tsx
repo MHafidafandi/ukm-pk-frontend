@@ -95,12 +95,13 @@ export const DocumentationList = () => {
     <div className="flex h-full flex-1 flex-col gap-6 overflow-hidden bg-slate-50 p-4 text-text-primary-light dark:bg-slate-900 dark:text-text-primary-dark md:p-6">
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="flex flex-col mb-8">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
-            Dokumentasi
+            Documentation Management
           </h2>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Kelola dokumentasi kegiatan organisasi
+          <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+            Manage and organize organizational documents with Google Drive
+            integration.
           </p>
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_DOCUMENTATIONS}>
@@ -109,7 +110,7 @@ export const DocumentationList = () => {
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 hover:scale-105 active:scale-95"
           >
             <Plus className="size-4" />
-            Tambah Dokumen
+            Add Document
           </button>
         </PermissionGate>
       </div>
