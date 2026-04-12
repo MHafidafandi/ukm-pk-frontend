@@ -3,27 +3,21 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { CreateActivityInput } from "@/lib/validations/activity-schema";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useMemo, useEffect } from "react";
+import { format } from "date-fns";
+import { ImagePlus, X, Loader2, CalendarIcon } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { CalendarIcon, ImagePlus, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { env } from "@/configs/env";
 
-// ✅ Base URL untuk media/thumbnail dari backend
-const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
+const MEDIA_BASE_URL = env.MEDIA_URL;
 
 type Props = {
   open: boolean;
@@ -35,6 +29,26 @@ type Props = {
   existingThumbnailUrl?: string;
 };
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+const FieldWrapper = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const inputClass =
+  "w-full bg-surface-container-low border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2.5 text-sm text-on-surface outline-none focus:border-primary transition-colors placeholder:text-outline";
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export const ActivityFormDialog = ({
   open,
   onOpenChange,
@@ -45,95 +59,91 @@ export const ActivityFormDialog = ({
   existingThumbnailUrl,
 }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const filePreviewUrl = useMemo(() => {
+    if (!(form.thumbnail instanceof File)) return null;
+    return URL.createObjectURL(form.thumbnail);
+  }, [form.thumbnail]);
 
   useEffect(() => {
-    if (open) {
-      if (form.thumbnail instanceof File) {
-        setPreviewUrl(URL.createObjectURL(form.thumbnail));
-      } else if (existingThumbnailUrl) {
-        // ✅ Kalau sudah full URL biarkan, kalau relatif prefix dengan base URL
-        const fullUrl = existingThumbnailUrl.startsWith("http")
+    return () => {
+      if (filePreviewUrl?.startsWith("blob:"))
+        URL.revokeObjectURL(filePreviewUrl);
+    };
+  }, [filePreviewUrl]);
+
+  const previewUrl = !open
+    ? null
+    : filePreviewUrl ||
+      (existingThumbnailUrl
+        ? existingThumbnailUrl.startsWith("http")
           ? existingThumbnailUrl
-          : `${MEDIA_BASE_URL}${existingThumbnailUrl}`;
-        setPreviewUrl(fullUrl);
-      } else {
-        setPreviewUrl(null);
-      }
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [open, existingThumbnailUrl]);
+          : `${MEDIA_BASE_URL}${existingThumbnailUrl}`
+        : null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setForm({ ...form, thumbnail: file });
-      if (previewUrl?.startsWith("blob:")) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      setPreviewUrl(URL.createObjectURL(file));
-    }
+    if (file) setForm({ ...form, thumbnail: file });
   };
 
   const removeThumbnail = () => {
-    setForm({ ...form, thumbnail: null as any });
-    if (previewUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    setForm({ ...form, thumbnail: null });
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto bg-surface p-0">
+        {/* ── Header ── */}
+        <DialogHeader className="px-8 pt-8 pb-6 border-b border-outline-variant/10">
+          <DialogTitle className="font-['Manrope'] font-bold text-xl text-on-surface">
             {isEdit ? "Edit Kegiatan" : "Buat Kegiatan Baru"}
           </DialogTitle>
-          <DialogDescription>
+          <p className="text-sm text-on-surface-variant mt-1">
             {isEdit
               ? "Perbarui informasi kegiatan."
               : "Tambahkan kegiatan baru ke dalam sistem."}
-          </DialogDescription>
+          </p>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2 overflow-y-auto pr-1 -mr-1">
-          {/* Thumbnail Upload */}
-          <div className="grid gap-2">
-            <Label>Thumbnail</Label>
+        {/* ── Form ── */}
+        <div className="px-8 py-6 space-y-6">
+          {/* Thumbnail */}
+          <FieldWrapper label="Thumbnail">
             {previewUrl ? (
-              <div className="relative h-36 w-full overflow-hidden rounded-lg border border-border bg-muted">
+              <div className="relative h-40 w-full rounded-2xl overflow-hidden bg-surface-container">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
-                  alt="Thumbnail preview"
+                  alt="Preview"
                   className="h-full w-full object-cover"
-                  // ✅ Fallback kalau gambar gagal load
-                  onError={() => setPreviewUrl(null)}
                 />
                 <button
                   type="button"
                   onClick={removeThumbnail}
-                  className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-error-container text-on-error-container flex items-center justify-center hover:opacity-90 transition-opacity"
                 >
-                  <X className="size-3.5" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
-                <span className="absolute left-2 bottom-2 rounded-md bg-black/50 px-2 py-0.5 text-[10px] text-white backdrop-blur-sm">
-                  {form.thumbnail instanceof File ? "Foto baru" : "Foto saat ini"}
+                <span className="absolute bottom-2 left-2 px-2 py-1 rounded-lg bg-on-surface/50 backdrop-blur-sm text-[10px] text-white font-medium">
+                  {form.thumbnail instanceof File
+                    ? "Foto baru"
+                    : "Foto saat ini"}
                 </span>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex h-28 w-full flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-border bg-muted/50 text-muted-foreground transition-colors hover:border-primary hover:bg-muted"
+                className="w-full h-32 rounded-2xl border-2 border-dashed border-outline-variant hover:border-primary transition-colors flex flex-col items-center justify-center gap-2 text-on-surface-variant hover:text-primary"
               >
-                <ImagePlus className="size-6" />
-                <span className="text-xs font-medium">Upload thumbnail</span>
-                <span className="text-[10px]">PNG, JPG, WEBP (max 5MB)</span>
+                <ImagePlus className="w-6 h-6" />
+                <span className="text-xs font-medium">
+                  Klik untuk unggah thumbnail
+                </span>
+                <span className="text-[10px] text-outline">
+                  PNG, JPG, WEBP (maks. 5MB)
+                </span>
               </button>
             )}
             <input
@@ -143,49 +153,46 @@ export const ActivityFormDialog = ({
               className="hidden"
               onChange={handleFileChange}
             />
-          </div>
+          </FieldWrapper>
 
           {/* Judul */}
-          <div className="grid gap-1.5">
-            <Label>Judul Kegiatan *</Label>
-            <Input
+          <FieldWrapper label="Judul Kegiatan *">
+            <input
               value={form.judul}
               onChange={(e) => setForm({ ...form, judul: e.target.value })}
+              className={inputClass}
               placeholder="Contoh: Bakti Sosial 2024"
             />
-          </div>
+          </FieldWrapper>
 
           {/* Lokasi */}
-          <div className="grid gap-1.5">
-            <Label>Lokasi *</Label>
-            <Input
+          <FieldWrapper label="Lokasi *">
+            <input
               value={form.lokasi}
               onChange={(e) => setForm({ ...form, lokasi: e.target.value })}
+              className={inputClass}
               placeholder="Contoh: Desa Sukamaju"
             />
-          </div>
+          </FieldWrapper>
 
           {/* Tanggal */}
-          <div className="grid gap-1.5">
-            <Label>Tanggal Pelaksanaan</Label>
+          <FieldWrapper label="Tanggal Pelaksanaan">
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
+                <button
                   className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !form.tanggal && "text-muted-foreground",
+                    inputClass,
+                    "flex items-center gap-2 text-left",
+                    !form.tanggal && "text-outline",
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.tanggal ? (
-                    format(new Date(form.tanggal), "PPP")
-                  ) : (
-                    <span>Pilih tanggal</span>
-                  )}
-                </Button>
+                  <CalendarIcon className="w-4 h-4 shrink-0" />
+                  {form.tanggal
+                    ? format(new Date(form.tanggal), "PPP")
+                    : "Pilih tanggal"}
+                </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={form.tanggal ? new Date(form.tanggal) : undefined}
@@ -196,26 +203,37 @@ export const ActivityFormDialog = ({
                 />
               </PopoverContent>
             </Popover>
-          </div>
+          </FieldWrapper>
 
           {/* Deskripsi */}
-          <div className="grid gap-1.5">
-            <Label>Deskripsi</Label>
-            <Textarea
+          <FieldWrapper label="Deskripsi">
+            <textarea
               value={form.deskripsi}
               onChange={(e) => setForm({ ...form, deskripsi: e.target.value })}
+              rows={4}
+              className={`${inputClass} resize-none`}
               placeholder="Deskripsi lengkap kegiatan..."
-              className="h-24 resize-none"
             />
+          </FieldWrapper>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-medium hover:bg-surface-container-high transition-colors"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-br from-primary to-primary-container text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
+            >
+              {isEdit ? "Simpan Perubahan" : "Buat Kegiatan"}
+            </button>
           </div>
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Batal
-          </Button>
-          <Button onClick={onSubmit}>{isEdit ? "Simpan" : "Buat"}</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

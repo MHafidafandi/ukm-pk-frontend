@@ -1,11 +1,25 @@
-// ── Landing Page Content Types ─────────────────────────────────────────────
+// features/landing-page/types/index.ts
 
-export type ContentType =
-  | "hero"
-  | "visi"
-  | "misi"
-  | "struktur_organisasi"
-  | "article";
+// Type yang punya render khusus di landing page
+export const KNOWN_TYPES = [
+  "hero",
+  "visi",
+  "misi",
+  "struktur_organisasi",
+  "donation_story",
+] as const;
+
+export type KnownContentType = (typeof KNOWN_TYPES)[number];
+
+// Type bisa apa saja — admin bebas ketik
+export type ContentType = KnownContentType | string;
+
+// donation_story adalah satu-satunya type yang multiple
+export const MULTIPLE_TYPES: ContentType[] = ["donation_story"];
+
+export function isMultipleType(type: ContentType): boolean {
+  return MULTIPLE_TYPES.includes(type);
+}
 
 export interface LandingContent {
   id: string;
@@ -15,15 +29,18 @@ export interface LandingContent {
   active: boolean;
   image: string | null;
   created_at: string;
-  created_by: string;
+  created_by: string | null;
   updated_at: string;
-  updated_by: string;
+  updated_by: string | null;
 }
 
-/** Content grouped by type for easy section rendering */
+// Grouped by type — known types punya field khusus, sisanya di "custom"
 export interface GroupedContent {
   hero: LandingContent | null;
   visi: LandingContent | null;
   misi: LandingContent | null;
   struktur_organisasi: LandingContent | null;
+  donation_stories: LandingContent[];
+  // Semua type lain yang tidak dikenal, grouped by type name
+  custom: Record<string, LandingContent[]>;
 }

@@ -8,13 +8,9 @@ import { ActivityProvider } from "@/features/activities/contexts/ActivityContext
 export default function ActivitiesPage() {
   return (
     <PermissionGuard permission={PERMISSIONS.VIEW_ACTIVITIES}>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="h-full flex-1 flex-col space-y-8 flex">
-          <ActivityProvider>
-            <ActivityList />
-          </ActivityProvider>
-        </div>
-      </div>
+      <ActivityProvider>
+        <ActivityList />
+      </ActivityProvider>
     </PermissionGuard>
   );
 }

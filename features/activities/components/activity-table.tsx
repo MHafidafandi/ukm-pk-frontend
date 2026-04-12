@@ -1,30 +1,75 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Calendar, LocateIcon, Pencil } from "lucide-react";
+import { Eye, Calendar, MapPin, Pencil, Star, Trash2 } from "lucide-react";
 import { Activity } from "../services/activityService";
+import { ActivityStatus } from "@/lib/validations/activity-schema";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { env } from "@/configs/env";
 
 type Props = {
   activities: Activity[];
   onEdit: (activity: Activity) => void;
   onDelete: (activity: Activity) => void;
   onViewDetail: (activity: Activity) => void;
+  onStatusChange: (activity: Activity, status: ActivityStatus) => void;
+  onFeaturedChange: (activity: Activity, isFeatured: boolean) => void;
 };
 
+// ── Status config ─────────────────────────────────────────────────────────────
+const getStatusCfg = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === "berjalan" || s === "ongoing")
+    return {
+      label: "Berjalan",
+      bg: "bg-primary-fixed",
+      text: "text-on-primary-fixed-variant",
+    };
+  if (s === "selesai" || s === "completed")
+    return {
+      label: "Selesai",
+      bg: "bg-secondary-fixed",
+      text: "text-on-secondary-fixed-variant",
+    };
+  if (s === "perencanaan" || s === "pending")
+    return {
+      label: "Perencanaan",
+      bg: "bg-tertiary-fixed",
+      text: "text-on-tertiary-fixed-variant",
+    };
+  return {
+    label: "Dibatalkan",
+    bg: "bg-error-container",
+    text: "text-on-error-container",
+  };
+};
+
+const normalizeStatus = (status: string): ActivityStatus => {
+  const s = status.toLowerCase();
+  if (s === "perencanaan") return "pending";
+  if (s === "berjalan") return "ongoing";
+  if (s === "selesai") return "completed";
+  if (s === "dibatalkan") return "cancelled";
+  return s as ActivityStatus;
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export const ActivityGrid = ({
   activities,
   onEdit,
   onDelete,
   onViewDetail,
+  onStatusChange,
+  onFeaturedChange,
 }: Props) => {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   if (activities.length === 0) {
     return (
-      <div className="flex h-48 w-full flex-col items-center justify-center rounded-xl border border-dashed border-border text-muted-foreground">
-        <p>No activity data available.</p>
+      <div className="flex h-48 w-full flex-col items-center justify-center gap-3 rounded-2xl bg-surface-container-low text-on-surface-variant">
+        <Calendar className="w-8 h-8 opacity-40" />
+        <p className="text-sm font-medium">Belum ada data kegiatan.</p>
       </div>
     );
   }
@@ -32,100 +77,133 @@ export const ActivityGrid = ({
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
       {activities.map((item) => {
-        const statusLower = item.status.toLowerCase();
-        const isOngoing = statusLower === "ongoing" || statusLower === "berjalan";
-        const isCompleted = statusLower === "selesai" || statusLower === "completed";
-        const isPending = statusLower === "perencanaan" || statusLower === "pending";
-
-        let statusConfig: { label: string; colorClass: string } = {
-          label: item.status,
-          colorClass: "bg-gray-500/90",
-        };
-        if (isOngoing)
-          statusConfig = { label: "Ongoing", colorClass: "bg-blue-500/90" };
-        else if (isCompleted)
-          statusConfig = { label: "Completed", colorClass: "bg-emerald-500/90" };
-        else if (isPending)
-          statusConfig = { label: "Planning", colorClass: "bg-amber-500/90" };
-        else
-          statusConfig = { label: "Cancelled", colorClass: "bg-rose-500/90" };
+        const statusCfg = getStatusCfg(item.status);
+        const featuredValue = item.is_featured as unknown;
+        const isFeatured =
+          featuredValue === true ||
+          featuredValue === 1 ||
+          featuredValue === "true";
 
         const imgUrl = item.thumbnail
-          ? `${process.env.NEXT_PUBLIC_MEDIA_URL ?? ""}${item.thumbnail}`
+          ? `${env.MEDIA_URL}${item.thumbnail}`
           : null;
-
         const showFallback = !imgUrl || imgErrors[item.id];
 
         return (
           <div
             key={item.id}
-            className="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-transform hover:scale-[1.02]"
+            className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm flex flex-col group hover:shadow-md transition-shadow"
           >
-            {/* ── Image ── */}
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 rounded-t-xl">
+            {/* ── Thumbnail ── */}
+            <div className="relative h-44 w-full overflow-hidden bg-surface-container shrink-0">
               {!showFallback ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={imgUrl!}
                   alt={item.judul}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={() =>
                     setImgErrors((prev) => ({ ...prev, [item.id]: true }))
                   }
                 />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
-                  <Calendar className="size-10 text-slate-300 dark:text-slate-600" />
-                  <span className="text-xs text-slate-400 dark:text-slate-500">
-                    No thumbnail
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-container">
+                  <Calendar className="w-10 h-10 text-outline opacity-40" />
+                  <span className="text-xs text-on-surface-variant font-medium">
+                    Belum ada thumbnail
                   </span>
                 </div>
               )}
 
-              {/* Badge status */}
-              <div
-                className={`absolute right-3 top-3 rounded-full ${statusConfig.colorClass} px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm`}
+              {/* Status Badge */}
+              <span
+                className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${statusCfg.bg} ${statusCfg.text}`}
               >
-                {statusConfig.label}
-              </div>
+                {statusCfg.label}
+              </span>
+
+              {/* Featured Badge */}
+              {isFeatured && (
+                <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-tertiary-fixed text-on-tertiary-fixed-variant flex items-center gap-1">
+                  <Star className="w-2.5 h-2.5" />
+                  Unggulan
+                </span>
+              )}
             </div>
 
             {/* ── Content ── */}
-            <div className="flex flex-1 flex-col p-5">
-              <div className="mb-4 flex-1">
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  <Calendar className="size-4" />
-                  <span>
-                    {format(new Date(item.tanggal), "dd MMM yyyy", {
-                      locale: idLocale,
-                    })}
-                  </span>
-                  <span className="mx-1">•</span>
-                  <LocateIcon className="size-4" />
-                  <span className="truncate max-w-[120px]">{item.lokasi}</span>
-                </div>
-                <h3 className="line-clamp-2 text-lg font-bold text-slate-900 dark:text-white">
-                  {item.judul}
-                </h3>
-                <p className="mt-2 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
-                  {item.deskripsi}
-                </p>
+            <div className="flex flex-col flex-1 p-5">
+              {/* Meta */}
+              <div className="flex items-center gap-3 text-xs text-on-surface-variant mb-2">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {format(new Date(item.tanggal), "dd MMM yyyy", {
+                    locale: idLocale,
+                  })}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-outline-variant" />
+                <span className="flex items-center gap-1 truncate max-w-[120px]">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{item.lokasi}</span>
+                </span>
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              {/* Title & Desc */}
+              <h3 className="font-['Manrope'] font-bold text-on-surface text-base line-clamp-2 mb-1">
+                {item.judul}
+              </h3>
+              <p className="text-sm text-on-surface-variant line-clamp-2 flex-1">
+                {item.deskripsi}
+              </p>
+
+              {/* Status Select */}
+              <div className="mt-4">
+                <select
+                  value={normalizeStatus(item.status)}
+                  onChange={(e) =>
+                    onStatusChange(item, e.target.value as ActivityStatus)
+                  }
+                  className="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2 text-xs font-medium text-on-surface outline-none focus:border-primary transition-colors"
+                >
+                  <option value="pending">Perencanaan</option>
+                  <option value="ongoing">Berjalan</option>
+                  <option value="completed">Selesai</option>
+                  <option value="cancelled">Dibatalkan</option>
+                </select>
+              </div>
+
+              {/* Featured Toggle */}
+              <label className="mt-3 flex items-center gap-2 cursor-pointer text-xs text-on-surface-variant font-medium">
+                <input
+                  type="checkbox"
+                  checked={isFeatured}
+                  onChange={(e) => onFeaturedChange(item, e.target.checked)}
+                  className="w-4 h-4 rounded border-outline-variant accent-primary"
+                />
+                Tampilkan sebagai unggulan
+              </label>
+
+              {/* Actions */}
+              <div className="mt-4 pt-4 border-t border-outline-variant/10 flex items-center gap-2">
                 <button
                   onClick={() => onEdit(item)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-white/5 transition-colors"
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl bg-surface-container text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors"
                 >
-                  <Pencil className="size-4" />
+                  <Pencil className="w-3.5 h-3.5" />
                   Edit
                 </button>
                 <button
                   onClick={() => onViewDetail(item)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-sm font-medium text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary-light dark:hover:bg-primary/30 transition-colors"
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold hover:opacity-90 transition-opacity"
                 >
-                  <Eye className="size-4" />
-                  Details
+                  <Eye className="w-3.5 h-3.5" />
+                  Detail
+                </button>
+                <button
+                  onClick={() => onDelete(item)}
+                  className="flex items-center justify-center p-2 rounded-xl bg-error-container text-on-error-container text-xs font-bold hover:opacity-90 transition-opacity"
+                  title="Hapus"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

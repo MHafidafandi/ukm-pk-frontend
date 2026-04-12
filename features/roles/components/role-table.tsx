@@ -1,13 +1,4 @@
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,6 +6,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Role } from "@/features/roles/services/roleService";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   roles: Role[];
@@ -24,48 +16,55 @@ type Props = {
 
 export const RolesTable = ({ roles, onEdit, onDelete }: Props) => {
   return (
-    <div className="w-full rounded-xl border border-border bg-card shadow-sm overflow-hidden mt-6">
-      <Table>
-        <TableHeader className="bg-muted/50 border-b-0">
-          <TableRow className="border-b-0 hover:bg-transparent">
-            <TableHead className="font-semibold text-foreground h-11 pl-4">
+    <div className="overflow-hidden">
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="bg-surface-container-high">
+            <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
               Nama Role
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
+            </th>
+            <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
               Pengguna
-            </TableHead>
-            <TableHead className="w-[70px] h-11 pr-4" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            </th>
+            <th className="px-6 py-4 w-16" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-outline-variant/10">
           {roles.length === 0 ? (
-            <TableRow>
-              <TableCell
+            <tr>
+              <td
                 colSpan={3}
-                className="h-32 text-center text-muted-foreground font-medium"
+                className="px-6 py-12 text-center text-sm text-on-surface-variant"
               >
                 Tidak ada data role.
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : (
             roles.map((role) => (
-              <TableRow
+              <tr
                 key={role.id}
-                className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                className="group hover:bg-surface transition-colors"
               >
-                <TableCell className="font-semibold text-foreground pl-4">
-                  {role.name}
-                </TableCell>
-                <TableCell className="text-muted-foreground font-medium">
-                  {role.user_count ?? 0} Pengguna
-                </TableCell>
-                <TableCell className="pr-4">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                    <span className="font-semibold text-sm text-on-surface">
+                      {role.name}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="text-sm text-on-surface-variant">
+                    {role.user_count ?? 0} Pengguna
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 hover:bg-muted"
+                        className="h-8 w-8 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors"
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
@@ -87,12 +86,12 @@ export const RolesTable = ({ roles, onEdit, onDelete }: Props) => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             ))
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };

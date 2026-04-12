@@ -1,16 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { getErrorMessage } from "@/lib/api/client";
 
 import { useActivityContext } from "../contexts/ActivityContext";
 import { Activity } from "../services/activityService";
 import {
+  ActivityStatus,
   CreateActivityInput,
   CreateActivitySchema,
 } from "@/lib/validations/activity-schema";
@@ -20,6 +21,29 @@ import { ActivityFormDialog } from "./activity-form-dialog";
 import { ActivityDeleteDialog } from "./activity-delete-dialog";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
+import { useQueryClient } from "@tanstack/react-query";
+
+// ── Filter Pill ───────────────────────────────────────────────────────────────
+const FilterPill = ({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+      active
+        ? "bg-primary text-on-primary shadow-sm"
+        : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
+    }`}
+  >
+    {label}
+  </button>
+);
 
 const emptyForm: CreateActivityInput = {
   judul: "",
@@ -28,11 +52,11 @@ const emptyForm: CreateActivityInput = {
   lokasi: "",
 };
 
+// ── Main Component ────────────────────────────────────────────────────────────
 export const ActivityList = () => {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-
   const [editing, setEditing] = useState<Activity | null>(null);
   const [deleting, setDeleting] = useState<Activity | null>(null);
   const [form, setForm] = useState<CreateActivityInput>(emptyForm);
@@ -42,15 +66,23 @@ export const ActivityList = () => {
     pagination,
     createActivity,
     updateActivity,
+    updateActivityStatus,
+    updateActivityFeatured,
     deleteActivity,
     isFetchingActivities,
     search,
     setSearch,
     statusFilter,
     setStatusFilter,
+    sort,
+    setSort,
+    order,
+    setOrder,
     page,
     setPage,
   } = useActivityContext();
+
+  const queryClient = useQueryClient();
 
   const openAdd = () => {
     setEditing(null);
@@ -82,7 +114,6 @@ export const ActivityList = () => {
   const handleSave = async () => {
     try {
       const parsed = CreateActivitySchema.parse(form);
-
       const formData = new FormData();
       formData.append("judul", parsed.judul);
       formData.append("deskripsi", parsed.deskripsi);
@@ -96,11 +127,6 @@ export const ActivityList = () => {
 
       if (editing) {
         const existingThumbnailUrl = editing.thumbnail || "";
-
-        // Rule update thumbnail:
-        // 1) thumbnail_url kosong + thumbnail file ada => ganti ke file baru
-        // 2) thumbnail_url kosong + thumbnail kosong => hapus thumbnail
-        // 3) thumbnail_url ada + thumbnail kosong => pertahankan thumbnail lama
         if (form.thumbnail instanceof File) {
           formData.append("thumbnail", form.thumbnail);
           formData.append("thumbnail_url", "");
@@ -112,15 +138,14 @@ export const ActivityList = () => {
         } else {
           formData.append("thumbnail_url", "");
         }
-
         await updateActivity({ id: editing.id, data: formData });
-        toast.success("Activity successfully updated 🎉");
+        toast.success("Kegiatan berhasil diperbarui");
       } else {
         if (form.thumbnail instanceof File) {
           formData.append("thumbnail", form.thumbnail);
         }
         await createActivity(formData);
-        toast.success("Activity successfully created 🎉");
+        toast.success("Kegiatan berhasil dibuat");
       }
 
       setFormOpen(false);
@@ -131,16 +156,48 @@ export const ActivityList = () => {
         typeof err === "object" &&
         err !== null &&
         "name" in err &&
-        err.name === "ZodError" &&
-        "errors" in err &&
-        Array.isArray(err.errors) &&
-        err.errors[0]?.message
+        (err as any).name === "ZodError"
       ) {
-        toast.error(err.errors[0].message as string);
+        toast.error((err as any).errors[0].message);
         return;
       }
-      toast.error(getErrorMessage(err) || "Failed to save activity");
-      console.error("[handleSave] error:", err);
+      toast.error(getErrorMessage(err) || "Gagal menyimpan kegiatan");
+    }
+  };
+
+  const handleStatusChange = async (item: Activity, status: ActivityStatus) => {
+    try {
+      await updateActivityStatus({ id: item.id, data: { status } });
+      toast.success("Status kegiatan diperbarui");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || "Gagal memperbarui status");
+    }
+  };
+
+  const handleFeaturedChange = async (item: Activity, isFeatured: boolean) => {
+    queryClient.setQueriesData({ queryKey: ["activities"] }, (old: any) => {
+      if (!old) return old;
+      const updateList = (list: Activity[]) =>
+        list.map((a) =>
+          a.id === item.id ? { ...a, is_featured: isFeatured } : a,
+        );
+      if (old?.data?.activities)
+        return {
+          ...old,
+          data: { ...old.data, activities: updateList(old.data.activities) },
+        };
+      if (Array.isArray(old)) return updateList(old);
+      return old;
+    });
+    try {
+      await updateActivityFeatured({
+        id: item.id,
+        data: { is_featured: isFeatured },
+      });
+      toast.success("Featured diperbarui");
+    } catch (err: unknown) {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      toast.error(getErrorMessage(err) || "Gagal memperbarui featured");
     }
   };
 
@@ -148,20 +205,20 @@ export const ActivityList = () => {
     if (!deleting) return;
     try {
       await deleteActivity(deleting.id);
-      toast.success("Activity deleted 🎉");
+      toast.success("Kegiatan dihapus");
       setDeleteOpen(false);
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err) || "Failed to delete activity");
+      toast.error(getErrorMessage(err) || "Gagal menghapus kegiatan");
     }
   };
 
-  // Pagination helpers
+  // Pagination
   const totalPages = pagination?.total_pages ?? 1;
   const currentPage = page;
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
 
-  const getPageNumbers = () => {
+  const getPageNumbers = (): (number | "ellipsis")[] => {
     const pages: (number | "ellipsis")[] = [];
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -172,9 +229,8 @@ export const ActivityList = () => {
         let i = Math.max(2, currentPage - 1);
         i <= Math.min(totalPages - 1, currentPage + 1);
         i++
-      ) {
+      )
         pages.push(i);
-      }
       if (currentPage < totalPages - 2) pages.push("ellipsis");
       pages.push(totalPages);
     }
@@ -182,63 +238,82 @@ export const ActivityList = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+    <div className="space-y-8">
+      {/* ── Page Header ── */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Activity Management
+          <h1 className="font-['Manrope'] font-bold text-3xl text-on-surface tracking-tight">
+            Manajemen Kegiatan
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage and track all social activities and events.
+          <p className="text-on-surface-variant text-sm mt-1">
+            Pantau dan kelola semua kegiatan sosial dan acara organisasi.
           </p>
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_ACTIVITIES}>
-          <Button
+          <button
             onClick={openAdd}
-            className="bg-primary hover:bg-primary/90 text-white shadow-sm inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 font-semibold transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-primary-container text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
           >
-            <Plus className="h-5 w-5" /> Create Activity
-          </Button>
+            <Plus className="w-4 h-4" />
+            Buat Kegiatan
+          </button>
         </PermissionGate>
       </div>
 
-      {/* Filters & Search */}
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full lg:max-w-md">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-            <Search className="size-4" />
-          </div>
+      {/* ── Toolbar ── */}
+      <div className="bg-surface-container-low rounded-2xl px-6 py-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* Search */}
+        <div className="relative w-full lg:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline w-4 h-4" />
           <input
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
-            placeholder="Search activities by name, location..."
             type="text"
+            placeholder="Cari kegiatan berdasarkan judul atau lokasi..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-surface-container-lowest rounded-full py-2.5 pl-10 pr-4 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
-        <div className="flex w-full flex-wrap gap-2 lg:w-auto">
-          {[
-            { id: "", label: "All Status" },
-            { id: "perencanaan", label: "Planning" },
-            { id: "berjalan", label: "Ongoing" },
-            { id: "selesai", label: "Completed" },
-          ].map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setStatusFilter(s.id)}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${statusFilter === s.id
-                ? "bg-primary text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
-                }`}
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Status Filter Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[
+              { id: "", label: "Semua" },
+              { id: "perencanaan", label: "Perencanaan" },
+              { id: "berjalan", label: "Berjalan" },
+              { id: "selesai", label: "Selesai" },
+            ].map((s) => (
+              <FilterPill
+                key={s.id}
+                label={s.label}
+                active={statusFilter === s.id}
+                onClick={() => setStatusFilter(s.id)}
+              />
+            ))}
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="bg-surface-container-lowest border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2 text-xs font-medium text-on-surface-variant outline-none focus:border-primary transition-colors"
             >
-              {s.label}
+              <option value="tanggal">Tanggal</option>
+              <option value="judul">Judul</option>
+              <option value="status">Status</option>
+            </select>
+            <button
+              onClick={() => setOrder(order === "ASC" ? "DESC" : "ASC")}
+              className="px-3 py-2 rounded-xl bg-surface-container-lowest text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors"
+            >
+              {order === "ASC" ? "↑ Asc" : "↓ Desc"}
             </button>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* Grid / Loading */}
+      {/* ── Grid / Loading ── */}
       {isFetchingActivities ? (
         <div className="flex h-48 w-full items-center justify-center">
           <Spinner className="h-8 w-8" />
@@ -249,61 +324,62 @@ export const ActivityList = () => {
           onEdit={openEdit}
           onDelete={openDelete}
           onViewDetail={handleViewDetail}
+          onStatusChange={handleStatusChange}
+          onFeaturedChange={handleFeaturedChange}
         />
       )}
 
-      {/* Pagination */}
+      {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-1 pt-4">
-          <button
-            onClick={() => setPage(currentPage - 1)}
-            disabled={!hasPrev}
-            className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-40 dark:text-slate-400 dark:hover:bg-white/5"
-          >
-            <ChevronLeft className="size-4" />
-            <span className="hidden sm:inline">Prev</span>
-          </button>
+        <div className="flex items-center justify-between px-2">
+          <p className="text-xs text-on-surface-variant">
+            Halaman {currentPage} dari {totalPages} · Total{" "}
+            {pagination?.total ?? 0} kegiatan
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(currentPage - 1)}
+              disabled={!hasPrev}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          {getPageNumbers().map((p, i) =>
-            p === "ellipsis" ? (
-              <span
-                key={`ellipsis-${i}`}
-                className="flex size-9 items-center justify-center text-sm text-slate-400"
-              >
-                …
-              </span>
-            ) : (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+            {getPageNumbers().map((p, i) =>
+              p === "ellipsis" ? (
+                <span
+                  key={`e-${i}`}
+                  className="w-9 h-9 flex items-center justify-center text-sm text-on-surface-variant"
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${
+                    currentPage === p
+                      ? "bg-primary text-on-primary shadow-sm"
+                      : "text-on-surface-variant hover:bg-surface-container-highest"
                   }`}
-              >
-                {p}
-              </button>
-            )
-          )}
+                >
+                  {p}
+                </button>
+              ),
+            )}
 
-          <button
-            onClick={() => setPage(currentPage + 1)}
-            disabled={!hasNext}
-            className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-40 dark:text-slate-400 dark:hover:bg-white/5"
-          >
-            <span className="hidden sm:inline">Next</span>
-            <ChevronRight className="size-4" />
-          </button>
+            <button
+              onClick={() => setPage(currentPage + 1)}
+              disabled={!hasNext}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {pagination && (
-        <p className="text-center text-xs text-muted-foreground">
-          Page {page} of {totalPages} · Total {pagination.total} activities
-        </p>
-      )}
-
-      {/* Dialogs */}
+      {/* ── Dialogs ── */}
       <ActivityFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
@@ -313,7 +389,6 @@ export const ActivityList = () => {
         onSubmit={handleSave}
         existingThumbnailUrl={editing?.thumbnail}
       />
-
       <ActivityDeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

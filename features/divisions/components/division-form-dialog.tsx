@@ -31,17 +31,23 @@ export const DivisionFormDialog = ({
 }: Props) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg bg-surface-container-lowest border-outline-variant/20">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Divisi" : "Tambah Divisi"}</DialogTitle>
-          <DialogDescription>
-            {isEdit ? "Perbarui informasi divisi." : "Isi data divisi baru."}
+          <DialogTitle className="font-['Manrope'] text-on-surface">
+            {isEdit ? "Edit Division" : "Create New Division"}
+          </DialogTitle>
+          <DialogDescription className="text-on-surface-variant">
+            {isEdit
+              ? "Update division information and settings."
+              : "Add a new division to your organization."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
+        <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label>Nama Divisi *</Label>
+            <Label className="text-on-surface font-medium">
+              Division Name *
+            </Label>
             <Input
               value={form.nama_divisi}
               onChange={(e) =>
@@ -50,12 +56,13 @@ export const DivisionFormDialog = ({
                   nama_divisi: e.target.value,
                 })
               }
-              placeholder="Nama divisi"
+              placeholder="e.g., Research & Development"
+              className="bg-surface-container-low border-outline-variant/30 placeholder:text-on-surface-variant focus:border-primary"
             />
           </div>
 
           <div className="grid gap-2">
-            <Label>Deskripsi</Label>
+            <Label className="text-on-surface font-medium">Description</Label>
             <Textarea
               value={form.deskripsi}
               onChange={(e) =>
@@ -64,16 +71,26 @@ export const DivisionFormDialog = ({
                   deskripsi: e.target.value,
                 })
               }
-              placeholder="Deskripsi tugas divisi"
+              placeholder="Describe the division's role and responsibilities..."
+              className="bg-surface-container-low border-outline-variant/30 placeholder:text-on-surface-variant focus:border-primary"
             />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Batal
+        <DialogFooter className="gap-3">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="border-outline-variant/30 text-on-surface hover:bg-surface-container-high"
+          >
+            Cancel
           </Button>
-          <Button onClick={onSubmit}>{isEdit ? "Simpan" : "Tambah"}</Button>
+          <Button
+            onClick={onSubmit}
+            className="bg-primary-gradient text-on-primary hover:shadow-md"
+          >
+            {isEdit ? "Save Changes" : "Create Division"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

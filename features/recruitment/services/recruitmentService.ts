@@ -4,7 +4,11 @@ import { Division } from "@/features/divisions/services/divisionService";
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export type RecruitmentStatus = "draft" | "open" | "closed";
-export type RegistrantStatus = "pending" | "accepted" | "rejected" | "interview";
+export type RegistrantStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "interview";
 
 export interface Recruitment {
   id: string;
@@ -95,7 +99,7 @@ const BASE = "/admin/recruitments";
 // --- Recruitments (List) ---
 
 export async function getRecruitments(
-  filters?: RecruitmentFilters
+  filters?: RecruitmentFilters,
 ): Promise<{ data: { recruitments: Recruitment[]; pagination: Pagination } }> {
   const params: Record<string, string> = {};
   if (filters?.page) params.page = String(filters.page);
@@ -125,7 +129,7 @@ export async function getSelectDivisions(): Promise<Division[]> {
 // --- Create ---
 
 export async function createRecruitment(
-  data: CreateRecruitmentDTO
+  data: CreateRecruitmentDTO,
 ): Promise<any> {
   const result = await api.post(BASE, data);
   return result;
@@ -135,7 +139,7 @@ export async function createRecruitment(
 
 export async function updateRecruitment(
   id: string,
-  data: UpdateRecruitmentDTO
+  data: UpdateRecruitmentDTO,
 ): Promise<any> {
   const result = await api.put(`${BASE}/${id}`, data);
   return result;
@@ -175,7 +179,7 @@ export async function registerRecruitment(
 // --- Registrants ---
 // recruitmentService.ts
 export async function getRegistrants(
-  filters?: RegistrantFilters
+  filters?: RegistrantFilters,
 ): Promise<{ data: { registrants: Registrant[]; pagination: Pagination } }> {
   const params: Record<string, string> = {};
   if (filters?.recruitment_id) params.recruitment_id = filters.recruitment_id; // ← ini
@@ -183,6 +187,8 @@ export async function getRegistrants(
   if (filters?.limit) params.limit = String(filters.limit);
   if (filters?.search) params.search = filters.search;
   if (filters?.status) params.status = filters.status;
+  if (filters?.sort) params.sort = filters.sort;
+  if (filters?.order) params.order = filters.order;
 
   const result = await api.get(`${BASE}/registrants`, { params });
   return result as any;

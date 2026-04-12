@@ -8,11 +8,9 @@ import { DocumentationProvider } from "@/features/documentation/contexts/Documen
 export default function DocumentationPage() {
   return (
     <PermissionGuard permission={PERMISSIONS.VIEW_DOCUMENTATIONS}>
-      <div className="flex-1 space-y-4 p-8 pt-6 h-full min-h-0 flex flex-col">
-        <DocumentationProvider>
-          <DocumentationList />
-        </DocumentationProvider>
-      </div>
+      <DocumentationProvider>
+        <DocumentationList />
+      </DocumentationProvider>
     </PermissionGuard>
   );
 }

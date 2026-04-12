@@ -169,12 +169,6 @@ export function LoginForm({
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
             Password
           </label>
-          <a
-            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-            href="#"
-          >
-            Forgot Password?
-          </a>
         </div>
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

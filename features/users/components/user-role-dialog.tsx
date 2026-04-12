@@ -4,9 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,14 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { User } from "@/features/auth/contexts/AuthContext";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
 import { useUserContext } from "@/features/users/contexts/UserContext";
-import { useRoleContext } from "@/features/roles/contexts/RoleContext";
 import { Role } from "@/features/roles/services/roleService";
 
 type Props = {
@@ -34,31 +29,26 @@ type Props = {
 
 export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
   const [selectedRole, setSelectedRole] = useState("");
-
   const {
     assignUserRole: assignRole,
     removeUserRole: removeRole,
     isAssigningRole,
   } = useUserContext();
 
-  // Ensure userRoles is always an array
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentRoles: any[] = Array.isArray(user?.roles) ? user!.roles : [];
-
-  // Filter out roles user already has
   const availableRoles = roles.filter(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (role) => !currentRoles.some((ur: any) => ur.id === role.id),
   );
 
   const handleAssign = async () => {
     if (!user || !selectedRole) return;
     try {
-      await assignRole({
-        id: user.id,
-        roleId: selectedRole,
-      });
+      await assignRole({ id: user.id, roleId: selectedRole });
       toast.success("Role berhasil ditambahkan");
       setSelectedRole("");
-    } catch (error) {
+    } catch {
       toast.error("Gagal menambahkan role");
     }
   };
@@ -66,89 +56,112 @@ export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
   const handleRemove = async (roleId: string) => {
     if (!user) return;
     try {
-      await removeRole({
-        id: user.id,
-        roleId: roleId,
-      });
+      await removeRole({ id: user.id, roleId });
       toast.success("Role berhasil dihapus");
-    } catch (error) {
+    } catch {
       toast.error("Gagal menghapus role");
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Kelola Role</DialogTitle>
-          <DialogDescription>
-            Atur role untuk pengguna <strong>{user?.nama}</strong>.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md bg-surface-container-lowest p-0">
+        <div className="px-8 pt-8 pb-6 bg-surface-container-low">
+          <DialogHeader>
+            <DialogTitle className="font-['Manrope'] text-xl font-bold text-primary">
+              Kelola Role
+            </DialogTitle>
+            <DialogDescription className="text-sm text-on-surface-variant">
+              Atur role untuk{" "}
+              <strong className="text-on-surface">{user?.nama}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4 py-2">
+        <div className="px-8 py-6 space-y-6">
           {/* Current Roles */}
-          <div className="space-y-2">
-            <Label>Role Saat Ini</Label>
+          <div className="space-y-3">
+            <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              Role Saat Ini
+            </Label>
             <div className="flex flex-wrap gap-2">
               {currentRoles.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-on-surface-variant">
                   User belum memiliki role.
                 </p>
               ) : (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 currentRoles.map((role: any) => (
-                  <Badge key={role.id} variant="secondary" className="pr-1">
+                  <span
+                    key={role.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary-container text-on-secondary-container text-xs font-bold rounded-full font-interface"
+                  >
                     {role.name}
                     <button
                       onClick={() => handleRemove(role.id)}
-                      className="ml-1 rounded-full p-0.5 hover:bg-destructive hover:text-destructive-foreground focus:outline-none"
+                      className="rounded-full p-0.5 hover:bg-destructive hover:text-white transition-colors"
                     >
                       <X className="h-3 w-3" />
-                      <span className="sr-only">Remove</span>
                     </button>
-                  </Badge>
+                  </span>
                 ))
               )}
             </div>
           </div>
 
           {/* Add Role */}
-          <div className="flex gap-2 items-end">
-            <div className="grid w-full gap-2">
-              <Label>Tambah Role</Label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih role..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      Tidak ada role tersedia
-                    </SelectItem>
-                  ) : (
-                    availableRoles.map((role: Role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              Tambah Role
+            </Label>
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
+                    <SelectValue placeholder="Pilih role..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.length === 0 ? (
+                      <SelectItem
+                        value="none"
+                        disabled
+                        className="font-interface"
+                      >
+                        Tidak ada role tersedia
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : (
+                      availableRoles.map((role: Role) => (
+                        <SelectItem
+                          key={role.id}
+                          value={role.id}
+                          className="font-interface"
+                        >
+                          {role.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <button
+                onClick={handleAssign}
+                disabled={!selectedRole || isAssigningRole}
+                className="font-bold px-4 py-2 text-sm text-on-primary bg-primary rounded-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+              >
+                Tambah
+              </button>
             </div>
-            <Button
-              onClick={handleAssign}
-              disabled={!selectedRole || isAssigningRole}
-            >
-              Tambah
-            </Button>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="px-8 py-5 bg-surface-container-low flex justify-end">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="px-5 py-2.5 text-sm font-medium text-primary border border-outline/20 rounded-xl hover:bg-surface-container transition-colors"
+          >
             Selesai
-          </Button>
-        </DialogFooter>
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );

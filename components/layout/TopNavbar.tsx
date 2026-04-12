@@ -1,56 +1,66 @@
 "use client";
 
-import { Search, Bell, Calendar } from "lucide-react";
+import { Bell, Settings, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
-import { ModeToggle } from "@/components/ui/ThemeToggle";
-import { format } from "date-fns";
 
 export function TopNavbar() {
-  const { logout } = useAuth(); // or just leave it empty if not needed
+  const { logout } = useAuth();
 
   return (
-    <header className="flex h-20 items-center justify-between border-b border-border bg-card px-8 shadow-sm shrink-0 z-10 transition-colors">
+    <header
+      className="glass-header flex h-16 items-center justify-between px-8 shrink-0 z-40 sticky top-0 transition-colors"
+      style={{ boxShadow: "0 1px 0 var(--outline-variant)" }}
+    >
+      {/* Left */}
       <div className="flex items-center gap-4">
-        <SidebarTrigger className="-ml-3 text-muted-foreground hover:text-foreground transition-colors" />
-        <div className="hidden sm:flex flex-col">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            Welcome back! 👋
-          </h2>
+        <SidebarTrigger className="-ml-2 text-on-surface-variant hover:text-primary transition-colors" />
+
+        {/* Search */}
+        <div className="hidden lg:flex items-center bg-surface-container-low rounded-xl px-3 h-10 gap-2 focus-within:ring-2 focus-within:ring-primary transition-all">
+          <Search className="h-4 w-4 text-on-surface-variant" />
+          <Input
+            className="bg-transparent border-none shadow-none focus-visible:ring-0 w-56 h-8 px-0 text-sm text-on-surface placeholder:text-on-surface-variant"
+            placeholder="Search curated database..."
+          />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="hidden lg:flex items-center bg-muted/50 rounded-xl px-3 py-1.5 border border-transparent focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all h-11">
-          <Search className="h-4 w-4 text-muted-foreground mr-2" />
-          <Input
-            className="bg-transparent border-none shadow-none focus-visible:ring-0 w-48 lg:w-64 h-8 px-0"
-            placeholder="Search..."
-          />
-        </div>
-
-        {/* Date / Calendar */}
-        <div className="hidden md:flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors h-11">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">
-            {format(new Date(), "MMM dd, yyyy")}
-          </span>
-        </div>
-
-        <ModeToggle />
-
+      {/* Right */}
+      <div className="flex items-center gap-2">
         {/* Notifications */}
         <Button
           variant="ghost"
           size="icon"
-          className="relative rounded-full hover:bg-muted text-muted-foreground h-11 w-11 transition-colors"
+          className="relative h-9 w-9 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
         >
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 bg-destructive rounded-full border-2 border-card" />
+          <Bell className="h-4 w-4" />
+          <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full border-2 border-white" />
         </Button>
+
+        {/* Settings */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+
+        {/* Divider */}
+        <div className="h-6 w-px bg-outline-variant mx-1" />
+
+        {/* Label */}
+        <div className="hidden sm:flex flex-col text-right">
+          <span className="font-['Manrope'] text-xs font-bold text-on-surface">
+            Admin Portal
+          </span>
+          <span className="text-[10px] text-on-surface-variant font-medium">
+            UKM Dashboard
+          </span>
+        </div>
       </div>
     </header>
   );

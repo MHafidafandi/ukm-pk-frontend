@@ -11,6 +11,8 @@ export type UsersParams = {
   page?: number;
   limit?: number;
   search?: string;
+  sort?: string;
+  order?: "ASC" | "DESC";
   status?: string;
   division_id?: string;
   angkatan?: number;

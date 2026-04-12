@@ -1,4 +1,4 @@
-import { LayoutGrid, Edit, Trash2, Users } from "lucide-react";
+import { Edit, Trash2, Users } from "lucide-react";
 import {
   Division,
   DivisionsStatRes,
@@ -7,49 +7,6 @@ import {
 import { PermissionGate } from "@/components/guard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useState } from "react";
-
-const DIVISION_COLORS = [
-  {
-    color: "text-primary",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
-    border: "border-purple-200 dark:border-purple-800",
-  },
-  {
-    color: "text-blue-600",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    border: "border-blue-200 dark:border-blue-800",
-  },
-  {
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-900/20",
-    border: "border-emerald-200 dark:border-emerald-800",
-  },
-  {
-    color: "text-orange-600",
-    bg: "bg-orange-50 dark:bg-orange-900/20",
-    border: "border-orange-200 dark:border-orange-800",
-  },
-  {
-    color: "text-pink-600",
-    bg: "bg-pink-50 dark:bg-pink-900/20",
-    border: "border-pink-200 dark:border-pink-800",
-  },
-  {
-    color: "text-cyan-600",
-    bg: "bg-cyan-50 dark:bg-cyan-900/20",
-    border: "border-cyan-200 dark:border-cyan-800",
-  },
-  {
-    color: "text-yellow-600",
-    bg: "bg-yellow-50 dark:bg-yellow-900/20",
-    border: "border-yellow-200 dark:border-yellow-800",
-  },
-  {
-    color: "text-red-600",
-    bg: "bg-red-50 dark:bg-red-900/20",
-    border: "border-red-200 dark:border-red-800",
-  },
-];
 
 export const DivisionCard = ({
   division,
@@ -62,9 +19,21 @@ export const DivisionCard = ({
   onEdit: (d: Division) => void;
   onDelete: (d: Division) => void;
 }) => {
-  const palette = DIVISION_COLORS[index % DIVISION_COLORS.length];
   const memberCount = division.user_count ?? 0;
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+
+  // Icons for divisions (cycling through relevant icons)
+  const icons = [
+    "🚀", // R&D
+    "📊", // Sales/Marketing
+    "⚙️", // Operations
+    "👥", // HR
+    "⚖️", // Legal
+    "🎯", // General
+    "🔬", // Research
+    "💼", // Business
+  ];
+  const icon = icons[index % icons.length];
 
   const handleEdit = async () => {
     try {
@@ -77,72 +46,67 @@ export const DivisionCard = ({
       setIsLoadingEdit(false);
     }
   };
+
   return (
-    <div
-      className={`group relative bg-slate-50 dark:bg-slate-900 rounded-xl border ${palette.border} shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}
-    >
-      {/* Top accent bar */}
-      <div
-        className={`h-1 w-full ${palette.bg}`}
-      />
-
-      <div className="p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-xl ${palette.bg}`}>
-              <LayoutGrid className={`w-5 h-5 ${palette.color}`} />
-            </div>
-            <div>
-              <h3 className="font-bold text-text-primary-light dark:text-text-primary-dark text-sm leading-tight">
-                {division.nama_divisi}
-              </h3>
-              {/* {division.deskripsi && (
-                <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-0.5 line-clamp-1">
-                  {division.deskripsi}
-                </p>
-              )} */}
-            </div>
+    <div className="group bg-surface-container-lowest rounded-xl p-6 transition-all duration-200 hover:shadow-md border border-outline-variant/10 hover:border-outline-variant/30">
+      {/* Header with Icon and Actions */}
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-start gap-3 flex-1">
+          <div className="p-3 bg-secondary-container rounded-xl flex items-center justify-center text-2xl">
+            {icon}
           </div>
-
-          {/* Actions */}
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            <PermissionGate permission={PERMISSIONS.EDIT_DIVISIONS}>
-              <button
-                onClick={handleEdit}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-text-secondary-light hover:text-primary transition-colors"
-              >
-                {isLoadingEdit ? (
-                  <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block" />
-                ) : (
-                  <Edit className="w-4 h-4" />
-                )}
-              </button>
-            </PermissionGate>
-            <PermissionGate permission={PERMISSIONS.DELETE_DIVISIONS}>
-              <button
-                onClick={() =>
-                  onDelete({
-                    id: division.division_id,
-                    nama_divisi: division.nama_divisi,
-                  })
-                }
-                className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-text-secondary-light hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </PermissionGate>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-['Manrope'] font-bold text-on-surface text-base leading-tight">
+              {division.nama_divisi}
+            </h3>
           </div>
         </div>
 
-        {/* Member count */}
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <Users className="w-4 h-4 text-text-secondary-light dark:text-text-secondary-dark" />
-          <span className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
-            <span className={`font-bold ${palette.color}`}>{memberCount}</span>{" "}
-            anggota
+        {/* Actions */}
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <PermissionGate permission={PERMISSIONS.EDIT_DIVISIONS}>
+            <button
+              onClick={handleEdit}
+              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors"
+              disabled={isLoadingEdit}
+            >
+              {isLoadingEdit ? (
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Edit className="w-4 h-4" />
+              )}
+            </button>
+          </PermissionGate>
+          <PermissionGate permission={PERMISSIONS.DELETE_DIVISIONS}>
+            <button
+              onClick={() =>
+                onDelete({
+                  id: division.division_id,
+                  nama_divisi: division.nama_divisi,
+                })
+              }
+              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-error transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </PermissionGate>
+        </div>
+      </div>
+
+      {/* Member Stats */}
+      <div className="flex items-center gap-2 pt-4 border-t border-outline-variant/10">
+        <div className="w-5 h-5 rounded-full bg-secondary-container flex items-center justify-center">
+          <Users className="w-3 h-3 text-on-secondary-container" />
+        </div>
+        <span className="font-['Manrope'] text-sm font-bold text-on-surface">
+          {memberCount}
+          <span className="font-medium text-on-surface-variant ms-1">
+            members
           </span>
-        </div>
+        </span>
+        <span className="text-xs text-on-surface-variant ms-auto">
+          {division.percentage}%
+        </span>
       </div>
     </div>
   );

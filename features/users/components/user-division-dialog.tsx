@@ -4,9 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -17,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { User } from "@/features/auth/contexts/AuthContext";
 import { useState, useEffect } from "react";
-import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
 import { toast } from "sonner";
 import { useUserContext } from "@/features/users/contexts/UserContext";
 
@@ -35,78 +32,78 @@ export const UserDivisionDialog = ({
   divisions,
 }: Props) => {
   const [selectedDivision, setSelectedDivision] = useState("");
-
   const { assignUserDivision: assignDivision, isAssigningDivision } =
     useUserContext();
 
   useEffect(() => {
-    if (user?.division?.id) {
-      setSelectedDivision(user.division.id);
-    } else {
-      setSelectedDivision("");
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedDivision(user?.division?.id ?? "");
   }, [user, open]);
 
   const handleSave = async () => {
     if (!user || !selectedDivision) return;
-
-    // If no change, just close
     if (selectedDivision === user.division?.id) {
       onOpenChange(false);
       return;
     }
-
     try {
-      await assignDivision({
-        id: user.id,
-        divisionId: selectedDivision,
-      });
+      await assignDivision({ id: user.id, divisionId: selectedDivision });
       toast.success("Divisi berhasil dipindahkan");
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error("Gagal memindahkan divisi");
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Pindah Divisi</DialogTitle>
-          <DialogDescription>
-            Pindahkan pengguna <strong>{user?.nama}</strong> ke divisi lain.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-2">
-          <div className="grid gap-2">
-            <Label>Divisi</Label>
-            <Select
-              value={selectedDivision}
-              onValueChange={setSelectedDivision}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih divisi" />
-              </SelectTrigger>
-              <SelectContent>
-                {divisions.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.nama}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <DialogContent className="sm:max-w-md bg-surface-container-lowest p-0">
+        <div className="px-8 pt-8 pb-6 bg-surface-container-low">
+          <DialogHeader>
+            <DialogTitle className="font-['Manrope'] text-xl font-bold text-primary">
+              Pindah Divisi
+            </DialogTitle>
+            <DialogDescription className=" text-sm text-on-surface-variant">
+              Pindahkan{" "}
+              <strong className="text-on-surface">{user?.nama}</strong> ke
+              divisi lain.
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="px-8 py-6 space-y-2">
+          <Label className=" text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+            Divisi
+          </Label>
+          <Select value={selectedDivision} onValueChange={setSelectedDivision}>
+            <SelectTrigger className=" border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
+              <SelectValue placeholder="Pilih divisi" />
+            </SelectTrigger>
+            <SelectContent>
+              {divisions.map((d) => (
+                <SelectItem key={d.id} value={d.id} className="">
+                  {d.nama}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="px-8 py-5 bg-surface-container-low flex justify-end gap-3">
+          <button
+            onClick={() => onOpenChange(false)}
+            className=" px-5 py-2.5 text-sm font-medium text-primary border border-outline/20 rounded-xl hover:bg-surface-container transition-colors"
+          >
             Batal
-          </Button>
-          <Button onClick={handleSave} disabled={isAssigningDivision}>
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isAssigningDivision}
+            className=" font-bold px-6 py-2.5 text-sm text-on-primary bg-primary-gradient rounded-xl shadow-ambient hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+          >
             Simpan
-          </Button>
-        </DialogFooter>
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,13 +1,5 @@
 "use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Asset } from "../services/assetService";
 import {
   DropdownMenu,
@@ -15,141 +7,174 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 type Props = {
   assets: Asset[];
+  onEdit?: (asset: Asset) => void;
+  onDelete?: (asset: Asset) => void;
 };
 
-const conditionColor: Record<string, { label: string; colorClass: string }> = {
+// ── Condition config ──────────────────────────────────────────────────────────
+const CONDITION_MAP: Record<
+  string,
+  { label: string; bg: string; text: string }
+> = {
   baik: {
-    label: "Good",
-    colorClass:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    label: "Baik",
+    bg: "bg-primary-fixed",
+    text: "text-on-primary-fixed-variant",
   },
   rusak_ringan: {
-    label: "Minor Damage",
-    colorClass:
-      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    label: "Rusak Ringan",
+    bg: "bg-tertiary-fixed",
+    text: "text-on-tertiary-fixed-variant",
   },
   rusak_berat: {
-    label: "Major Damage",
-    colorClass:
-      "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+    label: "Rusak Berat",
+    bg: "bg-error-container",
+    text: "text-on-error-container",
   },
   hilang: {
-    label: "Lost",
-    colorClass:
-      "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
+    label: "Hilang",
+    bg: "bg-surface-container-highest",
+    text: "text-on-surface-variant",
   },
   dipinjam: {
-    label: "Borrowed",
-    colorClass:
-      "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    label: "Dipinjam",
+    bg: "bg-secondary-fixed",
+    text: "text-on-secondary-fixed-variant",
   },
   dalam_perbaikan: {
-    label: "Maintenance",
-    colorClass:
-      "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+    label: "Perbaikan",
+    bg: "bg-tertiary-fixed",
+    text: "text-on-tertiary-fixed-variant",
   },
 };
 
-export const AssetTable = ({ assets }: Props) => {
+const ConditionBadge = ({ kondisi }: { kondisi: string }) => {
+  const cfg = CONDITION_MAP[kondisi] ?? {
+    label: kondisi.replace(/_/g, " "),
+    bg: "bg-surface-container-high",
+    text: "text-on-surface-variant",
+  };
   return (
-    <div className="w-full">
-      <Table>
-        <TableHeader className="bg-muted/50 rounded-t-xl border-b-0">
-          <TableRow className="border-b-0 hover:bg-transparent">
-            <TableHead className="font-semibold text-foreground rounded-tl-xl h-11">
-              Nama / Kode
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Kategori / Judul
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Kondisi
-            </TableHead>
-            <TableHead className="font-semibold text-foreground text-center h-11">
-              Stok
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
-              Lokasi
-            </TableHead>
-            <TableHead className="w-[70px] rounded-tr-xl h-11"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${cfg.bg} ${cfg.text}`}
+    >
+      {cfg.label}
+    </span>
+  );
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
+export const AssetTable = ({ assets, onEdit, onDelete }: Props) => {
+  return (
+    <div className="w-full overflow-x-auto">
+      <table className="w-full text-left border-collapse">
+        {/* Header */}
+        <thead>
+          <tr className="bg-surface-container-high">
+            {["Nama / Kode", "Judul", "Kondisi", "Stok", "Lokasi", ""].map(
+              (h, i) => (
+                <th
+                  key={i}
+                  className={`px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ${
+                    h === "Stok" ? "text-center" : ""
+                  } ${h === "" ? "w-14" : ""}`}
+                >
+                  {h}
+                </th>
+              ),
+            )}
+          </tr>
+        </thead>
+
+        {/* Body */}
+        <tbody className="divide-y divide-outline-variant/10">
           {assets.length === 0 ? (
-            <TableRow>
-              <TableCell
+            <tr>
+              <td
                 colSpan={6}
-                className="h-32 text-center text-muted-foreground font-medium"
+                className="h-32 text-center text-on-surface-variant text-sm py-12"
               >
                 Belum ada data aset.
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : (
-            assets.map((asset) => {
-              const condition = conditionColor[asset.kondisi] || {
-                label: asset.kondisi.replace("_", " "),
-                colorClass: "bg-gray-100 text-gray-800 border-gray-200",
-              };
-              return (
-                <TableRow
-                  key={asset.id}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                >
-                  <TableCell>
-                    <div className="font-semibold text-foreground">
-                      {asset.nama}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                      {asset.kode}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-medium">
-                    {asset.judul || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase border ${condition.colorClass}`}
-                    >
-                      {condition.label}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center font-medium">
-                    {asset.available} / {asset.jumlah}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-medium">
-                    {asset.lokasi}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-muted"
+            assets.map((asset) => (
+              <tr key={asset.id} className="hover:bg-surface transition-colors">
+                {/* Nama / Kode */}
+                <td className="px-6 py-4">
+                  <p className="font-semibold text-on-surface text-sm">
+                    {asset.nama}
+                  </p>
+                  <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
+                    {asset.kode}
+                  </p>
+                </td>
+
+                {/* Judul */}
+                <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">
+                  {asset.judul || "—"}
+                </td>
+
+                {/* Kondisi */}
+                <td className="px-6 py-4">
+                  <ConditionBadge kondisi={asset.kondisi} />
+                </td>
+
+                {/* Stok */}
+                <td className="px-6 py-4 text-center">
+                  <span className="font-['Manrope'] font-bold text-on-surface text-sm">
+                    {asset.available}
+                  </span>
+                  <span className="text-on-surface-variant text-xs">
+                    {" "}
+                    / {asset.jumlah}
+                  </span>
+                </td>
+
+                {/* Lokasi */}
+                <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">
+                  {asset.lokasi}
+                </td>
+
+                {/* Actions */}
+                <td className="px-6 py-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36">
+                      {onEdit && (
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() => onEdit(asset)}
                         >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem className="cursor-pointer">
-                          <Pencil className="mr-2 h-4 w-4 text-primary" /> Edit
+                          <Pencil className="mr-2 h-3.5 w-3.5 text-primary" />
+                          Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive cursor-pointer focus:text-destructive focus:bg-destructive/10">
-                          <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                      )}
+                      {onDelete && (
+                        <DropdownMenuItem
+                          className="text-error cursor-pointer focus:text-error focus:bg-error-container/20"
+                          onClick={() => onDelete(asset)}
+                        >
+                          <Trash2 className="mr-2 h-3.5 w-3.5" />
+                          Hapus
                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };

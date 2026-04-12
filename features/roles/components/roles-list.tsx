@@ -29,7 +29,6 @@ import { useRoleContext } from "@/features/roles/contexts/RoleContext";
 import { Role } from "@/features/roles/services/roleService";
 import { PERMISSIONS } from "@/lib/permissions";
 import { z } from "zod";
-
 import { RoleFormDialog } from "./role-form-dialog";
 import { RoleDeleteDialog } from "./role-delete-dialog";
 import { PermissionGate } from "@/components/PermissionGate";
@@ -41,12 +40,7 @@ const createRoleSchema = z.object({
 
 type CreateRoleInput = z.infer<typeof createRoleSchema>;
 
-const emptyForm: CreateRoleInput = {
-  name: "",
-  permissions: [],
-};
-
-// ── Permission Groups ──────────────────────────────────────────────────────
+const emptyForm: CreateRoleInput = { name: "", permissions: [] };
 
 const PERMISSION_GROUPS = [
   {
@@ -54,8 +48,6 @@ const PERMISSION_GROUPS = [
     label: "User Management",
     desc: "Akun, profil, dan role",
     icon: Users,
-    color: "text-primary",
-    bg: "bg-purple-50 dark:bg-purple-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_USERS,
       create: PERMISSIONS.CREATE_USERS,
@@ -69,16 +61,12 @@ const PERMISSION_GROUPS = [
     label: "Role Management",
     desc: "Role dan permissions",
     icon: Shield,
-    color: "text-violet-600",
-    bg: "bg-violet-50 dark:bg-violet-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_ROLES,
       create: PERMISSIONS.CREATE_ROLES,
       update: PERMISSIONS.EDIT_ROLES,
       delete: PERMISSIONS.DELETE_ROLES,
-      extra: [
-        { label: "Manage Permissions", value: PERMISSIONS.MANAGE_PERMISSIONS },
-      ],
+      extra: [{ label: "Manage Perms", value: PERMISSIONS.MANAGE_PERMISSIONS }],
     },
   },
   {
@@ -86,8 +74,6 @@ const PERMISSION_GROUPS = [
     label: "Division Management",
     desc: "Divisi organisasi",
     icon: LayoutGrid,
-    color: "text-cyan-600",
-    bg: "bg-cyan-50 dark:bg-cyan-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_DIVISIONS,
       create: PERMISSIONS.CREATE_DIVISIONS,
@@ -100,8 +86,6 @@ const PERMISSION_GROUPS = [
     label: "Activity Progress",
     desc: "Kegiatan dan progress",
     icon: ClipboardList,
-    color: "text-green-600",
-    bg: "bg-green-50 dark:bg-green-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_ACTIVITIES,
       create: PERMISSIONS.CREATE_ACTIVITIES,
@@ -114,8 +98,6 @@ const PERMISSION_GROUPS = [
     label: "Documents",
     desc: "Dokumen organisasi",
     icon: FileText,
-    color: "text-yellow-600",
-    bg: "bg-yellow-50 dark:bg-yellow-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_DOCUMENTS,
       create: PERMISSIONS.CREATE_DOCUMENTS,
@@ -128,8 +110,6 @@ const PERMISSION_GROUPS = [
     label: "Documentations",
     desc: "Dokumentasi kegiatan",
     icon: FolderOpen,
-    color: "text-orange-600",
-    bg: "bg-orange-50 dark:bg-orange-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_DOCUMENTATIONS,
       create: PERMISSIONS.CREATE_DOCUMENTATIONS,
@@ -146,8 +126,6 @@ const PERMISSION_GROUPS = [
     label: "LPJ",
     desc: "Laporan pertanggungjawaban",
     icon: BookOpen,
-    color: "text-red-600",
-    bg: "bg-red-50 dark:bg-red-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_LPJ,
       create: PERMISSIONS.CREATE_LPJ,
@@ -160,8 +138,6 @@ const PERMISSION_GROUPS = [
     label: "Progress Reports",
     desc: "Laporan perkembangan",
     icon: ClipboardList,
-    color: "text-teal-600",
-    bg: "bg-teal-50 dark:bg-teal-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_PROGRESS_REPORTS,
       create: PERMISSIONS.CREATE_PROGRESS_REPORTS,
@@ -174,8 +150,6 @@ const PERMISSION_GROUPS = [
     label: "Donations",
     desc: "Dana masuk dan donatur",
     icon: Heart,
-    color: "text-pink-600",
-    bg: "bg-pink-50 dark:bg-pink-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_DONATIONS,
       create: PERMISSIONS.CREATE_DONATIONS,
@@ -189,8 +163,6 @@ const PERMISSION_GROUPS = [
     label: "Assets Inventory",
     desc: "Inventaris organisasi",
     icon: Box,
-    color: "text-blue-600",
-    bg: "bg-blue-50 dark:bg-blue-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_ASSETS,
       create: PERMISSIONS.CREATE_ASSETS,
@@ -203,8 +175,6 @@ const PERMISSION_GROUPS = [
     label: "Loans",
     desc: "Peminjaman aset",
     icon: Package,
-    color: "text-indigo-600",
-    bg: "bg-indigo-50 dark:bg-indigo-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_LOANS,
       create: PERMISSIONS.CREATE_LOANS,
@@ -218,8 +188,6 @@ const PERMISSION_GROUPS = [
     label: "Recruitment",
     desc: "Rekrutmen anggota baru",
     icon: UserPlus,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-900/20",
     permissions: {
       view: PERMISSIONS.VIEW_RECRUITMENTS,
       create: PERMISSIONS.CREATE_RECRUITMENTS,
@@ -233,15 +201,12 @@ const PERMISSION_GROUPS = [
 ];
 
 const ACTIONS = ["view", "create", "update", "delete"] as const;
-
 const ACTION_ICONS = {
   view: Eye,
   create: PlusCircle,
   update: Edit3,
   delete: Trash2,
 };
-
-// ── Component ──────────────────────────────────────────────────────────────
 
 export const RolesList = () => {
   const [formOpen, setFormOpen] = useState(false);
@@ -264,24 +229,18 @@ export const RolesList = () => {
     setIsMatrixModified(false);
   }, []);
 
-  // Initialize activeRole when roles first become available
-  const shouldInitialize = roles.length > 0 && !activeRole;
-  if (shouldInitialize) {
-    handleSelectRole(roles[0]);
-  }
+  if (roles.length > 0 && !activeRole) handleSelectRole(roles[0]);
 
   const openAdd = () => {
     setEditing(null);
     setForm(emptyForm);
     setFormOpen(true);
   };
-
   const openEdit = (role: Role) => {
     setEditing(role);
     setForm({ name: role.name, permissions: role.permissions || [] });
     setFormOpen(true);
   };
-
   const openDelete = (role: Role) => {
     setDeleting(role);
     setDeleteOpen(true);
@@ -292,9 +251,8 @@ export const RolesList = () => {
       const parsed = createRoleSchema.parse(form);
       if (editing) {
         await updateRole({ id: editing.id, data: parsed });
-        if (activeRole?.id === editing.id) {
+        if (activeRole?.id === editing.id)
           setActiveRole((prev) => (prev ? { ...prev, ...parsed } : null));
-        }
       } else {
         await createRole(parsed);
       }
@@ -304,8 +262,10 @@ export const RolesList = () => {
     } catch (err: unknown) {
       const errObj = err as Record<string, unknown>;
       if (errObj?.name === "ZodError" && "errors" in errObj) {
-        const errors = errObj.errors as Array<{ message: string }>;
-        toast.error(errors[0]?.message || "Validasi gagal");
+        toast.error(
+          (errObj.errors as Array<{ message: string }>)[0]?.message ||
+            "Validasi gagal",
+        );
         return;
       }
       toast.error("Gagal menyimpan role");
@@ -385,338 +345,337 @@ export const RolesList = () => {
 
   const statsCards = stats?.data
     ? [
-      {
-        label: "Total Roles",
-        value: stats.data.total_roles ?? 0,
-        icon: Shield,
-        color: "text-violet-600",
-        bg: "bg-violet-50 dark:bg-violet-900/20",
-      },
-      {
-        label: "Most Popular",
-        value: stats.data.most_popular?.role_name ?? "—",
-        sub: `${stats.data.most_popular?.user_count ?? 0} users`,
-        icon: Users,
-        color: "text-primary",
-        bg: "bg-purple-50 dark:bg-purple-900/20",
-      },
-      {
-        label: "Unassigned Roles",
-        value: stats.data.unassigned_roles?.length ?? 0,
-        icon: Settings,
-        color: "text-orange-600",
-        bg: "bg-orange-50 dark:bg-orange-900/20",
-      },
-    ]
+        {
+          label: "Total Roles",
+          value: stats.data.total_roles ?? 0,
+          icon: Shield,
+        },
+        {
+          label: "Most Popular",
+          value: stats.data.most_popular?.role_name ?? "—",
+          sub: `${stats.data.most_popular?.user_count ?? 0} users`,
+          icon: Users,
+        },
+        {
+          label: "Unassigned Roles",
+          value: stats.data.unassigned_roles?.length ?? 0,
+          icon: Settings,
+        },
+      ]
     : [];
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-4rem)] font-display text-text-primary-light dark:text-text-primary-dark flex flex-col gap-4">
-      {/* ── Stats Cards ── */}
+    <>
+      {/* ── Page Header ── */}
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-['Manrope'] text-3xl font-bold text-on-surface tracking-tight">
+            Role & Permissions
+          </h1>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Atur level akses untuk setiap anggota organisasi.
+          </p>
+        </div>
+        <PermissionGate permission={PERMISSIONS.CREATE_ROLES}>
+          <button
+            onClick={openAdd}
+            className="bg-primary-gradient text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-ambient hover:opacity-90 active:scale-95 transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah Role
+          </button>
+        </PermissionGate>
+      </header>
+
+      {/* ── Stats ── */}
       {statsCards.length > 0 && (
-        <div className="max-w-7xl mx-auto w-full mb-2">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {statsCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <div
-                  key={card.label}
-                  className="flex items-center gap-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-4"
-                >
-                  <div
-                    className={`p-3 rounded-xl ${card.bg} ${card.color} shrink-0`}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark font-medium">
-                      {card.label}
-                    </p>
-                    <p className="text-xl font-bold text-text-primary-light dark:text-text-primary-dark truncate">
-                      {card.value}
-                    </p>
-                    {card.sub && (
-                      <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
-                        {card.sub}
-                      </p>
-                    )}
-                  </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {statsCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.label}
+                className="bg-surface-container-lowest rounded-2xl p-6 flex items-center gap-4 shadow-ambient"
+              >
+                <div className="h-12 w-12 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0">
+                  <Icon className="h-5 w-5 text-on-secondary-container" />
                 </div>
-              );
-            })}
-          </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">
+                    {card.label}
+                  </p>
+                  <p className="font-['Manrope'] text-2xl font-bold text-on-surface">
+                    {card.value}
+                  </p>
+                  {card.sub && (
+                    <p className="text-xs text-on-surface-variant">
+                      {card.sub}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
-      <div className="max-w-7xl mx-auto h-full flex flex-col md:flex-row gap-6">
-        {/* ── Left: Roles List ── */}
-        <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold">Roles</h3>
-            <PermissionGate permission={PERMISSIONS.CREATE_ROLES}>
-              <button
-                onClick={openAdd}
-                className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm shadow-primary/30"
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </button>
-            </PermissionGate>
-          </div>
 
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
-            {roles.map((role, idx) => {
-              const isActive = activeRole?.id === role.id;
-              return (
-                <button
-                  key={role.id}
-                  onClick={() => handleSelectRole(role)}
-                  className={[
-                    "flex items-center justify-between px-4 py-3.5 border-l-4 transition-all w-full text-left group",
-                    isActive
-                      ? "border-primary bg-primary/5 dark:bg-primary/10"
-                      : "border-transparent hover:bg-slate-100 dark:hover:bg-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600",
-                    idx !== roles.length - 1
-                      ? "border-b border-gray-100 dark:border-gray-700/60"
-                      : "",
-                  ].join(" ")}
-                >
-                  {/* Nama role + badge user count */}
-                  <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                    <span
-                      className={[
-                        "text-sm font-semibold truncate",
-                        isActive
-                          ? "text-primary dark:text-primary-light"
-                          : "text-text-primary-light dark:text-text-primary-dark",
-                      ].join(" ")}
-                    >
-                      {role.name}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <Users className="w-3 h-3 text-text-secondary-light dark:text-text-secondary-dark shrink-0" />
-                      <span className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
-                        {role.user_count ?? 0}{" "}
-                        <span className="hidden sm:inline">user</span>
+      {/* ── Split Layout ── */}
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* ── Left: Role List ── */}
+        <div className="w-full md:w-72 flex-shrink-0">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-ambient overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 bg-surface-container-low flex items-center justify-between">
+              <h3 className="font-['Manrope'] text-base font-bold text-primary">
+                Organizational Roles
+              </h3>
+            </div>
+
+            {/* Role items */}
+            <div className="divide-y divide-outline-variant/10">
+              {roles.map((role) => {
+                const isActive = activeRole?.id === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    onClick={() => handleSelectRole(role)}
+                    className={`w-full flex items-center justify-between px-5 py-4 text-left transition-all group ${
+                      isActive
+                        ? "bg-primary/5 border-l-4 border-primary"
+                        : "hover:bg-surface border-l-4 border-transparent"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                      <span
+                        className={`text-sm font-semibold truncate ${isActive ? "text-primary" : "text-on-surface"}`}
+                      >
+                        {role.name}
+                      </span>
+                      <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {role.user_count ?? 0} user
                       </span>
                     </div>
-                  </div>
 
-                  {/* Action buttons */}
-                  <div
-                    className={[
-                      "flex gap-1 shrink-0 transition-opacity ml-2",
-                      isActive
-                        ? "opacity-100"
-                        : "opacity-0 group-hover:opacity-100",
-                    ].join(" ")}
-                  >
-                    <PermissionGate permission={PERMISSIONS.EDIT_ROLES}>
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEdit(role);
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-secondary-light hover:text-primary cursor-pointer transition-colors"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </div>
-                    </PermissionGate>
-                    <PermissionGate permission={PERMISSIONS.DELETE_ROLES}>
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDelete(role);
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-text-secondary-light hover:text-red-500 cursor-pointer transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </div>
-                    </PermissionGate>
-                  </div>
-                </button>
-              );
-            })}
+                    <div
+                      className={`flex gap-1 flex-shrink-0 ml-2 transition-opacity ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                    >
+                      <PermissionGate permission={PERMISSIONS.EDIT_ROLES}>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(role);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-primary/10 text-on-surface-variant hover:text-primary cursor-pointer transition-colors"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </div>
+                      </PermissionGate>
+                      <PermissionGate permission={PERMISSIONS.DELETE_ROLES}>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDelete(role);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-destructive/10 text-on-surface-variant hover:text-destructive cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </div>
+                      </PermissionGate>
+                    </div>
+                  </button>
+                );
+              })}
 
-            {roles.length === 0 && (
-              <div className="p-8 text-center text-text-secondary-light dark:text-text-secondary-dark text-sm">
-                Belum ada role
-              </div>
-            )}
+              {roles.length === 0 && (
+                <div className="p-8 text-center text-sm text-on-surface-variant">
+                  Belum ada role
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── Right: Permissions Matrix ── */}
-        <div className="w-full md:w-2/3 lg:w-3/4 flex flex-col gap-4">
+        {/* ── Right: Permission Matrix ── */}
+        <div className="flex-1 min-w-0">
           {activeRole ? (
-            <>
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-xl font-bold">
-                  Permissions {activeRole.name}
-                </h3>
+            <div className="bg-surface-container-lowest rounded-2xl shadow-ambient overflow-hidden">
+              {/* Matrix header */}
+              <div className="px-6 py-5 bg-primary flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-primary-fixed mb-1">
+                    Permissions Editor
+                  </p>
+                  <h4 className="font-['Manrope'] text-xl font-bold text-on-primary">
+                    {activeRole.name}
+                  </h4>
+                </div>
+                <Shield className="h-6 w-6 text-primary-fixed opacity-60" />
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden relative">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-100 dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 text-text-secondary-light dark:text-text-secondary-dark uppercase font-semibold text-xs tracking-wider">
-                      <tr>
-                        <th className="px-6 py-4 min-w-55">Feature</th>
-                        {ACTIONS.map((action) => {
-                          const Icon = ACTION_ICONS[action];
-                          return (
-                            <th
-                              key={action}
-                              className="px-4 py-4 text-center w-20"
-                            >
-                              <div className="flex flex-col items-center gap-1">
-                                <Icon className="w-4 h-4" />
-                                <span className="capitalize">{action}</span>
-                              </div>
-                            </th>
-                          );
-                        })}
-                        <th className="px-4 py-4 text-center min-w-[120px]">
-                          Extra
-                        </th>
-                        <th className="px-4 py-4 text-center w-24">All</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                      {PERMISSION_GROUPS.map((group) => {
-                        const allPerms = [
-                          ...ACTIONS.map((a) => group.permissions[a]).filter(
-                            Boolean,
-                          ),
-                          ...(group.permissions.extra?.map((e) => e.value) ??
-                            []),
-                        ];
-                        const hasAll = allPerms.every((p) =>
-                          currentPermissions.has(p),
-                        );
-
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-surface-container-high">
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant min-w-[200px]">
+                        Fitur
+                      </th>
+                      {ACTIONS.map((action) => {
+                        const Icon = ACTION_ICONS[action];
                         return (
-                          <tr
-                            key={group.id}
-                            className="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          <th
+                            key={action}
+                            className="px-4 py-4 text-center w-20"
                           >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className={`p-2 rounded-lg ${group.bg} ${group.color}`}
-                                >
-                                  <group.icon className="w-4 h-4" />
-                                </div>
-                                <div>
-                                  <p className="font-bold text-text-primary-light dark:text-text-primary-dark">
-                                    {group.label}
-                                  </p>
-                                  <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
-                                    {group.desc}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
+                            <div className="flex flex-col items-center gap-1 text-on-surface-variant">
+                              <Icon className="h-3.5 w-3.5" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest capitalize">
+                                {action}
+                              </span>
+                            </div>
+                          </th>
+                        );
+                      })}
+                      <th className="px-4 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-on-surface-variant min-w-[120px]">
+                        Extra
+                      </th>
+                      <th className="px-4 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-on-surface-variant w-24">
+                        All
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    {PERMISSION_GROUPS.map((group) => {
+                      const allPerms = [
+                        ...ACTIONS.map((a) => group.permissions[a]).filter(
+                          Boolean,
+                        ),
+                        ...(group.permissions.extra?.map((e) => e.value) ?? []),
+                      ];
+                      const hasAll = allPerms.every((p) =>
+                        currentPermissions.has(p),
+                      );
+                      const Icon = group.icon;
 
-                            {ACTIONS.map((action) => {
-                              const permValue = group.permissions[action];
-                              return (
-                                <td
-                                  key={action}
-                                  className="px-4 py-4 text-center"
-                                >
-                                  {permValue ? (
+                      return (
+                        <tr
+                          key={group.id}
+                          className="hover:bg-surface transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-secondary-container flex-shrink-0">
+                                <Icon className="h-4 w-4 text-on-secondary-container" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-on-surface">
+                                  {group.label}
+                                </p>
+                                <p className="text-xs text-on-surface-variant">
+                                  {group.desc}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {ACTIONS.map((action) => {
+                            const permValue = group.permissions[action];
+                            return (
+                              <td
+                                key={action}
+                                className="px-4 py-4 text-center"
+                              >
+                                {permValue ? (
+                                  <input
+                                    type="checkbox"
+                                    checked={currentPermissions.has(permValue)}
+                                    onChange={() => togglePermission(permValue)}
+                                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                                  />
+                                ) : (
+                                  <span className="text-on-surface-variant/30 text-xs">
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })}
+
+                          <td className="px-4 py-4">
+                            {group.permissions.extra?.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {group.permissions.extra.map((extra) => (
+                                  <label
+                                    key={extra.value}
+                                    className="flex items-center gap-1.5 text-xs text-on-surface-variant cursor-pointer"
+                                  >
                                     <input
                                       type="checkbox"
                                       checked={currentPermissions.has(
-                                        permValue,
+                                        extra.value,
                                       )}
                                       onChange={() =>
-                                        togglePermission(permValue)
+                                        togglePermission(extra.value)
                                       }
-                                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-slate-800 dark:border-gray-600 cursor-pointer"
+                                      className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
                                     />
-                                  ) : (
-                                    <span className="text-gray-400 dark:text-gray-600">
-                                      —
-                                    </span>
-                                  )}
-                                </td>
-                              );
-                            })}
+                                    {extra.label}
+                                  </label>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-on-surface-variant/30 text-xs">
+                                —
+                              </span>
+                            )}
+                          </td>
 
-                            <td className="px-4 py-4">
-                              {group.permissions.extra?.length ? (
-                                <div className="flex flex-wrap gap-2">
-                                  {group.permissions.extra.map((extra) => (
-                                    <label
-                                      key={extra.value}
-                                      className="flex items-center gap-1.5 text-xs text-text-secondary-light dark:text-text-secondary-dark cursor-pointer"
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={currentPermissions.has(
-                                          extra.value,
-                                        )}
-                                        onChange={() =>
-                                          togglePermission(extra.value)
-                                        }
-                                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                                      />
-                                      {extra.label}
-                                    </label>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 dark:text-gray-600 text-xs">
-                                  —
-                                </span>
-                              )}
-                            </td>
+                          <td className="px-4 py-4 text-center">
+                            <button
+                              onClick={() => toggleGroupAll(group)}
+                              className="text-primary text-xs font-bold hover:underline whitespace-nowrap"
+                            >
+                              {hasAll ? "Deselect" : "Select All"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-                            <td className="px-4 py-4 text-center">
-                              <button
-                                onClick={() => toggleGroupAll(group)}
-                                className="text-primary text-xs font-bold hover:underline whitespace-nowrap"
-                              >
-                                {hasAll ? "Deselect" : "Select All"}
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+              {/* Save bar */}
+              {isMatrixModified && (
+                <div className="px-6 py-4 bg-surface-container-low border-t border-outline-variant/20 flex justify-end gap-3 sticky bottom-0">
+                  <button
+                    onClick={handleDiscardMatrix}
+                    className="px-5 py-2.5 text-sm font-medium text-on-surface-variant border border-outline-variant rounded-xl hover:bg-surface-container transition-colors"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    onClick={handleSaveMatrix}
+                    className="font-bold px-6 py-2.5 text-sm text-on-primary bg-primary-gradient rounded-xl shadow-ambient hover:opacity-90 active:scale-95 transition-all flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save Changes
+                  </button>
                 </div>
-
-                {isMatrixModified && (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 sticky bottom-0 animate-in slide-in-from-bottom-2">
-                    <button
-                      onClick={handleDiscardMatrix}
-                      className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-text-secondary-light dark:text-text-secondary-dark font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      Discard
-                    </button>
-                    <button
-                      onClick={handleSaveMatrix}
-                      className="px-6 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white font-bold shadow-lg shadow-primary/30 transition-all active:scale-95 flex items-center gap-2"
-                    >
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
+              )}
+            </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-text-secondary-light dark:text-text-secondary-dark border-2 border-dashed rounded-xl border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-slate-900">
-              <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
-                <Settings className="w-8 h-8 text-gray-400" />
+            <div className="flex flex-col items-center justify-center p-12 bg-surface-container-lowest rounded-2xl shadow-ambient text-center">
+              <div className="h-16 w-16 rounded-full bg-surface-container flex items-center justify-center mb-4">
+                <Settings className="h-8 w-8 text-on-surface-variant" />
               </div>
-              <p className="font-semibold text-lg text-text-primary-light dark:text-text-primary-dark">
+              <p className="font-['Manrope'] font-bold text-lg text-on-surface">
                 Belum Ada Role Dipilih
               </p>
-              <p className="text-sm mt-1">
-                Pilih role dari sidebar untuk melihat dan mengubah permissions.
+              <p className="text-sm text-on-surface-variant mt-1">
+                Pilih role dari panel kiri untuk melihat dan mengubah
+                permissions.
               </p>
             </div>
           )}
@@ -731,13 +690,12 @@ export const RolesList = () => {
         setForm={setForm}
         onSubmit={handleSaveRoleInfo}
       />
-
       <RoleDeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         role={deleting}
         onConfirm={handleDelete}
       />
-    </div>
+    </>
   );
 };

@@ -1,7 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import React, { createContext, useContext, useMemo, useState } from "react";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import {
@@ -11,9 +16,14 @@ import {
   updateDonation,
   deleteDonation,
   uploadProof,
+  verifyDonation,
+  rejectDonation,
+  cancelDonation,
+  bulkVerifyDonations,
+  bulkRejectDonations,
   Donation,
   DonationStats,
-  CreateDonationInput,
+  CreateDonationPayload,
   PaginationMeta,
 } from "@/features/donation/services/donationService";
 import { getErrorMessage } from "@/lib/api/client";
@@ -25,18 +35,33 @@ interface DonationContextType {
   isLoadingStats: boolean;
   pagination: PaginationMeta | null;
   page: number;
-  setPage: (p: number) => void; searchQuery: string;
+  setPage: (p: number) => void;
+  searchQuery: string;
   setSearchQuery: (val: string) => void;
   activeFilter: string;
   setActiveFilter: (val: string) => void;
+  methodFilter: string;
+  setMethodFilter: (val: string) => void;
+  startDateFilter: string;
+  setStartDateFilter: (val: string) => void;
+  endDateFilter: string;
+  setEndDateFilter: (val: string) => void;
 
-  createDonation: (data: CreateDonationInput) => Promise<any>;
-  updateDonation: (args: {
-    id: string;
-    data: Partial<CreateDonationInput> & { status?: string };
-  }) => Promise<any>;
-  deleteDonation: (id: string) => Promise<any>;
-  uploadProof: (args: { id: string; file: File }) => Promise<any>;
+  createDonation: (data: CreateDonationPayload | FormData) => Promise<unknown>;
+  updateDonation: (args: { id: string; data: FormData }) => Promise<unknown>;
+  deleteDonation: (id: string) => Promise<unknown>;
+  uploadProof: (args: { id: string; file: File }) => Promise<unknown>;
+  verifyDonation: (args: { id: string; catatan?: string }) => Promise<unknown>;
+  rejectDonation: (args: { id: string; catatan: string }) => Promise<unknown>;
+  cancelDonation: (id: string) => Promise<unknown>;
+  bulkVerifyDonations: (args: {
+    donation_ids: string[];
+    catatan?: string;
+  }) => Promise<unknown>;
+  bulkRejectDonations: (args: {
+    donation_ids: string[];
+    catatan: string;
+  }) => Promise<unknown>;
 }
 
 const DonationContext = createContext<DonationContextType | undefined>(
@@ -59,18 +84,60 @@ export const DonationProvider = ({
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [methodFilter, setMethodFilter] = useState("all");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [debounceSearch] = useDebounce(searchQuery, 500);
 
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  };
+
+  const handleActiveFilterChange = (value: string) => {
+    setActiveFilter(value);
+    setPage(1);
+  };
+
+  const handleMethodFilterChange = (value: string) => {
+    setMethodFilter(value);
+    setPage(1);
+  };
+
+  const handleStartDateFilterChange = (value: string) => {
+    setStartDateFilter(value);
+    setPage(1);
+  };
+
+  const handleEndDateFilterChange = (value: string) => {
+    setEndDateFilter(value);
+    setPage(1);
+  };
+
   const { data: donationsData, isLoading: isLoadingDonations } = useQuery({
-    queryKey: ["donations", "list", page, limit, debounceSearch, activeFilter],
-    queryFn: () => getDonations({
+    queryKey: [
+      "donations",
+      "list",
       page,
       limit,
-      search: debounceSearch || undefined,
-      status: activeFilter !== "all" ? activeFilter : undefined,
-    }),
+      debounceSearch,
+      activeFilter,
+      methodFilter,
+      startDateFilter,
+      endDateFilter,
+    ],
+    queryFn: () =>
+      getDonations({
+        page,
+        limit,
+        search: debounceSearch || undefined,
+        status: activeFilter !== "all" ? activeFilter : undefined,
+        metode: methodFilter !== "all" ? methodFilter : undefined,
+        start_date: startDateFilter || undefined,
+        end_date: endDateFilter || undefined,
+      }),
     placeholderData: keepPreviousData,
   });
 
@@ -79,31 +146,32 @@ export const DonationProvider = ({
     queryFn: getDonationStats,
   });
 
-  const donations = donationsData?.data?.donations || [];
-  const pagination = donationsData?.data?.pagination || null;
+  const donations = useMemo(
+    () => donationsData?.data?.donations || [],
+    [donationsData],
+  );
+  const pagination = useMemo(
+    () => donationsData?.data?.pagination || null,
+    [donationsData],
+  );
 
   const createDonationMutation = useMutation({
     mutationFn: createDonation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(getErrorMessage(error));
     },
   });
 
   const updateDonationMutation = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Partial<CreateDonationInput> & { status?: string };
-    }) => updateDonation(id, data),
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
+      updateDonation(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(getErrorMessage(error));
     },
   });
@@ -113,7 +181,7 @@ export const DonationProvider = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["donations"] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(getErrorMessage(error));
     },
   });
@@ -125,7 +193,61 @@ export const DonationProvider = ({
       queryClient.invalidateQueries({ queryKey: ["donations"] });
       toast.success("Bukti pembayaran berhasil diupload");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const verifyDonationMutation = useMutation({
+    mutationFn: ({ id, catatan }: { id: string; catatan?: string }) =>
+      verifyDonation(id, { catatan }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const rejectDonationMutation = useMutation({
+    mutationFn: ({ id, catatan }: { id: string; catatan: string }) =>
+      rejectDonation(id, { catatan }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const cancelDonationMutation = useMutation({
+    mutationFn: (id: string) => cancelDonation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const bulkVerifyMutation = useMutation({
+    mutationFn: (data: { donation_ids: string[]; catatan?: string }) =>
+      bulkVerifyDonations(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const bulkRejectMutation = useMutation({
+    mutationFn: (data: { donation_ids: string[]; catatan: string }) =>
+      bulkRejectDonations(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["donations"] });
+    },
+    onError: (error: unknown) => {
       toast.error(getErrorMessage(error));
     },
   });
@@ -141,14 +263,25 @@ export const DonationProvider = ({
       setPage,
       limit,
       searchQuery,
-      setSearchQuery,
+      setSearchQuery: handleSearchQueryChange,
       activeFilter,
-      setActiveFilter,
+      setActiveFilter: handleActiveFilterChange,
+      methodFilter,
+      setMethodFilter: handleMethodFilterChange,
+      startDateFilter,
+      setStartDateFilter: handleStartDateFilterChange,
+      endDateFilter,
+      setEndDateFilter: handleEndDateFilterChange,
 
       createDonation: createDonationMutation.mutateAsync,
       updateDonation: updateDonationMutation.mutateAsync,
       deleteDonation: deleteDonationMutation.mutateAsync,
       uploadProof: uploadProofMutation.mutateAsync,
+      verifyDonation: verifyDonationMutation.mutateAsync,
+      rejectDonation: rejectDonationMutation.mutateAsync,
+      cancelDonation: cancelDonationMutation.mutateAsync,
+      bulkVerifyDonations: bulkVerifyMutation.mutateAsync,
+      bulkRejectDonations: bulkRejectMutation.mutateAsync,
     }),
     [
       donations,
@@ -161,10 +294,18 @@ export const DonationProvider = ({
       limit,
       searchQuery,
       activeFilter,
+      methodFilter,
+      startDateFilter,
+      endDateFilter,
       createDonationMutation,
       updateDonationMutation,
       deleteDonationMutation,
       uploadProofMutation,
+      verifyDonationMutation,
+      rejectDonationMutation,
+      cancelDonationMutation,
+      bulkVerifyMutation,
+      bulkRejectMutation,
     ],
   );
 

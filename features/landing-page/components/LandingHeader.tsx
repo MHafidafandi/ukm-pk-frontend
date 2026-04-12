@@ -8,11 +8,11 @@ export default function LandingHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = [
-    { label: "Home", href: "#" },
-    { label: "Aktivitas", href: "#" },
-    { label: "Donasi", href: "#" },
-    { label: "Rekrutmen", href: "#" },
-    { label: "Contact Us", href: "#" },
+    { label: "Home", href: "#top" },
+    { label: "Aktivitas", href: "#activities" },
+    { label: "Donasi", href: "#donations" },
+    { label: "Rekrutmen", href: "/login" },
+    { label: "Contact Us", href: "#contact" },
   ];
 
   return (

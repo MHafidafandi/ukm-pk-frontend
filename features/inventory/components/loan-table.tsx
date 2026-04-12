@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Loan } from "../services/assetService";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, RotateCcw, AlertOctagon } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
@@ -19,46 +10,64 @@ type Props = {
   onMarkLost?: (loanId: string, data: any) => Promise<void>;
 };
 
-const statusColor: Record<string, { label: string; colorClass: string }> = {
-  dipinjam: {
-    label: "Borrowed",
-    colorClass:
-      "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-  },
-  dikembalikan: {
-    label: "Returned",
-    colorClass:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-  },
-  hilang: {
-    label: "Lost",
-    colorClass:
-      "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-  },
-  rusak: {
-    label: "Broken",
-    colorClass:
-      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-  },
-  terlambat: {
-    label: "Late",
-    colorClass:
-      "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-  },
+// ── Status config ─────────────────────────────────────────────────────────────
+const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> =
+  {
+    dipinjam: {
+      label: "Dipinjam",
+      bg: "bg-primary-fixed",
+      text: "text-on-primary-fixed-variant",
+    },
+    dikembalikan: {
+      label: "Dikembalikan",
+      bg: "bg-secondary-fixed",
+      text: "text-on-secondary-fixed-variant",
+    },
+    hilang: {
+      label: "Hilang",
+      bg: "bg-error-container",
+      text: "text-on-error-container",
+    },
+    rusak: {
+      label: "Rusak",
+      bg: "bg-tertiary-fixed",
+      text: "text-on-tertiary-fixed-variant",
+    },
+    terlambat: {
+      label: "Terlambat",
+      bg: "bg-error-container",
+      text: "text-on-error-container",
+    },
+  };
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const cfg = STATUS_MAP[status] ?? {
+    label: status,
+    bg: "bg-surface-container-high",
+    text: "text-on-surface-variant",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${cfg.bg} ${cfg.text}`}
+    >
+      {cfg.label}
+    </span>
+  );
 };
 
+const formatDate = (date?: string) => {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
   const [returningId, setReturningId] = useState<string | null>(null);
   const [markingLostId, setMarkingLostId] = useState<string | null>(null);
-
-  const formatDate = (date?: string) => {
-    if (!date) return "-";
-    return new Date(date).toLocaleDateString("id-ID", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const handleReturn = async (loanId: string, data: any) => {
     if (!onReturn) return;
@@ -81,124 +90,137 @@ export const LoanTable = ({ loans, onReturn, onMarkLost }: Props) => {
   };
 
   return (
-    <div className="w-full">
-      <Table>
-        <TableHeader className="bg-muted/50 rounded-t-xl">
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="font-semibold text-foreground rounded-tl-xl h-11 text-center">
-              Asset
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11 text-center">
-              Borrower
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11 text-center">
-              Loan Date
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11 text-center">
-              Return Date
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11 text-center">
-              Status
-            </TableHead>
-            <TableHead className="w-[120px] rounded-tr-xl h-11 text-center">
-              Action
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loans.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="h-32 text-center text-muted-foreground font-medium"
+    <div className="w-full overflow-x-auto">
+      <table className="w-full text-left border-collapse">
+        {/* Header */}
+        <thead>
+          <tr className="bg-surface-container-high">
+            {[
+              "Aset",
+              "Peminjam",
+              "Tgl Pinjam",
+              "Tgl Kembali",
+              "Status",
+              "Aksi",
+            ].map((h) => (
+              <th
+                key={h}
+                className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant"
               >
-                No loan data yet.
-              </TableCell>
-            </TableRow>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        {/* Body */}
+        <tbody className="divide-y divide-outline-variant/10">
+          {loans.length === 0 ? (
+            <tr>
+              <td
+                colSpan={6}
+                className="h-32 text-center text-on-surface-variant text-sm py-12"
+              >
+                Belum ada data peminjaman.
+              </td>
+            </tr>
           ) : (
             loans.map((loan) => {
-              const status = statusColor[loan.status] || {
-                label: loan.status,
-                colorClass: "bg-gray-100 text-gray-800 border-gray-200",
-              };
               const isReturning = returningId === loan.id;
+              const isMarkingLost = markingLostId === loan.id;
+              const isBusy = isReturning || isMarkingLost;
+              const isActive = loan.status === "dipinjam";
 
               return (
-                <TableRow
+                <tr
                   key={loan.id}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                  className="hover:bg-surface transition-colors"
                 >
-                  <TableCell>
-                    <div className="font-semibold text-foreground">
-                      {loan.asset?.nama || "Unknown"}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium text-muted-foreground">
-                    {loan.user?.nama || "Unknown"}
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">
+                  {/* Aset */}
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-on-surface text-sm">
+                      {loan.asset?.nama || "—"}
+                    </p>
+                    <p className="text-[10px] text-on-surface-variant mt-0.5">
+                      {loan.asset?.kode || ""}
+                    </p>
+                  </td>
+
+                  {/* Peminjam */}
+                  <td className="px-6 py-4 text-sm text-on-surface font-medium">
+                    {loan.user?.nama || "—"}
+                  </td>
+
+                  {/* Tgl Pinjam */}
+                  <td className="px-6 py-4 text-sm text-on-surface-variant">
                     {formatDate(loan.tanggal_pinjam)}
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">
+                  </td>
+
+                  {/* Tgl Kembali */}
+                  <td className="px-6 py-4 text-sm text-on-surface-variant">
                     {formatDate(loan.tanggal_kembali)}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase border ${status.colorClass}`}
-                    >
-                      {status.label}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right flex gap-2 justify-end">
-                    {loan.status === "dipinjam" && onReturn && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 hover:bg-muted font-medium"
-                        disabled={isReturning || markingLostId === loan.id}
-                        onClick={() =>
-                          handleReturn(loan.id, {
-                            asset_id: loan.asset_id,
-                            tanggal_kembali: new Date().toISOString().split("T")[0],
-                            kondisi: "baik",
-                            catatan: "Returned in good condition",
-                          })
-                        }
-                      >
-                        {isReturning ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          "Return"
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-6 py-4">
+                    <StatusBadge status={loan.status} />
+                  </td>
+
+                  {/* Aksi */}
+                  <td className="px-6 py-4">
+                    {isActive && (
+                      <div className="flex items-center gap-2">
+                        {onReturn && (
+                          <button
+                            disabled={isBusy}
+                            onClick={() =>
+                              handleReturn(loan.id, {
+                                asset_id: loan.asset_id,
+                                tanggal_kembali: new Date()
+                                  .toISOString()
+                                  .split("T")[0],
+                                kondisi: "baik",
+                                catatan: "Dikembalikan dalam kondisi baik",
+                              })
+                            }
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                          >
+                            {isReturning ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <RotateCcw className="w-3 h-3" />
+                            )}
+                            Kembalikan
+                          </button>
                         )}
-                      </Button>
-                    )}
-                    {loan.status === "dipinjam" && onMarkLost && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="h-8 font-medium"
-                        disabled={isReturning || markingLostId === loan.id}
-                        onClick={() =>
-                          handleMarkLost(loan.id, {
-                            asset_id: loan.asset_id,
-                            catatan: "Marked as lost",
-                          })
-                        }
-                      >
-                        {markingLostId === loan.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          "Mark Lost"
+                        {onMarkLost && (
+                          <button
+                            disabled={isBusy}
+                            onClick={() =>
+                              handleMarkLost(loan.id, {
+                                asset_id: loan.asset_id,
+                                catatan: "Ditandai hilang",
+                              })
+                            }
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-error-container text-on-error-container text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                          >
+                            {isMarkingLost ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <AlertOctagon className="w-3 h-3" />
+                            )}
+                            Hilang
+                          </button>
                         )}
-                      </Button>
+                      </div>
                     )}
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               );
             })
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };

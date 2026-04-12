@@ -1,16 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
-import {
-  ArrowLeft,
-  Calendar,
-  MapPin,
-  Pencil,
-  FileText,
-  Users,
-  Info,
-  Image as ImageIcon,
-} from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Pencil, ImageOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useActivityContext } from "../contexts/ActivityContext";
@@ -22,13 +13,45 @@ import { ProgressReportList } from "./progress-report-list";
 import { LpjViewer } from "./lpj-viewer";
 import { ActivityFormDialog } from "./activity-form-dialog";
 import { CreateActivityInput } from "@/lib/validations/activity-schema";
+import { env } from "@/configs/env";
 
-type Props = {
-  id: string;
+const MEDIA_BASE_URL = env.MEDIA_URL;
+
+type Props = { id: string };
+
+// ── Status config ─────────────────────────────────────────────────────────────
+const getStatusCfg = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === "berjalan" || s === "ongoing")
+    return {
+      label: "Berjalan",
+      bg: "bg-primary-fixed",
+      text: "text-on-primary-fixed-variant",
+      pulse: true,
+    };
+  if (s === "selesai" || s === "completed")
+    return {
+      label: "Selesai",
+      bg: "bg-secondary-fixed",
+      text: "text-on-secondary-fixed-variant",
+      pulse: false,
+    };
+  if (s === "perencanaan" || s === "pending")
+    return {
+      label: "Perencanaan",
+      bg: "bg-tertiary-fixed",
+      text: "text-on-tertiary-fixed-variant",
+      pulse: false,
+    };
+  return {
+    label: "Dibatalkan",
+    bg: "bg-error-container",
+    text: "text-on-error-container",
+    pulse: false,
+  };
 };
 
-const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
-
+// ── Component ─────────────────────────────────────────────────────────────────
 export const ActivityDetail = ({ id }: Props) => {
   const router = useRouter();
   const {
@@ -39,27 +62,29 @@ export const ActivityDetail = ({ id }: Props) => {
   } = useActivityContext();
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<CreateActivityInput>(() => {
-    if (activity) {
-      return {
-        judul: activity.judul,
-        deskripsi: activity.deskripsi,
-        tanggal: new Date(activity.tanggal),
-        lokasi: activity.lokasi,
-      };
-    }
-    return {
-      judul: "",
-      deskripsi: "",
-      tanggal: new Date(),
-      lokasi: "",
-    };
+  const [editForm, setEditForm] = useState<CreateActivityInput>({
+    judul: "",
+    deskripsi: "",
+    tanggal: new Date(),
+    lokasi: "",
   });
 
   useEffect(() => {
     setActiveActivityId(id);
     return () => setActiveActivityId(null);
   }, [id, setActiveActivityId]);
+
+  const openEditDialog = () => {
+    if (!activity) return;
+    setEditForm({
+      judul: activity.judul,
+      deskripsi: activity.deskripsi,
+      tanggal: new Date(activity.tanggal),
+      lokasi: activity.lokasi,
+      thumbnail: undefined,
+    });
+    setEditOpen(true);
+  };
 
   const handleEditSave = async () => {
     try {
@@ -75,7 +100,6 @@ export const ActivityDetail = ({ id }: Props) => {
       formData.append("lokasi", editForm.lokasi);
 
       const existingThumbnailUrl = activity?.thumbnail || "";
-
       if (editForm.thumbnail instanceof File) {
         formData.append("thumbnail", editForm.thumbnail);
         formData.append("thumbnail_url", "");
@@ -97,6 +121,7 @@ export const ActivityDetail = ({ id }: Props) => {
     }
   };
 
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
@@ -105,123 +130,93 @@ export const ActivityDetail = ({ id }: Props) => {
     );
   }
 
+  // ── Not Found ─────────────────────────────────────────────────────────────
   if (!activity) {
     return (
-      <div className="flex h-48 w-full flex-col items-center justify-center gap-4 text-muted-foreground">
-        <p>Activity not found</p>
+      <div className="flex h-48 w-full flex-col items-center justify-center gap-4 text-on-surface-variant">
+        <p className="text-sm font-medium">Kegiatan tidak ditemukan.</p>
         <button
           onClick={() => router.push("/dashboard/activities")}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:opacity-90 transition-opacity"
         >
-          <ArrowLeft className="size-4" />
-          Back to Activities
+          <ArrowLeft className="w-4 h-4" />
+          Kembali ke Kegiatan
         </button>
       </div>
     );
   }
 
-  // Status styling
-  const statusLower = activity.status.toLowerCase();
-  const isOngoing = statusLower === "ongoing" || statusLower === "berjalan";
-  const isCompleted = statusLower === "selesai" || statusLower === "completed";
-  const isPending = statusLower === "perencanaan" || statusLower === "pending";
-
-  let statusConfig: { label: string; colorClass: string } = {
-    label: activity.status,
-    colorClass: "bg-gray-500/90 text-white",
-  };
-  if (isOngoing)
-    statusConfig = {
-      label: "Berjalan",
-      colorClass:
-        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    };
-  else if (isCompleted)
-    statusConfig = {
-      label: "Selesai",
-      colorClass:
-        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    };
-  else if (isPending)
-    statusConfig = {
-      label: "Perencanaan",
-      colorClass:
-        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    };
-  else
-    statusConfig = {
-      label: "Dibatalkan",
-      colorClass:
-        "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
-    };
+  const statusCfg = getStatusCfg(activity.status);
 
   return (
-    <div className="flex flex-col w-full gap-8">
-      {/* Breadcrumbs & Title */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2 items-center text-sm">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors"
-          >
-            Dashboard
-          </button>
-          <span className="text-slate-400 dark:text-slate-600">/</span>
-          <button
-            onClick={() => router.push("/dashboard/activities")}
-            className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors"
-          >
-            Activities
-          </button>
-          <span className="text-slate-400 dark:text-slate-600">/</span>
-          <span className="text-primary font-medium">Activity Details</span>
-        </div>
-
-        <div className="flex flex-wrap justify-between items-start gap-4">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-slate-900 dark:text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">
-              {activity.judul}
-            </h1>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-              <span className="inline-flex items-center gap-1">
-                <Calendar className="size-4" />
-                Started{" "}
-                {format(new Date(activity.tanggal), "MMM dd, yyyy", {
-                  locale: idLocale,
-                })}
-              </span>
-              <span className="size-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-4" />
-                {activity.lokasi}
-              </span>
-              <span className="size-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-              <span
-                className={`inline-flex items-center gap-1 font-medium px-2 py-0.5 rounded-full text-xs uppercase tracking-wide ${statusConfig.colorClass}`}
-              >
-                {isOngoing && (
-                  <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-                )}
-                {statusConfig.label}
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setEditOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg transition-colors shadow-sm"
-          >
-            <Pencil className="size-4" />
-            <span>Edit Activity</span>
-          </button>
-        </div>
+    <div className="space-y-8">
+      {/* ── Breadcrumb ── */}
+      <div className="flex flex-wrap items-center gap-2 text-sm text-on-surface-variant">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="hover:text-primary transition-colors"
+        >
+          Dashboard
+        </button>
+        <span>/</span>
+        <button
+          onClick={() => router.push("/dashboard/activities")}
+          className="hover:text-primary transition-colors"
+        >
+          Kegiatan
+        </button>
+        <span>/</span>
+        <span className="text-primary font-medium truncate max-w-[200px]">
+          {activity.judul}
+        </span>
       </div>
 
-      {/* Activity Overview Card */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/3 aspect-video md:aspect-4/3 rounded-lg bg-slate-100 dark:bg-slate-900 bg-cover bg-center shrink-0 flex items-center justify-center relative overflow-hidden">
+      {/* ── Page Header ── */}
+      <div className="flex flex-wrap justify-between items-start gap-4">
+        <div className="flex flex-col gap-3">
+          {/* Status + Meta */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${statusCfg.bg} ${statusCfg.text}`}
+            >
+              {statusCfg.pulse && (
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+              )}
+              {statusCfg.label}
+            </span>
+            <span className="flex items-center gap-1.5 text-sm text-on-surface-variant">
+              <Calendar className="w-4 h-4" />
+              {format(new Date(activity.tanggal), "dd MMMM yyyy", {
+                locale: idLocale,
+              })}
+            </span>
+            <span className="flex items-center gap-1.5 text-sm text-on-surface-variant">
+              <MapPin className="w-4 h-4" />
+              {activity.lokasi}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h1 className="font-['Manrope'] font-bold text-3xl text-on-surface tracking-tight leading-tight">
+            {activity.judul}
+          </h1>
+        </div>
+
+        {/* Edit Button */}
+        <button
+          onClick={openEditDialog}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-high transition-colors shadow-sm shrink-0"
+        >
+          <Pencil className="w-4 h-4" />
+          Edit Kegiatan
+        </button>
+      </div>
+
+      {/* ── Overview Card ── */}
+      <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col md:flex-row gap-0">
+        {/* Thumbnail */}
+        <div className="w-full md:w-80 h-56 md:h-auto shrink-0 bg-surface-container relative overflow-hidden">
           {activity.thumbnail ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={
                 activity.thumbnail.startsWith("http")
@@ -229,54 +224,46 @@ export const ActivityDetail = ({ id }: Props) => {
                   : `${MEDIA_BASE_URL}${activity.thumbnail}`
               }
               alt={activity.judul}
-              className="h-full w-full object-cover"
+              className="w-full h-full object-cover"
             />
           ) : (
-            <ImageIcon className="size-12 text-slate-300 dark:text-slate-700" />
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-outline">
+              <ImageOff className="w-10 h-10 opacity-40" />
+              <span className="text-xs font-medium text-on-surface-variant">
+                Belum ada thumbnail
+              </span>
+            </div>
           )}
         </div>
 
-        <div className="flex flex-col justify-between py-1 grow">
+        {/* Info */}
+        <div className="flex flex-col justify-between p-6 lg:p-8 flex-1">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <Info className="size-5 text-primary" />
-              Activity Overview
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-6 whitespace-pre-wrap">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-3">
+              Deskripsi Kegiatan
+            </p>
+            <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
               {activity.deskripsi}
             </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3 mt-auto">
-            <button className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors shadow-md shadow-primary/20">
-              <FileText className="size-4" />
-              View Proposal
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors">
-              <Users className="size-4" />
-              View Participants
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Two Column Layout for Reports & LPJ */}
+      {/* ── Two Column: Progress + LPJ ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 flex flex-col gap-6">
+        <div className="lg:col-span-2">
           <ProgressReportList activityId={id} />
         </div>
-
-        {/* Right Column: LPJ Upload */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
+        <div className="lg:col-span-1">
           <LpjViewer activityId={id} />
         </div>
       </div>
 
-      {/* Edit Dialog */}
+      {/* ── Edit Dialog ── */}
       <ActivityFormDialog
         open={editOpen}
         onOpenChange={setEditOpen}
-        isEdit={true}
+        isEdit
         form={editForm}
         setForm={setEditForm}
         onSubmit={handleEditSave}
