@@ -5,9 +5,7 @@ import {
 } from "@/features/auth/contexts/AuthContext";
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@/lib/permissions";
-
 import { Button } from "@/components/ui/button";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import {
   MoreHorizontal,
   Pencil,
@@ -29,75 +26,55 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { env } from "@/configs/env";
 
-/* ================= CONFIG ================= */
-
+/* ── Status badge config ── */
 const statusConfig: Record<
   User["status"],
-  { label: string; colorClass: string }
+  { label: string; className: string }
 > = {
   aktif: {
     label: "Aktif",
-    colorClass:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    className: "bg-primary-fixed text-on-primary-fixed-variant",
   },
   nonaktif: {
     label: "Nonaktif",
-    colorClass:
-      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    className: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
   },
   alumni: {
     label: "Alumni",
-    colorClass:
-      "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    className: "bg-secondary-fixed text-on-secondary-fixed-variant",
   },
 };
 
-/* ================= TYPES ================= */
-
+/* ── Types ── */
 type Props = {
   users: User[];
-
-  pagination?: {
-    total: number;
-    total_pages: number;
-  };
-
+  pagination?: { total: number; total_pages: number };
   currentPage: number;
   pageSize: number;
-
   onPageChange: (page: number) => void;
-
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
-
   onStatusChange: (user: User, status: User["status"]) => void;
-
   onAssignDivision?: (user: User) => void;
   onManageRoles?: (user: User) => void;
 };
-
-/* ================= COMPONENT ================= */
 
 export const UsersTable = ({
   users,
   pagination,
   currentPage,
   pageSize,
-
   onPageChange,
   onEdit,
   onDelete,
   onStatusChange,
-
   onAssignDivision,
   onManageRoles,
 }: Props) => {
   const { can } = usePermission();
   const totalPages = pagination?.total_pages ?? 1;
   const totalData = pagination?.total ?? 0;
-
   const start = users.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-
   const end = Math.min(currentPage * pageSize, totalData);
 
   const getAvatarSrc = (user: User) => {
@@ -116,148 +93,137 @@ export const UsersTable = ({
 
   return (
     <>
-      <table className="min-w-full divide-y divide-border-light dark:divide-border-dark">
-        <thead className="bg-slate-50/50 dark:bg-slate-800">
-          <tr>
-            <th
-              scope="col"
-              className="px-6 py-4 text-left text-xs font-semibold text-subtext-light dark:text-subtext-dark uppercase tracking-wider"
-            >
-              <div className="flex items-center gap-2 cursor-pointer group">
-                Nama
-                <span className="material-icons text-sm text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                  sort
-                </span>
-              </div>
+      <table className="min-w-full border-collapse">
+        {/* ── Head ── */}
+        <thead>
+          <tr className="bg-surface-container-high">
+            <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
+              Nama & Identitas
             </th>
-            <th
-              scope="col"
-              className="px-6 py-4 text-left text-xs font-semibold text-subtext-light dark:text-subtext-dark uppercase tracking-wider"
-            >
-              <div className="flex items-center gap-2 cursor-pointer group">
-                Kontak
-                <span className="material-icons text-sm text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                  sort
-                </span>
-              </div>
+            <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
+              Kontak
             </th>
-            <th
-              scope="col"
-              className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-subtext-light dark:text-subtext-dark uppercase tracking-wider"
-            >
+            <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
               Divisi
             </th>
-            <th
-              scope="col"
-              className="hidden md:table-cell px-6 py-4 text-left text-xs font-semibold text-subtext-light dark:text-subtext-dark uppercase tracking-wider"
-            >
+            <th className="hidden md:table-cell px-6 py-4 text-left text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
               Angkatan
             </th>
-            <th
-              scope="col"
-              className="px-6 py-4 text-left text-xs font-semibold text-subtext-light dark:text-subtext-dark uppercase tracking-wider"
-            >
+            <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
               Status
             </th>
-            <th
-              scope="col"
-              className="px-6 py-4 text-right text-xs font-semibold text-subtext-light dark:text-subtext-dark uppercase tracking-wider"
-            >
+            <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-widest text-on-surface-variant font-interface">
               Aksi
             </th>
           </tr>
         </thead>
-        <tbody className="bg-background-light dark:bg-slate-900 divide-y divide-border-light dark:divide-border-dark">
+
+        {/* ── Body ── */}
+        <tbody className="divide-y divide-outline-variant/10">
           {users.length === 0 ? (
             <tr>
               <td
                 colSpan={6}
-                className="px-6 py-8 text-center text-muted-foreground font-medium"
+                className="px-6 py-12 text-center text-sm text-on-surface-variant"
               >
                 Tidak ada data anggota.
               </td>
             </tr>
           ) : (
             users.map((user) => {
-              const isActive = user.status === "aktif";
-              const isAlumni = user.status === "alumni";
-              const isInactive = user.status === "nonaktif";
-
-              const badgeColor = isActive
-                ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-200 dark:border-green-800"
-                : isAlumni
-                  ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600"
-                  : isInactive
-                    ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800"
-                    : "bg-gray-100 text-gray-800 border-gray-200";
-
+              const badge = statusConfig[user.status];
               const avatarSrc = getAvatarSrc(user);
 
               return (
                 <tr
                   key={user.id}
-                  className="hover:bg-background-light dark:hover:bg-gray-800/50 transition-colors group"
+                  className="group hover:bg-surface transition-colors"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <Avatar className="h-10 w-10 shrink-0 border-2 border-white shadow-sm dark:border-gray-700">
+                  {/* Nama */}
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-10 w-10 shrink-0">
                         <AvatarImage
                           src={avatarSrc || undefined}
                           alt={user.nama}
                         />
-                        <AvatarFallback className="bg-slate-100 text-sm font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                        <AvatarFallback className="bg-secondary-container text-on-secondary-container text-sm font-bold">
                           {getInitials(user.nama || "User")}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <div>
+                        <p className="text-sm font-bold text-on-surface">
                           {user.nama}
-                        </div>
-                        <div className="text-xs text-subtext-light dark:text-subtext-dark">
+                        </p>
+                        <p className="text-xs text-on-surface-variant">
                           {user.email}
-                        </div>
+                          {user.username && (
+                            <>
+                              {" "}
+                              ·{" "}
+                              <span className="font-medium">
+                                {user.username}
+                              </span>
+                            </>
+                          )}
+                        </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700 dark:text-gray-300 font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+
+                  {/* Kontak */}
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <span className="text-sm text-on-surface-variant">
                       {user.nomor_telepon || "-"}
                     </span>
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="h-2.5 w-2.5 rounded-full bg-primary mr-2"></span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {isDivisionUser(user.division)
-                          ? user.division.nama_divisi
-                          : isDivisionMe(user.division)
-                            ? user.division.name
-                            : "-"}
-                      </span>
-                    </div>
+
+                  {/* Divisi */}
+                  <td className="hidden sm:table-cell px-6 py-5 whitespace-nowrap">
+                    <p className="text-sm font-semibold text-on-surface">
+                      {isDivisionUser(user.division)
+                        ? user.division.nama_divisi
+                        : isDivisionMe(user.division)
+                          ? user.division.name
+                          : "-"}
+                    </p>
+                    {user.angkatan && (
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mt-0.5">
+                        Angkatan {user.angkatan}
+                      </p>
+                    )}
                   </td>
-                  <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+
+                  {/* Angkatan */}
+                  <td className="hidden md:table-cell px-6 py-5 whitespace-nowrap text-sm text-on-surface-variant">
                     {user.angkatan || "-"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Status */}
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <span
-                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${badgeColor}`}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge?.className}`}
                     >
-                      {statusConfig[user.status]?.label || user.status}
+                      {badge?.label || user.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+
+                  {/* Aksi */}
+                  <td className="px-6 py-5 whitespace-nowrap text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-gray-400 hover:text-primary dark:hover:text-primary mx-1 transition-colors p-1 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 h-8 w-8"
+                          className="h-8 w-8 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent
+                        align="end"
+                        className="font-interface"
+                      >
                         {can(PERMISSIONS.EDIT_USERS) && (
                           <DropdownMenuItem onClick={() => onEdit(user)}>
                             <Pencil className="mr-2 h-4 w-4" />
@@ -332,81 +298,45 @@ export const UsersTable = ({
         </tbody>
       </table>
 
-      {/* ================= PAGINATION ================= */}
-      <div className="bg-slate-50/50 dark:bg-slate-800 border-t border-border-light dark:border-border-dark px-6 py-4 flex items-center justify-between">
-        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-subtext-light dark:text-subtext-dark">
-              Menampilkan{" "}
-              <span className="font-medium text-gray-900 dark:text-white">
-                {start}
-              </span>{" "}
-              hingga{" "}
-              <span className="font-medium text-gray-900 dark:text-white">
-                {end}
-              </span>{" "}
-              dari{" "}
-              <span className="font-medium text-gray-900 dark:text-white">
-                {totalData}
-              </span>{" "}
-              data
-            </p>
-          </div>
-          <div>
-            <nav
-              className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-              aria-label="Pagination"
-            >
-              <button
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage <= 1}
-                className="relative inline-flex items-center px-2 py-2 rounded-l-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Previous</span>
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    onClick={() => onPageChange(page)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                      currentPage === page
-                        ? "z-10 bg-primary/10 border-primary text-primary"
-                        : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
-              <button
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-                className="relative inline-flex items-center px-2 py-2 rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="sr-only">Next</span>
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </nav>
-          </div>
-        </div>
-        <div className="flex items-center justify-between sm:hidden w-full">
+      {/* ── Pagination ── */}
+      <div className="bg-surface-container-low px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p className="text-sm text-on-surface-variant">
+          Menampilkan <span className="font-bold text-on-surface">{start}</span>{" "}
+          – <span className="font-bold text-on-surface">{end}</span> dari{" "}
+          <span className="font-bold text-on-surface">{totalData}</span> data
+        </p>
+
+        <nav className="flex items-center gap-1">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+            className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-lowest transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Previous
+            <ChevronLeft className="h-4 w-4" />
           </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => onPageChange(page)}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                currentPage === page
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:bg-surface-container-lowest"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+            className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-lowest transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Next
+            <ChevronRight className="h-4 w-4" />
           </button>
-        </div>
+        </nav>
       </div>
     </>
   );

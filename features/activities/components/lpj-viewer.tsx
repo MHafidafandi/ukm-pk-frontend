@@ -1,4 +1,5 @@
 "use client";
+
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -12,25 +13,30 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useActivityContext } from "../contexts/ActivityContext";
 import { useRef, useState } from "react";
-import { FileCheck, ExternalLink, Trash2, Upload, Loader2 } from "lucide-react";
+import {
+  FileCheck,
+  ExternalLink,
+  Trash2,
+  Upload,
+  Loader2,
+  FileText,
+} from "lucide-react";
 import { format, Locale } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { env } from "@/configs/env";
 
 const MEDIA_BASE_URL = env.MEDIA_URL;
 
-type Props = {
-  activityId: string;
-};
+type Props = { activityId: string };
 
 function safeFormatDate(
   value: string | null | undefined,
   fmt: string,
   options?: { locale?: Locale },
 ): string {
-  if (!value) return "-";
+  if (!value) return "—";
   const d = new Date(value);
-  if (isNaN(d.getTime())) return "-";
+  if (isNaN(d.getTime())) return "—";
   return format(d, fmt, options);
 }
 
@@ -46,26 +52,17 @@ export const LpjViewer = ({ activityId }: Props) => {
   const [isUploading, setIsUploading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Klik area "Buat LPJ" → buka file picker
-  const handleClickUpload = () => {
-    fileInputRef.current?.click();
-  };
+  const handleClickUpload = () => fileInputRef.current?.click();
 
-  // User sudah pilih file → langsung upload
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Reset input supaya bisa pilih file yang sama lagi kalau perlu
     e.target.value = "";
 
-    // Validasi: hanya PDF
     if (file.type !== "application/pdf") {
       toast.error("Hanya file PDF yang diperbolehkan");
       return;
     }
-
-    // Validasi: max 10MB
     if (file.size > 10 * 1024 * 1024) {
       toast.error("Ukuran file maksimal 10MB");
       return;
@@ -73,12 +70,10 @@ export const LpjViewer = ({ activityId }: Props) => {
 
     try {
       setIsUploading(true);
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("activity_id", activityId);
       formData.append("tanggal", format(new Date(), "yyyy-MM-dd"));
-
       await createLpj(formData);
       toast.success("LPJ berhasil diupload");
     } catch {
@@ -99,22 +94,27 @@ export const LpjViewer = ({ activityId }: Props) => {
     }
   };
 
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-slate-400">
-        Loading LPJ...
+      <div className="flex items-center justify-center h-32 text-on-surface-variant text-sm gap-2">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Memuat LPJ...
       </div>
     );
   }
 
   return (
     <>
-      <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
-        <FileCheck className="size-5 text-primary" />
-        Final Report (LPJ)
-      </h2>
+      {/* ── Section Title ── */}
+      <div className="flex items-center gap-2 mb-5">
+        <h2 className="font-['Manrope'] font-bold text-xl text-on-surface flex items-center gap-2">
+          <FileCheck className="w-5 h-5 text-primary" />
+          Laporan Pertanggungjawaban (LPJ)
+        </h2>
+      </div>
 
-      {/* Hidden file input */}
+      {/* Hidden input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -123,105 +123,121 @@ export const LpjViewer = ({ activityId }: Props) => {
         className="hidden"
       />
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 h-full flex flex-col">
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          Laporan Pertanggungjawaban (LPJ) kegiatan. Upload setelah kegiatan
-          selesai dilaksanakan.
-        </p>
+      {/* ── Card ── */}
+      <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-6">
+          <p className="text-sm text-on-surface-variant mb-5 leading-relaxed">
+            Upload LPJ setelah kegiatan selesai dilaksanakan. Hanya file PDF
+            yang diterima, maksimal 10MB.
+          </p>
 
-        {!lpj?.created_at ? (
-          /* ── Belum ada LPJ ── */
-          <>
-            <div
-              onClick={!isUploading ? handleClickUpload : undefined}
-              className={`flex-1 min-h-50 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center p-6 text-center group
-                ${
+          {!lpj?.created_at ? (
+            /* ── Belum ada LPJ ── */
+            <div>
+              <button
+                onClick={!isUploading ? handleClickUpload : undefined}
+                disabled={isUploading}
+                className={`w-full h-36 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3 ${
                   isUploading
-                    ? "border-primary/50 bg-primary/5 dark:bg-primary/10 cursor-wait"
-                    : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
+                    ? "border-primary/40 bg-primary-fixed/10 cursor-wait"
+                    : "border-outline-variant hover:border-primary hover:bg-primary-fixed/5 cursor-pointer"
                 }`}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="size-8 text-primary animate-spin mb-3" />
-                  <h4 className="text-sm font-bold text-primary mb-1">
-                    Mengupload LPJ...
-                  </h4>
-                  <p className="text-xs text-slate-400">
-                    Mohon tunggu sebentar
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 group-hover:text-primary group-hover:scale-110 transition-all flex items-center justify-center mb-3">
-                    <Upload className="size-6" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary mb-1">
-                    Upload LPJ
-                  </h4>
-                  <p className="text-xs text-slate-400">
-                    Klik untuk memilih file PDF (maks. 10MB)
-                  </p>
-                </>
-              )}
-            </div>
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-7 h-7 text-primary animate-spin" />
+                    <p className="text-sm font-bold text-primary">
+                      Mengupload LPJ...
+                    </p>
+                    <p className="text-xs text-on-surface-variant">
+                      Mohon tunggu sebentar
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <p className="text-sm font-bold text-on-surface">
+                      Upload LPJ
+                    </p>
+                    <p className="text-xs text-on-surface-variant">
+                      Klik untuk memilih file PDF (maks. 10MB)
+                    </p>
+                  </>
+                )}
+              </button>
 
-            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-              <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                <span>Status</span>
-                <span className="text-amber-500 font-medium">
+              <div className="mt-4 pt-4 border-t border-outline-variant/10 flex items-center justify-between text-xs">
+                <span className="text-on-surface-variant font-medium">
+                  Status LPJ
+                </span>
+                <span className="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-bold">
                   Belum ada LPJ
                 </span>
               </div>
             </div>
-          </>
-        ) : (
-          /* ── Sudah ada LPJ ── */
-          <div className="flex-1 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-xl p-6 flex flex-col items-center text-center">
-            <div className="size-16 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-500 flex items-center justify-center mb-4">
-              <FileCheck className="size-8" />
-            </div>
-            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-              LPJ Telah Dibuat
-            </h4>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
-              Tanggal:{" "}
-              <span className="font-medium text-slate-700 dark:text-slate-300">
-                {safeFormatDate(lpj.tanggal, "dd MMMM yyyy", {
+          ) : (
+            /* ── Sudah ada LPJ ── */
+            <div className="flex flex-col gap-4">
+              {/* Status Card */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary-fixed/30">
+                <div className="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0">
+                  <FileCheck className="w-6 h-6 text-on-secondary-fixed-variant" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-on-surface">
+                    LPJ Telah Diupload
+                  </p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Tanggal:{" "}
+                    <span className="font-semibold text-on-surface">
+                      {safeFormatDate(lpj.tanggal, "dd MMMM yyyy", {
+                        locale: idLocale,
+                      })}
+                    </span>
+                  </p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] font-bold uppercase tracking-wide">
+                  Selesai
+                </span>
+              </div>
+
+              {/* Meta */}
+              <p className="text-xs text-on-surface-variant">
+                Dibuat pada{" "}
+                {safeFormatDate(lpj.created_at, "dd MMM yyyy, HH:mm", {
                   locale: idLocale,
                 })}
-              </span>
-            </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mb-6">
-              Dibuat pada{" "}
-              {safeFormatDate(lpj.created_at, "dd MMM yyyy, HH:mm", {
-                locale: idLocale,
-              })}
-            </p>
+              </p>
 
-            {lpj.file_url && (
-              <a
-                href={MEDIA_BASE_URL + lpj.file_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 mb-4 bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 transition-colors text-sm font-medium rounded-lg"
-              >
-                <ExternalLink className="size-4" />
-                Lihat File LPJ
-              </a>
-            )}
-
-            <button
-              onClick={() => setDeleteOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 transition-colors text-sm font-medium rounded-lg"
-            >
-              <Trash2 className="size-4" />
-              Hapus LPJ
-            </button>
-          </div>
-        )}
+              {/* Actions */}
+              <div className="flex items-center gap-3">
+                {lpj.file_url && (
+                  <a
+                    href={MEDIA_BASE_URL + lpj.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold hover:opacity-90 transition-opacity"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Lihat File LPJ
+                  </a>
+                )}
+                <button
+                  onClick={() => setDeleteOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-error-container text-on-error-container text-xs font-bold hover:opacity-90 transition-opacity"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Hapus LPJ
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* ── Delete Dialog ── */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

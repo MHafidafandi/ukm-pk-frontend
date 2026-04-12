@@ -2,7 +2,6 @@
 
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,17 +25,15 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRoleContext } from "@/features/roles/contexts/RoleContext";
+import { Label } from "@/components/ui/label";
 
-type Props = {
-  recruitmentId: string;
-};
+type Props = { recruitmentId: string };
 
 export const RegistrantsList = ({ recruitmentId }: Props) => {
   const router = useRouter();
   const {
     setActiveRecruitmentId,
     registrants,
-    // divisions,
     activeRecruitmentDetails,
     isFetchingRegistrants,
     isFetchingRecruitmentDetails,
@@ -53,7 +50,8 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
   const { divisions } = useDivisionContext();
   const { roles } = useRoleContext();
 
-  const [selectedRegistrant, setSelectedRegistrant] = useState<Registrant | null>(null);
+  const [selectedRegistrant, setSelectedRegistrant] =
+    useState<Registrant | null>(null);
   const [division, setDivision] = useState("");
   const [role, setRole] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,8 +61,9 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     return () => setActiveRecruitmentId(null);
   }, [recruitmentId]);
 
-
-  const recruitment = activeRecruitmentDetails;
+  const recruitmentName = recruitments?.find(
+    (r) => r.id === recruitmentId,
+  )?.nama_recruitment;
 
   const handleAcceptClick = (registrant: Registrant) => {
     setSelectedRegistrant(registrant);
@@ -75,10 +74,9 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
 
   const handleConfirmAccept = async () => {
     if (!division || role.length === 0) {
-      toast.error("Please select both division and role");
+      toast.error("Pilih divisi dan role terlebih dahulu");
       return;
     }
-
     try {
       if (!selectedRegistrant) return;
       await acceptRegistrant({
@@ -88,18 +86,19 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
       });
       setIsModalOpen(false);
     } catch {
-      toast.error("Failed to accept registrant");
+      toast.error("Gagal menerima pendaftar");
     }
   };
+
   const handleRejectRegistrant = async (registrant: Registrant) => {
     try {
       await rejectRegistrant(registrant.id);
     } catch {
-      toast.error("Failed to reject registrant");
+      toast.error("Gagal menolak pendaftar");
     }
   };
 
-  if (isFetchingRecruitmentDetails && !recruitment) {
+  if (isFetchingRecruitmentDetails && !activeRecruitmentDetails) {
     return (
       <div className="flex h-48 w-full items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -107,30 +106,27 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     );
   }
 
-
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
+      {/* ── Header ── */}
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => router.push("/dashboard/recruitment")}
-            className="hover:bg-muted transition-colors rounded-full h-10 w-10"
+            className="h-10 w-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
           >
-            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
-          </Button>
+            <ArrowLeft className="h-5 w-5" />
+          </button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Registrant: {recruitments?.find((r) => r.id === recruitmentId)?.nama_recruitment}
+            <h1 className="font-['Manrope'] text-3xl font-bold text-on-surface tracking-tight">
+              Pendaftar: {recruitmentName}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage registrant for this recruitment
+            <p className=" text-sm text-on-surface-variant mt-1">
+              Kelola pendaftar untuk rekrutmen ini
             </p>
           </div>
         </div>
-      </div>
+      </header>
 
       <RegistrantsTable
         registrants={registrants}
@@ -145,56 +141,77 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
         onRejectRegistrant={handleRejectRegistrant}
       />
 
+      {/* ── Accept Dialog ── */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Division and Role</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-md bg-surface-container-lowest p-0">
+          <div className="px-8 pt-8 pb-6 bg-surface-container-low">
+            <DialogHeader>
+              <DialogTitle className="font-['Manrope'] text-xl font-bold text-primary">
+                Tetapkan Divisi & Role
+              </DialogTitle>
+            </DialogHeader>
+          </div>
 
-          <div className="flex flex-col gap-4 mt-2">
-            <Select value={division} onValueChange={setDivision}>
-              <label className="text-sm font-medium">Select Division</label>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Division" />
-              </SelectTrigger>
-              <SelectContent>
-                {divisions.map((div) => (
-                  <SelectItem key={div.id} value={div.id}>
-                    {div.nama_divisi}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="px-8 py-6 space-y-6">
+            <div className="space-y-2">
+              <Label className=" text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Pilih Divisi
+              </Label>
+              <Select value={division} onValueChange={setDivision}>
+                <SelectTrigger className=" border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
+                  <SelectValue placeholder="Pilih divisi" />
+                </SelectTrigger>
+                <SelectContent>
+                  {divisions.map((div) => (
+                    <SelectItem key={div.id} value={div.id} className="">
+                      {div.nama_divisi}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Select Roles</label>
-              <div className="flex flex-col gap-2 rounded-md border p-3">
+            <div className="space-y-3">
+              <Label className=" text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Pilih Role
+              </Label>
+              <div className="flex flex-col gap-2 rounded-xl bg-surface-container-low p-4">
                 {roles.map((r) => (
                   <div key={r.id} className="flex items-center gap-2">
                     <Checkbox
                       id={`role-${r.id}`}
                       checked={role.includes(r.id)}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setRole([...role, r.id]);
-                        } else {
-                          setRole(role.filter(id => id !== r.id));
-                        }
+                        if (checked) setRole([...role, r.id]);
+                        else setRole(role.filter((id) => id !== r.id));
                       }}
                     />
-                    <label htmlFor={`role-${r.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{r.name}</label>
+                    <label
+                      htmlFor={`role-${r.id}`}
+                      className=" text-sm font-medium text-on-surface cursor-pointer"
+                    >
+                      {r.name}
+                    </label>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <DialogFooter className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmAccept}>Confirm</Button>
-          </DialogFooter>
+          <div className="px-8 py-5 bg-surface-container-low flex justify-end gap-3">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className=" px-5 py-2.5 text-sm font-medium text-primary border border-outline/20 rounded-xl hover:bg-surface-container transition-colors"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleConfirmAccept}
+              className=" font-bold px-6 py-2.5 text-sm text-on-primary bg-primary-gradient rounded-xl shadow-ambient hover:opacity-90 active:scale-95 transition-all"
+            >
+              Konfirmasi
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

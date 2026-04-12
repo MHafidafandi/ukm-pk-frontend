@@ -17,8 +17,27 @@ import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Documentation } from "../services/documentationService";
 
-type Props = {
-  documents: Documentation[];
+type Props = { documents: Documentation[] };
+
+const getCategoryLabel = (type: string) => {
+  const map: Record<string, string> = {
+    laporan_kegiatan: "Laporan Kegiatan",
+    surat_keluar: "Surat Keluar",
+    surat_masuk: "Surat Masuk",
+    proposal: "Proposal",
+    sop: "SOP",
+    template: "Template",
+    panduan: "Panduan",
+    laporan: "Laporan",
+  };
+  return map[type] ?? "Lainnya";
+};
+
+const formatSize = (size?: number) => {
+  if (!size) return "-";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 export const DocumentTable = ({ documents }: Props) => {
@@ -31,100 +50,51 @@ export const DocumentTable = ({ documents }: Props) => {
     bulkArchiveDocuments,
     bulkDeleteDocuments,
   } = useDocumentationContext();
-
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
-  const formatSize = (size?: number) => {
-    if (!size) return "-";
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const getCategoryLabel = (type: string) => {
-    switch (type) {
-      case "laporan_kegiatan":
-        return "Laporan Kegiatan";
-      case "surat_keluar":
-        return "Surat Keluar";
-      case "surat_masuk":
-        return "Surat Masuk";
-      case "proposal":
-        return "Proposal";
-      case "sop":
-        return "SOP";
-      case "template":
-        return "Template";
-      case "panduan":
-        return "Panduan";
-      case "laporan":
-        return "Laporan";
-      default:
-        return "Lainnya";
-    }
-  };
-
-  const toggleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? documents.map((document) => document.id) : []);
-  };
-
-  const toggleSelectOne = (id: string, checked: boolean) => {
-    setSelectedIds((current) =>
-      checked
-        ? Array.from(new Set([...current, id]))
-        : current.filter((item) => item !== id),
+  const toggleSelectAll = (checked: boolean) =>
+    setSelectedIds(checked ? documents.map((d) => d.id) : []);
+  const toggleSelectOne = (id: string, checked: boolean) =>
+    setSelectedIds((cur) =>
+      checked ? Array.from(new Set([...cur, id])) : cur.filter((i) => i !== id),
     );
-  };
-
   const handleDelete = () => {
     if (!deleteId) return;
     void deleteDocument(deleteId);
     setDeleteId(null);
   };
 
-  const handleBulkArchive = () => {
-    if (!selectedIds.length) return;
-    void bulkArchiveDocuments(selectedIds);
-  };
-
-  const handleBulkDelete = () => {
-    if (!selectedIds.length) return;
-    void bulkDeleteDocuments(selectedIds);
-  };
-
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+      {/* Bulk actions */}
+      <div className="flex items-center gap-2 px-6 py-3 border-b border-outline-variant/10">
         <button
-          type="button"
-          onClick={handleBulkArchive}
+          onClick={() => void bulkArchiveDocuments(selectedIds)}
           disabled={!selectedIds.length}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          className=" inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Archive className="size-4" />
-          Archive Selected
+          <Archive className="h-4 w-4" />
+          Arsipkan Terpilih
         </button>
         <button
-          type="button"
-          onClick={handleBulkDelete}
+          onClick={() => void bulkDeleteDocuments(selectedIds)}
           disabled={!selectedIds.length}
-          className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900/50 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-900/20"
+          className=" inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-destructive bg-destructive/5 hover:bg-destructive/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Trash2 className="size-4" />
-          Delete Selected
+          <Trash2 className="h-4 w-4" />
+          Hapus Terpilih
         </button>
       </div>
 
       <div className="overflow-x-auto w-full">
-        <table className="min-w-200 w-full border-collapse text-left">
+        <table className="min-w-[900px] w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
-              <th className="sticky left-0 z-10 w-10 bg-slate-50 p-4 dark:bg-slate-950">
+            <tr className="bg-surface-container-high">
+              <th className="w-10 px-4 py-4">
                 <input
-                  className="rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-900"
                   type="checkbox"
+                  className="rounded border-outline-variant text-primary focus:ring-primary"
                   checked={
                     documents.length > 0 &&
                     selectedIds.length === documents.length
@@ -132,143 +102,139 @@ export const DocumentTable = ({ documents }: Props) => {
                   onChange={(e) => toggleSelectAll(e.target.checked)}
                 />
               </th>
-              <th className="p-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
-                Title
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+                Judul
               </th>
-              <th className="p-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
-                Type
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+                Tipe
               </th>
-              <th className="p-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
-                Activity
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+                Aktivitas
               </th>
-              <th className="p-4 text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
-                Creator
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+                Pembuat
               </th>
-              <th className="p-4 text-xs font-bold uppercase tracking-widest text-center text-gray-600 dark:text-gray-300">
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant  text-center">
                 Drive
               </th>
-              <th className="p-4 text-xs font-bold uppercase tracking-widest text-center text-gray-600 dark:text-gray-300">
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant  text-center">
                 File
               </th>
-              <th className="p-4 text-xs font-bold uppercase tracking-widest text-center text-gray-600 dark:text-gray-300">
+              <th className="px-4 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant  text-center">
                 Status
               </th>
-              <th className="p-4 pr-8 text-end text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
-                Action
+              <th className="px-4 py-4 pr-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant  text-right">
+                Aksi
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 text-sm text-gray-700 dark:divide-gray-800/60 dark:text-gray-300">
+          <tbody className="divide-y divide-outline-variant/10">
             {documents.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-gray-500">
-                  No documents found
+                <td
+                  colSpan={9}
+                  className="px-6 py-12 text-center  text-sm text-on-surface-variant"
+                >
+                  Tidak ada dokumen
                 </td>
               </tr>
             ) : (
-              documents.map((document) => {
-                const active = document.status === "aktif";
-
+              documents.map((doc) => {
+                const active = doc.status === "aktif";
                 return (
                   <tr
-                    key={document.id}
-                    className="group transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                    key={doc.id}
+                    className="group hover:bg-surface transition-colors"
                   >
-                    <td className="sticky left-0 z-10 bg-white p-4 group-hover:bg-slate-50/80 dark:bg-slate-900 dark:group-hover:bg-slate-800/40">
+                    <td className="px-4 py-4">
                       <input
-                        className="rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-900"
                         type="checkbox"
-                        checked={selectedSet.has(document.id)}
+                        className="rounded border-outline-variant text-primary focus:ring-primary"
+                        checked={selectedSet.has(doc.id)}
                         onChange={(e) =>
-                          toggleSelectOne(document.id, e.target.checked)
+                          toggleSelectOne(doc.id, e.target.checked)
                         }
                       />
                     </td>
-                    <td className="p-4 max-w-75">
-                      <div className="min-w-0">
-                        <div
-                          className="truncate font-bold text-gray-900 dark:text-white"
-                          title={document.judul}
-                        >
-                          {document.judul}
-                        </div>
-                        <div className="truncate text-xs text-gray-500 dark:text-gray-400">
-                          {document.deskripsi || "No description"}
-                        </div>
-                      </div>
+                    <td className="px-4 py-4 max-w-[200px]">
+                      <p
+                        className=" font-bold text-sm text-on-surface truncate"
+                        title={doc.judul}
+                      >
+                        {doc.judul}
+                      </p>
+                      <p className=" text-xs text-on-surface-variant truncate">
+                        {doc.deskripsi || "Tidak ada deskripsi"}
+                      </p>
                     </td>
-                    <td className="p-4">
-                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold capitalize tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                        {getCategoryLabel(document.tipe_dokumen)}
+                    <td className="px-4 py-4">
+                      <span className=" inline-flex rounded-full bg-secondary-container text-on-secondary-container px-3 py-1 text-xs font-bold">
+                        {getCategoryLabel(doc.tipe_dokumen)}
                       </span>
                     </td>
-                    <td className="p-4 max-w-45">
-                      <div className="truncate text-sm text-slate-600 dark:text-slate-300">
-                        {document.activity_id || "General Documentation"}
-                      </div>
+                    <td className="px-4 py-4 max-w-[160px]">
+                      <p className=" text-sm text-on-surface-variant truncate">
+                        {doc.activity_id || "Umum"}
+                      </p>
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex size-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-                          {document.dibuat_oleh
-                            ? document.dibuat_oleh.substring(0, 2).toUpperCase()
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {doc.dibuat_oleh
+                            ? doc.dibuat_oleh.substring(0, 2).toUpperCase()
                             : "AD"}
                         </div>
-                        <span className="max-w-30 truncate text-sm font-semibold">
-                          {document.dibuat_oleh || "Admin User"}
+                        <span className=" text-sm text-on-surface max-w-[100px] truncate font-semibold">
+                          {doc.dibuat_oleh || "Admin"}
                         </span>
                       </div>
                     </td>
-                    <td className="p-4 text-center">
-                      {document.link_gdrive ? (
+                    <td className="px-4 py-4 text-center">
+                      {doc.link_gdrive ? (
                         <a
-                          href={document.link_gdrive}
+                          href={doc.link_gdrive}
                           target="_blank"
                           rel="noreferrer"
-                          className="mx-auto inline-flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:border-green-200 hover:bg-green-50 hover:text-green-600 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-green-900 dark:hover:bg-green-900/20 dark:hover:text-green-400"
-                          title="Open in Drive"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:bg-primary-fixed hover:text-on-primary-fixed-variant transition-colors mx-auto"
+                          title="Buka di Drive"
                         >
-                          <ExternalLink className="size-4" />
+                          <ExternalLink className="h-4 w-4" />
                         </a>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-on-surface-variant/40 text-xs">
+                          —
+                        </span>
                       )}
                     </td>
-                    <td className="p-4 text-center text-xs text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-4 text-center">
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className="truncate">
-                          {document.nama_file || "-"}
+                        <span className=" text-xs text-on-surface truncate max-w-[80px]">
+                          {doc.nama_file || "—"}
                         </span>
-                        <span className="text-[11px] text-gray-400">
-                          {formatSize(document.ukuran_file)} ·{" "}
-                          {document.tipe_file || "-"}
+                        <span className=" text-[11px] text-on-surface-variant">
+                          {formatSize(doc.ukuran_file)} · {doc.tipe_file || "—"}
                         </span>
                       </div>
                     </td>
-                    <td className="p-4 text-center">
+                    <td className="px-4 py-4 text-center">
                       <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${
-                          active
-                            ? "border-green-200 bg-green-100 text-green-800 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
-                            : "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-                        }`}
+                        className={` inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${active ? "bg-primary-fixed text-on-primary-fixed-variant" : "bg-tertiary-fixed text-on-tertiary-fixed-variant"}`}
                       >
-                        {document.status}
+                        {doc.status}
                       </span>
                     </td>
-                    <td className="p-4 pr-8">
-                      <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <td className="px-4 py-4 pr-6">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {active ? (
                           <PermissionGate
                             permission={PERMISSIONS.ARCHIVE_DOCUMENTATIONS}
                           >
                             <button
-                              type="button"
-                              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
-                              title="Archive"
-                              onClick={() => archiveDocument(document.id)}
+                              onClick={() => archiveDocument(doc.id)}
+                              title="Arsipkan"
+                              className="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
                             >
-                              <Archive className="size-4" />
+                              <Archive className="h-4 w-4" />
                             </button>
                           </PermissionGate>
                         ) : (
@@ -276,26 +242,23 @@ export const DocumentTable = ({ documents }: Props) => {
                             permission={PERMISSIONS.EDIT_DOCUMENTATIONS}
                           >
                             <button
-                              type="button"
-                              className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
-                              title="Activate"
-                              onClick={() => activateDocument(document.id)}
+                              onClick={() => activateDocument(doc.id)}
+                              title="Aktifkan"
+                              className="rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
                             >
-                              <CheckCircle2 className="size-4" />
+                              <CheckCircle2 className="h-4 w-4" />
                             </button>
                           </PermissionGate>
                         )}
-
                         <PermissionGate
                           permission={PERMISSIONS.DELETE_DOCUMENTS}
                         >
                           <button
-                            type="button"
-                            className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                            title="Delete"
-                            onClick={() => setDeleteId(document.id)}
+                            onClick={() => setDeleteId(doc.id)}
+                            title="Hapus"
+                            className="rounded-lg p-1.5 text-on-surface-variant hover:bg-destructive/5 hover:text-destructive transition-colors"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </PermissionGate>
                       </div>
@@ -312,25 +275,29 @@ export const DocumentTable = ({ documents }: Props) => {
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
       >
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl">
-              Hapus Dokumentasi?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Dokumentasi akan dihapus dari
-              sistem.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Batal</AlertDialogCancel>
+        <AlertDialogContent className="bg-surface-container-lowest p-0 rounded-2xl overflow-hidden">
+          <div className="px-8 pt-8 pb-6 bg-surface-container-low">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-['Manrope'] text-xl font-bold text-destructive">
+                Hapus Dokumentasi?
+              </AlertDialogTitle>
+              <AlertDialogDescription className=" text-sm text-on-surface-variant">
+                Tindakan ini tidak dapat dibatalkan. Dokumentasi akan dihapus
+                dari sistem.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <div className="px-8 py-5 flex justify-end gap-3">
+            <AlertDialogCancel className=" px-5 py-2.5 text-sm font-medium text-primary border border-outline/20 rounded-xl hover:bg-surface-container transition-colors bg-transparent">
+              Batal
+            </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-xl bg-red-500 text-white shadow-sm shadow-red-500/20 hover:bg-red-600"
               onClick={handleDelete}
+              className=" font-bold px-6 py-2.5 text-sm text-white bg-destructive rounded-xl hover:opacity-90 active:scale-95 transition-all"
             >
               Hapus Permanen
             </AlertDialogAction>
-          </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </>

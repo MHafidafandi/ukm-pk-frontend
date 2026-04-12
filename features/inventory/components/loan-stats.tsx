@@ -1,92 +1,84 @@
-import { Users, UserCheck, Clock, TrendingUp } from "lucide-react";
+import { ShoppingBag, Clock, AlertTriangle, Hammer } from "lucide-react";
 
 type Props = {
-    loanStats: {
-        total_all: number;
-        // total_dikembalikan: number;
-        total_dipinjam: number;
-        // total_hilang: number;
-        total_overdue: number;
-        total_rusak: number;
-    };
+  loanStats: {
+    total_all: number;
+    total_dipinjam: number;
+    total_overdue: number;
+    total_rusak: number;
+  };
+};
+
+type StatItem = {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  sub?: string;
 };
 
 export const LoanStats = ({ loanStats }: Props) => {
-    const items = [
-        {
-            label: "Total Loan",
-            value: loanStats.total_all,
-            icon: Users,
-            ringClass: "bg-purple-100 dark:bg-purple-900/30 text-primary",
-            hoverClass: "hover:border-primary/50",
-        },
-        // {
-        //     label: "Total Assets Returned",
-        //     value: loanStats.total_dikembalikan,
-        //     icon: TrendingUp,
-        //     ringClass:
-        //         "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-        //     hoverClass: "hover:border-blue-500/50",
-        // },
-        {
-            label: "Total Assets In Use",
-            value: loanStats.total_dipinjam,
-            icon: TrendingUp,
-            ringClass:
-                "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-            hoverClass: "hover:border-blue-500/50",
-        },
-        // {
-        //     label: "Total Assets Lost",
-        //     value: loanStats.total_hilang,
-        //     icon: TrendingUp,
-        //     ringClass:
-        //         "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-        //     hoverClass: "hover:border-blue-500/50",
-        // },
-        {
-            label: "Total Assets Overdue",
-            value: loanStats.total_overdue,
-            icon: TrendingUp,
-            ringClass:
-                "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-            hoverClass: "hover:border-blue-500/50",
-        },
-        {
-            label: "Total Assets Damaged",
-            value: loanStats.total_rusak,
-            icon: TrendingUp,
-            ringClass:
-                "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-            hoverClass: "hover:border-blue-500/50",
-        },
-    ];
+  const items: StatItem[] = [
+    {
+      label: "Total Peminjaman",
+      value: loanStats.total_all,
+      icon: ShoppingBag,
+      iconBg: "bg-secondary-container",
+      iconColor: "text-on-secondary-container",
+      sub: "Semua periode",
+    },
+    {
+      label: "Sedang Dipinjam",
+      value: loanStats.total_dipinjam,
+      icon: Clock,
+      iconBg: "bg-primary-fixed",
+      iconColor: "text-on-primary-fixed-variant",
+      sub: "Aktif saat ini",
+    },
+    {
+      label: "Terlambat Dikembalikan",
+      value: loanStats.total_overdue,
+      icon: AlertTriangle,
+      iconBg: "bg-error-container",
+      iconColor: "text-on-error-container",
+      sub: "Perlu tindakan segera",
+    },
+    {
+      label: "Aset Rusak",
+      value: loanStats.total_rusak,
+      icon: Hammer,
+      iconBg: "bg-tertiary-fixed",
+      iconColor: "text-on-tertiary-fixed-variant",
+      sub: "Saat pengembalian",
+    },
+  ];
 
-    return (
-        <>
-            {items.map((s) => (
-                <div
-                    key={s.label}
-                    className={`bg-slate-50/50 dark:bg-slate-800 p-6 rounded-2xl shadow-soft border border-border-light dark:border-border-dark flex items-center justify-between group transition-all ${s.hoverClass}`}
-                >
-                    <div>
-                        <p className="text-sm font-medium text-subtext-light dark:text-subtext-dark">
-                            {s.label}
-                        </p>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                            {s.value}
-                        </h3>
-                    </div>
-                    <div
-                        className={`h-12 w-12 rounded-xl flex items-center justify-center ${s.ringClass}`}
-                    >
-                        <s.icon className="h-6 w-6" />
-                    </div>
-
-                </div>
-
-            ))}
-
-        </>
-    );
+  return (
+    <>
+      {items.map((s) => (
+        <div
+          key={s.label}
+          className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm"
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <div
+              className={`w-11 h-11 rounded-full ${s.iconBg} flex items-center justify-center shrink-0`}
+            >
+              <s.icon className={`w-5 h-5 ${s.iconColor}`} strokeWidth={2} />
+            </div>
+            <span className="text-on-surface-variant font-medium text-sm">
+              {s.label}
+            </span>
+          </div>
+          <p className="font-['Manrope'] font-extrabold text-2xl text-on-surface">
+            {s.value}
+          </p>
+          {s.sub && (
+            <p className="text-xs text-on-surface-variant mt-1.5">{s.sub}</p>
+          )}
+        </div>
+      ))}
+    </>
+  );
 };

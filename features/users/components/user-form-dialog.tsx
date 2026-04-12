@@ -1,5 +1,4 @@
 import { Role, User } from "@/features/auth/contexts/AuthContext";
-
 import {
   Dialog,
   DialogContent,
@@ -8,11 +7,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import {
   Select,
   SelectContent,
@@ -21,8 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CreateUserInput } from "@/lib/validations/users-schema";
-
-/* ================= TYPES ================= */
 
 type Props = {
   open: boolean;
@@ -36,7 +30,12 @@ type Props = {
   onSubmit: () => void;
 };
 
-/* ================= COMPONENT ================= */
+const inputClass = (hasError: boolean) =>
+  `w-full bg-surface-container-low border-0 border-b-2 rounded-none px-0 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus-visible:ring-0 transition-all ${
+    hasError
+      ? "border-destructive"
+      : "border-outline-variant focus:border-primary"
+  }`;
 
 export const UserFormDialog = ({
   open,
@@ -54,73 +53,97 @@ export const UserFormDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Edit Anggota" : "Tambah Anggota"}
-          </DialogTitle>
-          <DialogDescription>
-            {isEdit ? "Perbarui informasi anggota." : "Isi data anggota baru."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-surface-container-lowest p-0">
+        {/* Header */}
+        <div className="px-8 pt-8 pb-6 bg-surface-container-low">
+          <DialogHeader>
+            <DialogTitle className="font-['Manrope'] text-xl font-bold text-primary">
+              {isEdit ? "Edit Anggota" : "Tambah Anggota"}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-on-surface-variant">
+              {isEdit
+                ? "Perbarui informasi anggota."
+                : "Isi data anggota baru."}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="grid gap-4 py-2">
+        {/* Body */}
+        <div className="px-8 py-6 space-y-6">
           {/* Nama */}
-          <div className="grid gap-2">
-            <Label>Nama Lengkap *</Label>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              Nama Lengkap *
+            </Label>
             <Input
               value={form.nama}
               onChange={(e) => update({ nama: e.target.value })}
               placeholder="Nama lengkap"
-              className={errors.nama ? "border-red-500 focus-visible:ring-red-500" : ""}
+              className={inputClass(!!errors.nama)}
             />
-            {errors.nama && <span className="text-xs text-red-500">{errors.nama}</span>}
+            {errors.nama && (
+              <p className="text-xs text-destructive">{errors.nama}</p>
+            )}
           </div>
 
           {/* Username */}
-          <div className="grid gap-2">
-            <Label>Username *</Label>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              Username *
+            </Label>
             <Input
               value={form.username}
               onChange={(e) => update({ username: e.target.value })}
               placeholder="username"
-              className={errors.username ? "border-red-500 focus-visible:ring-red-500" : ""}
+              className={inputClass(!!errors.username)}
             />
-            {errors.username && <span className="text-xs text-red-500">{errors.username}</span>}
+            {errors.username && (
+              <p className="text-xs text-destructive">{errors.username}</p>
+            )}
           </div>
 
           {/* Email */}
-          <div className="grid gap-2">
-            <Label>Email *</Label>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              Email *
+            </Label>
             <Input
               type="email"
               value={form.email}
               onChange={(e) => update({ email: e.target.value })}
               placeholder="mail@example.com"
-              className={errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
+              className={inputClass(!!errors.email)}
             />
-            {errors.email && <span className="text-xs text-red-500">{errors.email}</span>}
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email}</p>
+            )}
           </div>
 
           {/* Password — hanya saat tambah */}
           {!isEdit && (
-            <div className="grid gap-2">
-              <Label>Password *</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Password *
+              </Label>
               <Input
                 type="password"
                 value={form.password}
                 onChange={(e) => update({ password: e.target.value })}
                 placeholder="••••••••"
-                className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
+                className={inputClass(!!errors.password)}
               />
-              {errors.password && <span className="text-xs text-red-500">{errors.password}</span>}
+              {errors.password && (
+                <p className="text-xs text-destructive">{errors.password}</p>
+              )}
             </div>
           )}
 
           {/* Angkatan + No. Telepon */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Angkatan</Label>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Angkatan
+              </Label>
               <Input
                 type="number"
                 value={form.angkatan}
@@ -128,42 +151,56 @@ export const UserFormDialog = ({
                   update({ angkatan: parseInt(e.target.value) || 0 })
                 }
                 placeholder="2024"
-                className={errors.angkatan ? "border-red-500 focus-visible:ring-red-500" : ""}
+                className={inputClass(!!errors.angkatan)}
               />
-              {errors.angkatan && <span className="text-xs text-red-500">{errors.angkatan}</span>}
+              {errors.angkatan && (
+                <p className="text-xs text-destructive">{errors.angkatan}</p>
+              )}
             </div>
-
-            <div className="grid gap-2">
-              <Label>No. Telepon</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                No. Telepon
+              </Label>
               <Input
                 value={form.nomor_telepon}
                 onChange={(e) => update({ nomor_telepon: e.target.value })}
                 placeholder="+628xxxxxx"
-                className={errors.nomor_telepon ? "border-red-500 focus-visible:ring-red-500" : ""}
+                className={inputClass(!!errors.nomor_telepon)}
               />
-              {errors.nomor_telepon && <span className="text-xs text-red-500">{errors.nomor_telepon}</span>}
+              {errors.nomor_telepon && (
+                <p className="text-xs text-destructive">
+                  {errors.nomor_telepon}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Alamat */}
-          <div className="grid gap-2">
-            <Label>Alamat</Label>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              Alamat
+            </Label>
             <Input
               value={form.alamat}
               onChange={(e) => update({ alamat: e.target.value })}
               placeholder="Alamat lengkap"
-              className={errors.alamat ? "border-red-500 focus-visible:ring-red-500" : ""}
+              className={inputClass(!!errors.alamat)}
             />
-            {errors.alamat && <span className="text-xs text-red-500">{errors.alamat}</span>}
+            {errors.alamat && (
+              <p className="text-xs text-destructive">{errors.alamat}</p>
+            )}
           </div>
 
           {/* Divisi + Role */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Divisi</Label>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Divisi
+              </Label>
               {isEdit && (
-                <p className="text-xs text-muted-foreground">
-                  Gunakan menu "Pindah Divisi" di tabel untuk mengubah divisi.
+                <p className="text-xs text-on-surface-variant">
+                  Gunakan menu &quot;Pindah Divisi&quot; di tabel untuk mengubah
+                  divisi.
                 </p>
               )}
               <Select
@@ -171,25 +208,34 @@ export const UserFormDialog = ({
                 value={form.division_id}
                 onValueChange={(v) => update({ division_id: v })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
                   <SelectValue placeholder="Pilih divisi" />
                 </SelectTrigger>
                 <SelectContent>
                   {divisions.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
+                    <SelectItem
+                      key={d.id}
+                      value={d.id}
+                      className="font-interface"
+                    >
                       {d.nama}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.division_id && <span className="text-xs text-red-500">{errors.division_id}</span>}
+              {errors.division_id && (
+                <p className="text-xs text-destructive">{errors.division_id}</p>
+              )}
             </div>
 
-            <div className="grid gap-2">
-              <Label>Role</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Role
+              </Label>
               {isEdit && (
-                <p className="text-xs text-muted-foreground">
-                  Gunakan menu "Kelola Role" di tabel untuk mengubah role.
+                <p className="text-xs text-on-surface-variant">
+                  Gunakan menu &quot;Kelola Role&quot; di tabel untuk mengubah
+                  role.
                 </p>
               )}
               <Select
@@ -197,46 +243,69 @@ export const UserFormDialog = ({
                 value={form.role_ids?.[0] ?? ""}
                 onValueChange={(v) => update({ role_ids: [v] })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
                   <SelectValue placeholder="Pilih role" />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
+                    <SelectItem
+                      key={role.id}
+                      value={role.id}
+                      className="font-interface"
+                    >
                       {role.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.role_ids && <span className="text-xs text-red-500">{errors.role_ids}</span>}
+              {errors.role_ids && (
+                <p className="text-xs text-destructive">{errors.role_ids}</p>
+              )}
             </div>
           </div>
 
           {/* Status */}
-          <div className="grid gap-2">
-            <Label>Status</Label>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+              Status
+            </Label>
             <Select
               value={form.status}
               onValueChange={(v) => update({ status: v as User["status"] })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="aktif">Aktif</SelectItem>
-                <SelectItem value="nonaktif">Nonaktif</SelectItem>
-                <SelectItem value="alumni">Alumni</SelectItem>
+                <SelectItem value="aktif" className="font-interface">
+                  Aktif
+                </SelectItem>
+                <SelectItem value="nonaktif" className="font-interface">
+                  Nonaktif
+                </SelectItem>
+                <SelectItem value="alumni" className="font-interface">
+                  Alumni
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        {/* Footer */}
+        <div className="px-8 py-5 bg-surface-container-low flex justify-end gap-3">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="px-5 py-2.5 text-sm font-medium text-primary border border-outline/20 rounded-xl hover:bg-surface-container transition-colors"
+          >
             Batal
-          </Button>
-          <Button onClick={onSubmit}>{isEdit ? "Simpan" : "Tambah"}</Button>
-        </DialogFooter>
+          </button>
+          <button
+            onClick={onSubmit}
+            className="font-bold px-6 py-2.5 text-sm text-on-primary bg-primary-gradient rounded-xl shadow-ambient hover:opacity-90 active:scale-95 transition-all"
+          >
+            {isEdit ? "Simpan" : "Tambah"}
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );

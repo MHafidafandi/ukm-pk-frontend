@@ -2,6 +2,20 @@ import { Donation, DonationStatus } from "../services/donationService";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
 import { env } from "@/configs/env";
+import {
+  CheckCircle,
+  XCircle,
+  MinusCircle,
+  Pencil,
+  Trash2,
+  Image,
+  Landmark,
+  Banknote,
+  Wallet,
+  QrCode,
+  HelpCircle,
+  Inbox,
+} from "lucide-react";
 
 type Props = {
   donations: Donation[];
@@ -12,243 +26,90 @@ type Props = {
   onCancel: (donation: Donation) => void;
 };
 
-const statusMap: Record<DonationStatus, { label: string; colorClass: string }> =
-  {
-    pending: {
-      label: "Pending",
-      colorClass:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
-    },
-    verified: {
-      label: "Verified",
-      colorClass:
-        "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-    },
-    rejected: {
-      label: "Rejected",
-      colorClass:
-        "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-    },
-    canceled: {
-      label: "Canceled",
-      colorClass:
-        "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-    },
+// ─── Status Config ────────────────────────────────────────────────────────────
+const statusConfig: Record<
+  DonationStatus,
+  { label: string; pill: string; dot: string }
+> = {
+  pending: {
+    label: "Pending",
+    pill: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
+    dot: "bg-tertiary",
+  },
+  verified: {
+    label: "Verified",
+    pill: "bg-primary-fixed text-on-primary-fixed-variant",
+    dot: "bg-primary",
+  },
+  rejected: {
+    label: "Ditolak",
+    pill: "bg-error-container text-on-error-container",
+    dot: "bg-error",
+  },
+  canceled: {
+    label: "Dibatalkan",
+    pill: "bg-surface-container-highest text-on-surface-variant",
+    dot: "bg-outline",
+  },
+};
+
+// ─── Method Config ────────────────────────────────────────────────────────────
+const normalizeMethod = (method: string): string => {
+  const map: Record<string, string> = {
+    "Transfer Bank": "bank_transfer",
+    Tunai: "cash",
+    "E-Wallet": "e_wallet",
+    QRIS: "qris",
   };
-
-const methodMap: Record<string, { label: string; icon: React.ReactNode }> = {
-  bank_transfer: {
-    label: "Bank Transfer",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="20" height="14" x="2" y="5" rx="2" />
-        <line x1="2" x2="22" y1="10" y2="10" />
-      </svg>
-    ),
-  },
-  "Transfer Bank": {
-    label: "Bank Transfer",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="20" height="14" x="2" y="5" rx="2" />
-        <line x1="2" x2="22" y1="10" y2="10" />
-      </svg>
-    ),
-  },
-  qris: {
-    label: "QRIS",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="5" height="5" x="3" y="3" rx="1" />
-        <rect width="5" height="5" x="16" y="3" rx="1" />
-        <rect width="5" height="5" x="3" y="16" rx="1" />
-        <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
-        <path d="M21 21v.01" />
-        <path d="M12 7v3a2 2 0 0 1-2 2H7" />
-        <path d="M3 12h.01" />
-        <path d="M12 3h.01" />
-        <path d="M12 16v.01" />
-        <path d="M16 12h1" />
-        <path d="M21 12v.01" />
-        <path d="M12 21v-1" />
-      </svg>
-    ),
-  },
-  e_wallet: {
-    label: "E-Wallet",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="20" height="16" x="2" y="4" rx="2" />
-        <path d="M22 10h-4c-1.1 0-2-.9-2-2V4" />
-        <path d="M12 11h.01" />
-      </svg>
-    ),
-  },
-  cash: {
-    label: "Cash",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="8" />
-        <line x1="12" x2="12" y1="8" y2="16" />
-        <line x1="9" x2="15" y1="12" y2="12" />
-      </svg>
-    ),
-  },
-  Tunai: {
-    label: "Cash",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="8" />
-        <line x1="12" x2="12" y1="8" y2="16" />
-        <line x1="9" x2="15" y1="12" y2="12" />
-      </svg>
-    ),
-  },
-  "E-Wallet": {
-    label: "E-Wallet",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="20" height="16" x="2" y="4" rx="2" />
-        <path d="M22 10h-4c-1.1 0-2-.9-2-2V4" />
-        <path d="M12 11h.01" />
-      </svg>
-    ),
-  },
-  QRIS: {
-    label: "QRIS",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="5" height="5" x="3" y="3" rx="1" />
-        <rect width="5" height="5" x="16" y="3" rx="1" />
-        <rect width="5" height="5" x="3" y="16" rx="1" />
-        <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
-        <path d="M21 21v.01" />
-        <path d="M12 7v3a2 2 0 0 1-2 2H7" />
-        <path d="M3 12h.01" />
-        <path d="M12 3h.01" />
-        <path d="M12 16v.01" />
-        <path d="M16 12h1" />
-        <path d="M21 12v.01" />
-        <path d="M12 21v-1" />
-      </svg>
-    ),
-  },
-  other: {
-    label: "Other",
-    icon: (
-      <svg
-        className="w-5 h-5 text-gray-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 16v-4" />
-        <path d="M12 8h.01" />
-      </svg>
-    ),
-  },
+  return map[method] ?? method;
 };
 
-const getAvatarGradient = (name: string) => {
-  const gradients = [
-    "from-purple-400 to-blue-500",
-    "from-pink-400 to-red-500",
-    "from-green-400 to-teal-500",
-    "from-orange-400 to-yellow-500",
-    "from-indigo-400 to-cyan-500",
-  ];
-  const charCode = name.charCodeAt(0) || 0;
-  return gradients[charCode % gradients.length];
+const MethodIcon = ({ method }: { method: string }) => {
+  const key = normalizeMethod(method);
+  const cls = "w-4 h-4 text-outline";
+  switch (key) {
+    case "bank_transfer":
+      return <Landmark className={cls} />;
+    case "cash":
+      return <Banknote className={cls} />;
+    case "e_wallet":
+      return <Wallet className={cls} />;
+    case "qris":
+      return <QrCode className={cls} />;
+    default:
+      return <HelpCircle className={cls} />;
+  }
 };
+
+const methodLabel: Record<string, string> = {
+  bank_transfer: "Bank Transfer",
+  cash: "Tunai (Cash)",
+  e_wallet: "E-Wallet",
+  qris: "QRIS",
+  other: "Lainnya",
+};
+
+// ─── Avatar Helpers ───────────────────────────────────────────────────────────
+const AVATAR_PALETTES = [
+  "bg-primary-fixed text-on-primary-fixed",
+  "bg-secondary-fixed text-on-secondary-fixed",
+  "bg-tertiary-fixed text-on-tertiary-fixed",
+  "bg-surface-container-highest text-on-surface",
+  "bg-primary-fixed-dim text-on-primary-fixed",
+];
+
+const getAvatarPalette = (name: string) =>
+  AVATAR_PALETTES[name.charCodeAt(0) % AVATAR_PALETTES.length];
 
 const getInitials = (name: string) => {
-  if (
-    name.toLowerCase() === "hamba allah" ||
-    name.toLowerCase() === "anonymous"
-  )
-    return "AN";
+  const lower = name.toLowerCase();
+  if (lower === "hamba allah" || lower === "anonymous") return "AN";
   const parts = name.split(" ");
   if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   return name.substring(0, 2).toUpperCase();
 };
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export const DonationTable = ({
   donations,
   onEdit,
@@ -257,73 +118,74 @@ export const DonationTable = ({
   onReject,
   onCancel,
 }: Props) => {
-  // Format DateTime
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
     return {
-      date: d.toLocaleDateString("en-US", {
+      date: d.toLocaleDateString("id-ID", {
         month: "short",
         day: "numeric",
         year: "numeric",
       }),
-      time: d.toLocaleTimeString("en-US", {
+      time: d.toLocaleTimeString("id-ID", {
         hour: "2-digit",
         minute: "2-digit",
       }),
     };
   };
 
-  // Format currency
-  const formatRupiah = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
+  const formatRupiah = (amount: number) =>
+    new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
-  };
 
   return (
     <div className="overflow-x-auto w-full">
-      <table className="w-full text-left border-collapse min-w-200">
+      <table className="w-full text-left border-collapse min-w-[800px]">
+        {/* Header */}
         <thead>
-          <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700">
-            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
-              Donatur Name
+          <tr className="bg-surface-container-high">
+            <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+              Donatur
             </th>
-            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
-              Amount (IDR)
+            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">
+              Jumlah
             </th>
-            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
-              Date
+            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+              Metode
             </th>
-            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
-              Method
+            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+              Tanggal
             </th>
-            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">
+            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
               Status
             </th>
-            <th className="px-6 py-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider text-right">
-              Actions
+            <th className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">
+              Aksi
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border-light dark:divide-border-dark">
+
+        {/* Body */}
+        <tbody className="text-sm divide-y divide-outline-variant/10">
           {donations.length === 0 ? (
             <tr>
-              <td
-                colSpan={6}
-                className="px-6 py-12 text-center text-text-secondary-light dark:text-text-secondary-dark"
-              >
-                No donations found.
+              <td colSpan={6} className="px-8 py-16 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <Inbox className="w-10 h-10 text-on-surface-variant opacity-40" />
+                  <p className="text-on-surface-variant font-medium">
+                    Belum ada data donasi
+                  </p>
+                </div>
               </td>
             </tr>
           ) : (
             donations.map((donation) => {
-              const statusInfo = statusMap[donation.status] || {
-                label: donation.status,
-                colorClass: "bg-slate-100 text-slate-800",
-              };
-              const methodInfo = methodMap[donation.metode] || methodMap.other;
+              const status =
+                statusConfig[donation.status] ?? statusConfig.canceled;
+              const methodKey = normalizeMethod(donation.metode);
+              const label = methodLabel[methodKey] ?? "Lainnya";
               const proofUrl = donation.bukti_pembayaran ?? "";
               const isAnonymous =
                 donation.nama_donatur.toLowerCase().includes("hamba allah") ||
@@ -333,66 +195,75 @@ export const DonationTable = ({
               return (
                 <tr
                   key={donation.id}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group"
+                  className="hover:bg-surface transition-colors group"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
+                  {/* Donatur */}
+                  <td className="px-8 py-5 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
+                        className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-bold text-xs ${
                           isAnonymous
-                            ? "bg-slate-200 dark:bg-slate-700 text-text-secondary-light dark:text-text-secondary-dark"
-                            : `bg-linear-to-tr ${getAvatarGradient(donation.nama_donatur)} text-white`
+                            ? "bg-surface-container-highest text-on-surface-variant"
+                            : getAvatarPalette(donation.nama_donatur)
                         }`}
                       >
                         {getInitials(donation.nama_donatur)}
                       </div>
-                      <div className="ml-4 truncate max-w-50">
-                        <div
-                          className={`text-sm font-medium truncate ${isAnonymous ? "text-text-secondary-light dark:text-text-secondary-dark" : "text-gray-900 dark:text-white"}`}
-                        >
+                      <div className="truncate max-w-[200px]">
+                        <p className="font-semibold text-on-surface truncate">
                           {isAnonymous ? "Anonymous" : donation.nama_donatur}
-                        </div>
-                        <div className="text-xs text-text-secondary-light dark:text-text-secondary-dark truncate">
-                          {donation.deskripsi || "General Donation"}
-                        </div>
+                        </p>
+                        <p className="text-xs text-on-surface-variant truncate mt-0.5">
+                          {donation.deskripsi || "Donasi Umum"}
+                        </p>
                       </div>
                     </div>
                   </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${isAnonymous ? "text-text-secondary-light dark:text-text-secondary-dark" : ""}`}
-                  >
-                    {formatRupiah(donation.jumlah)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                    {dateInfo.date}{" "}
-                    <span className="text-xs block text-gray-400">
-                      {dateInfo.time}
+
+                  {/* Jumlah */}
+                  <td className="px-6 py-5 whitespace-nowrap text-right">
+                    <span className="font-['Manrope'] font-bold text-on-surface">
+                      {formatRupiah(donation.jumlah)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {methodInfo.icon}
-                      <span
-                        className={`text-sm ${isAnonymous ? "text-text-secondary-light dark:text-text-secondary-dark" : ""}`}
-                      >
-                        {methodInfo.label}
-                      </span>
+
+                  {/* Metode */}
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex items-center gap-2 text-on-surface-variant">
+                      <MethodIcon method={donation.metode} />
+                      <span>{label}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Tanggal */}
+                  <td className="px-6 py-5 whitespace-nowrap text-on-surface-variant">
+                    <p>{dateInfo.date}</p>
+                    <p className="text-xs text-outline mt-0.5">
+                      {dateInfo.time}
+                    </p>
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-6 py-5 whitespace-nowrap">
                     <span
-                      className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.colorClass}`}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${status.pill}`}
                     >
-                      {statusInfo.label}
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${status.dot}`}
+                      />
+                      {status.label}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+
+                  {/* Aksi */}
+                  <td className="px-8 py-5 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* View Proof */}
                       <PermissionGate permission={PERMISSIONS.VIEW_DONATIONS}>
                         {proofUrl !== "" && (
                           <button
-                            className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/40 rounded-lg text-green-600 transition-colors mr-1"
-                            title="View Proof"
+                            title="Lihat Bukti Pembayaran"
+                            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
                             onClick={() =>
                               window.open(
                                 proofUrl.startsWith("http")
@@ -402,146 +273,65 @@ export const DonationTable = ({
                               )
                             }
                           >
-                            <svg
-                              className="w-5 h-5 block"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <rect
-                                width="18"
-                                height="18"
-                                x="3"
-                                y="3"
-                                rx="2"
-                                ry="2"
-                              />
-                              <circle cx="9" cy="9" r="2" />
-                              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                            </svg>
+                            <Image className="w-4 h-4" />
                           </button>
                         )}
                       </PermissionGate>
-                      {/* For now we leave Edit to standard view editing flow to handle status or anything else */}
+
+                      {/* Verify / Reject / Cancel */}
                       <PermissionGate permission={PERMISSIONS.VERIFY_DONATIONS}>
                         {donation.status === "pending" && (
                           <>
                             <button
-                              className="rounded-lg bg-green-50 p-1.5 text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/20 dark:text-green-300 dark:hover:bg-green-900/40"
-                              title="Verify"
+                              title="Verifikasi"
+                              className="p-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors"
                               onClick={() => onVerify(donation)}
                             >
-                              <svg
-                                className="w-5 h-5 block"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <path d="m9 12 2 2 4-4" />
-                                <circle cx="12" cy="12" r="10" />
-                              </svg>
+                              <CheckCircle className="w-4 h-4" />
                             </button>
                             <button
-                              className="rounded-lg bg-orange-50 p-1.5 text-orange-700 transition-colors hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:hover:bg-orange-900/40"
-                              title="Reject"
+                              title="Tolak"
+                              className="p-1.5 rounded-lg text-error hover:bg-error-container transition-colors"
                               onClick={() => {
                                 const catatan =
                                   window.prompt("Catatan penolakan:");
-                                if (catatan?.trim()) {
+                                if (catatan?.trim())
                                   onReject(donation, catatan.trim());
-                                }
                               }}
                             >
-                              <svg
-                                className="w-5 h-5 block"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M15 9 9 15" />
-                                <path d="m9 9 6 6" />
-                              </svg>
+                              <XCircle className="w-4 h-4" />
                             </button>
                             <button
-                              className="rounded-lg bg-gray-50 p-1.5 text-gray-700 transition-colors hover:bg-gray-100 dark:bg-gray-900/20 dark:text-gray-300 dark:hover:bg-gray-800"
-                              title="Cancel"
+                              title="Batalkan"
+                              className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
                               onClick={() => onCancel(donation)}
                             >
-                              <svg
-                                className="w-5 h-5 block"
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M15 9 9 15" />
-                              </svg>
+                              <MinusCircle className="w-4 h-4" />
                             </button>
                           </>
                         )}
                       </PermissionGate>
 
+                      {/* Edit */}
                       <PermissionGate permission={PERMISSIONS.EDIT_DONATIONS}>
                         <button
-                          className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 transition-colors"
-                          title="View / Edit Details"
+                          title="Edit"
+                          className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
                           onClick={() => onEdit(donation)}
                         >
-                          <svg
-                            className="w-5 h-5 block"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                            <path d="m15 5 4 4" />
-                          </svg>
+                          <Pencil className="w-4 h-4" />
                         </button>
                       </PermissionGate>
 
+                      {/* Delete */}
                       <PermissionGate permission={PERMISSIONS.DELETE_DONATIONS}>
                         {donation.status !== "verified" && (
                           <button
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors ml-1"
-                            title="Delete"
+                            title="Hapus"
+                            className="p-1.5 rounded-lg text-error hover:bg-error-container transition-colors"
                             onClick={() => onDelete(donation)}
                           >
-                            <svg
-                              className="w-5 h-5 block"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M3 6h18" />
-                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              <line x1="10" x2="10" y1="11" y2="17" />
-                              <line x1="14" x2="14" y1="11" y2="17" />
-                            </svg>
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </PermissionGate>
@@ -553,7 +343,6 @@ export const DonationTable = ({
           )}
         </tbody>
       </table>
-      {/* Pagination */}
     </div>
   );
 };

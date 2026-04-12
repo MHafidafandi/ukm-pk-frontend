@@ -1,72 +1,58 @@
+"use client";
 
-import { Heart, LucideIcon } from "lucide-react";
-
+import { Heart } from "lucide-react";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { usePermission } from "@/hooks/usePermission";
-
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
-
 import { NavUser } from "./NavUser";
 import { NavMain } from "./NavMain";
 import { MENU_ITEMS } from "@/configs/menu";
 
-// =======================
-// Menu Config
-// =======================
-
 export function AppSidebar() {
-  const menuItems = MENU_ITEMS;
   const { currentUser, logout } = useAuth();
-
-  const handleLogout = async () => {
-    logout();
-  };
-
-  // Filter menu items based on permissions
   const { userPermissions } = usePermission();
 
-  const filteredMenuItems = menuItems.filter((item) => {
-    // If no permission required, show it (or default to show)
-    if (!item.permission) return true;
-    return userPermissions.includes(item.permission);
-  });
+  const handleLogout = async () => logout();
+
+  const filteredMenuItems = MENU_ITEMS.filter((item) =>
+    !item.permission ? true : userPermissions.includes(item.permission),
+  );
 
   return (
-    <Sidebar>
-      {/* Header */}
-      <SidebarHeader className="p-4 pb-6 border-b border-sidebar-border/50 mb-1">
-        <div className="flex items-center gap-3 px-1">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary backdrop-blur-sm ring-1 ring-primary/20 shadow-sm">
-            <Heart className="h-5 w-5 text-primary-foreground" />
+    <Sidebar className="border-none">
+      <div className="flex flex-col h-full glass">
+        {/* Header */}
+        <SidebarHeader className="px-6 py-6 border-none">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary)] shadow-sm">
+              <Heart className="h-4 w-4 text-on-primary" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-['Manrope'] text-lg font-extrabold tracking-tight text-[var(--primary)]">
+                SIPEDULI
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--on-surface-variant)]">
+                Admin Portal
+              </span>
+            </div>
           </div>
+        </SidebarHeader>
 
-          <div className="flex flex-col truncate">
-            <span className="text-xl font-bold tracking-wider text-sidebar-foreground">
-              SIPEDULI
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/70">
-              Admin Portal
-            </span>
-          </div>
-        </div>
-      </SidebarHeader>
+        {/* Nav */}
+        <SidebarContent className="px-2 border-none">
+          <NavMain items={filteredMenuItems} />
+        </SidebarContent>
 
-      {/* Content */}
-      <SidebarContent>
-        <NavMain items={filteredMenuItems} />
-      </SidebarContent>
-
-      <SidebarSeparator />
-
-      <SidebarFooter className="p-4">
-        <NavUser user={currentUser} logout={handleLogout} />
-      </SidebarFooter>
+        {/* Footer */}
+        <SidebarFooter className="px-4 py-4 border-t border-outline-variant">
+          <NavUser user={currentUser} logout={handleLogout} />
+        </SidebarFooter>
+      </div>
     </Sidebar>
   );
 }

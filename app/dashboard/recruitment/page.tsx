@@ -1,20 +1,17 @@
-"use client";
-
-import { PermissionGuard } from "@/components/PermissionGuard";
-import { PERMISSIONS } from "@/lib/permissions";
+// app/dashboard/recruitment/page.tsx
 import { RecruitmentList } from "@/features/recruitment/components/recruitment-list";
 import { RecruitmentProvider } from "@/features/recruitment/contexts/RecruitmentContext";
+import { PermissionGuard } from "@/components/PermissionGuard";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export default function RecruitmentPage() {
   return (
     <PermissionGuard permission={PERMISSIONS.VIEW_RECRUITMENTS}>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="h-full flex-1 flex-col space-y-8 flex">
-          <RecruitmentProvider>
-            <RecruitmentList />
-          </RecruitmentProvider>
+      <RecruitmentProvider>
+        <div className="flex-1 p-8 bg-surface min-h-full">
+          <RecruitmentList />
         </div>
-      </div>
+      </RecruitmentProvider>
     </PermissionGuard>
   );
 }

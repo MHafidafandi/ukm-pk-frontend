@@ -1,21 +1,4 @@
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -23,6 +6,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import {
   MoreHorizontal,
   CheckCircle,
@@ -32,14 +16,13 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
-import { Registrant } from "@/features/recruitment/services/recruitmentService";
-import { Pagination } from "@/features/recruitment/services/recruitmentService";
+import {
+  Registrant,
+  Pagination,
+} from "@/features/recruitment/services/recruitmentService";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
-// ========================
-// PROPS
-// ========================
 type Props = {
   registrants: Registrant[];
   isLoading?: boolean;
@@ -53,32 +36,22 @@ type Props = {
   onRejectRegistrant?: (registrant: Registrant) => void;
 };
 
-// ========================
-// STATUS CONFIG
-// ========================
-const statusConfig: Record<
-  string,
-  { label: string; colorClass: string }
-> = {
+const statusConfig: Record<string, { label: string; className: string }> = {
   pending: {
     label: "Pending",
-    colorClass:
-      "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    className: "bg-secondary-container text-on-secondary-container",
   },
   interview: {
     label: "Interview",
-    colorClass:
-      "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
+    className: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
   },
   accepted: {
     label: "Accepted",
-    colorClass:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    className: "bg-primary-fixed text-on-primary-fixed-variant",
   },
   rejected: {
     label: "Rejected",
-    colorClass:
-      "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+    className: "bg-destructive/10 text-destructive",
   },
 };
 
@@ -90,9 +63,6 @@ const statusOptions = [
   { value: "rejected", label: "Rejected" },
 ];
 
-// ========================
-// COMPONENT
-// ========================
 export const RegistrantsTable = ({
   registrants,
   isLoading = false,
@@ -111,207 +81,187 @@ export const RegistrantsTable = ({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar: Search + Status Filter */}
+      {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full lg:max-w-md">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-            <Search className="size-4" />
-          </div>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
           <input
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
-            placeholder="Search registrant..."
+            className=" w-full pl-10 pr-4 bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 py-2.5 rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant outline-none transition-all"
+            placeholder="Cari pendaftar..."
             type="text"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-3">
-          <p className="text-sm text-muted-foreground">
-            {totalItems} registrants
-          </p>
-          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className="w-[160px] h-9">
-              <SelectValue placeholder="Filter status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <span className=" text-sm text-on-surface-variant">
+            {totalItems} pendaftar
+          </span>
+          <select
+            value={statusFilter}
+            onChange={(e) => onStatusFilterChange(e.target.value)}
+            className=" bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-2 pl-3 pr-8 rounded-xl text-sm font-medium cursor-pointer outline-none transition-all appearance-none"
+          >
+            {statusOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* Table */}
-      <div className="w-full rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50 border-b-0">
-            <TableRow className="border-b-0 hover:bg-transparent">
-              <TableHead className="font-semibold text-foreground h-11 pl-4">
-                Name
-              </TableHead>
-              <TableHead className="font-semibold text-foreground h-11">
-                Email/Contact
-              </TableHead>
-              <TableHead className="font-semibold text-foreground h-11">
-                Registered Date
-              </TableHead>
-              <TableHead className="font-semibold text-foreground h-11">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-ambient overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-surface-container-high">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+                Nama
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+                Email / Kontak
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+                Tanggal Daftar
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
                 Status
-              </TableHead>
-              <TableHead className="w-[70px] h-11 pr-4" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* Loading state */}
+              </th>
+              <th className="px-6 py-4 w-16" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-outline-variant/10">
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center">
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <tr>
+                <td colSpan={5} className="px-6 py-12 text-center">
+                  <div className="flex items-center justify-center gap-2 text-on-surface-variant">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm font-medium">
-                      Loading...
-                    </span>
+                    <span className=" text-sm">Memuat...</span>
                   </div>
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             ) : registrants.length === 0 ? (
-              /* Empty state */
-              <TableRow>
-                <TableCell
+              <tr>
+                <td
                   colSpan={5}
-                  className="h-32 text-center text-muted-foreground font-medium"
+                  className="px-6 py-12 text-center  text-sm text-on-surface-variant"
                 >
                   {searchValue || statusFilter !== "all"
-                    ? "No registrant found matching the filter."
-                    : "No registrant yet."}
-                </TableCell>
-              </TableRow>
+                    ? "Tidak ada pendaftar yang cocok."
+                    : "Belum ada pendaftar."}
+                </td>
+              </tr>
             ) : (
-              /* Data rows */
               registrants.map((item) => {
-                const status = statusConfig[item.status] || {
+                const status = statusConfig[item.status] ?? {
                   label: item.status,
-                  colorClass: "bg-gray-100 text-gray-800 border-gray-200",
+                  className: "bg-surface-container text-on-surface-variant",
                 };
-
                 return (
-                  <TableRow
+                  <tr
                     key={item.id}
-                    className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                    className="group hover:bg-surface transition-colors"
                   >
-                    <TableCell className="pl-4">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {item.nama}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                          {item.nim}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {item.email}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.nomor_telepon || "-"}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm font-medium text-muted-foreground">
+                    <td className="px-6 py-4">
+                      <p className=" font-semibold text-sm text-on-surface">
+                        {item.nama}
+                      </p>
+                      <p className=" text-xs text-on-surface-variant mt-0.5">
+                        {item.nim}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className=" text-sm text-on-surface">{item.email}</p>
+                      <p className=" text-xs text-on-surface-variant mt-0.5">
+                        {item.nomor_telepon || "-"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4  text-sm text-on-surface-variant">
                       {format(
                         new Date(item.created_at || new Date()),
                         "dd MMM yyyy HH:mm",
-                        { locale: idLocale }
+                        { locale: idLocale },
                       )}
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase border ${status.colorClass}`}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider  ${status.className}`}
                       >
                         {status.label}
                       </span>
-                    </TableCell>
-                    <TableCell className="pr-4">
+                    </td>
+                    <td className="px-6 py-4 text-right">
                       {(item.status === "pending" ||
                         item.status === "interview") && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-muted"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
-                                Actions
-                              </DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="cursor-pointer"
-                                onClick={() => onAcceptRegistrant?.(item)}
-                              >
-                                <CheckCircle className="mr-2 h-4 w-4 text-emerald-600" />
-                                Accept
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="cursor-pointer focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => onRejectRegistrant?.(item)}
-                              >
-                                <XCircle className="mr-2 h-4 w-4 text-destructive" />
-                                Reject
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className=" w-40">
+                            <DropdownMenuLabel className="text-xs font-semibold text-on-surface-variant">
+                              Aksi
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => onAcceptRegistrant?.(item)}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4 text-on-primary-fixed-variant" />
+                              Terima
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer focus:text-destructive focus:bg-destructive/10"
+                              onClick={() => onRejectRegistrant?.(item)}
+                            >
+                              <XCircle className="mr-2 h-4 w-4 text-destructive" />
+                              Tolak
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                       {item.status === "accepted" && (
-                        <CheckCircle className="h-4 w-4 text-emerald-500 mx-auto" />
+                        <CheckCircle className="h-4 w-4 text-on-primary-fixed-variant mx-auto" />
                       )}
                       {item.status === "rejected" && (
-                        <XCircle className="h-4 w-4 text-red-400 mx-auto" />
+                        <XCircle className="h-4 w-4 text-destructive mx-auto" />
                       )}
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 );
               })
             )}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
         <div className="flex items-center justify-between px-2 pt-2">
-          <p className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
+          <p className=" text-sm text-on-surface-variant">
+            Halaman {currentPage} dari {totalPages}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+          <div className="flex items-center gap-1">
+            <button
               disabled={currentPage <= 1}
               onClick={() => onPageChange(currentPage - 1)}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
               disabled={currentPage >= totalPages}
               onClick={() => onPageChange(currentPage + 1)}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}

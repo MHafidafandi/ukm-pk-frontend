@@ -2,60 +2,48 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   /* ── Fonts ── */
   --font-sans: var(--font-inter);
   --font-display: var(--font-manrope);
   --font-mono: var(--font-geist-mono);
 
-  /* ── Executive Curator: Primary (Deep Teal) ── */
-  --color-primary: #00444b;
-  --color-primary-container: #005d67;
-  --color-on-primary: #ffffff;
+  /* ── Map ke CSS vars di :root ── */
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
 
-  /* ── Surface Hierarchy (Light) ── */
-  --color-surface: #f9f9f9;
-  --color-surface-container-low: #edeeee;
-  --color-surface-container: #edeeee;
-  --color-surface-container-high: #e5e6e6;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-highest: #d8d9d9;
+  --color-surface: var(--surface);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
 
-  /* ── On-Surface Text ── */
-  --color-on-surface: #1a1c1c;
-  --color-on-surface-variant: #444746;
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
 
-  /* ── Outline / Ghost Borders ── */
-  --color-outline: rgba(26, 28, 28, 0.2);
-  --color-outline-variant: rgba(26, 28, 28, 0.15);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
 
-  /* ── Status / Fixed ── */
-  --color-primary-fixed: #b2dfdb;
-  --color-on-primary-fixed-variant: #00444b;
-  --color-secondary-fixed: #dcedc8;
-  --color-on-secondary-fixed-variant: #2e5c00;
-  --color-tertiary-fixed: #fff8e1;
-  --color-on-tertiary-fixed-variant: #7b5e00;
+  --color-primary-fixed: var(--primary-fixed);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
 
-  /* ── Secondary & Tertiary ── */
-  --color-secondary: #4caf90;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #e0f5ef;
-  --color-on-secondary-container: #00444b;
-  --color-tertiary: #f59e0b;
-  --color-on-tertiary: #ffffff;
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
 
-  /* ── Destructive ── */
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-  /* ── Ambient Shadow ── */
-  --shadow-ambient: 0 8px 32px -2px rgba(26, 28, 28, 0.06);
-  --shadow-float: 0 20px 40px -2px rgba(26, 28, 28, 0.06);
-
-  /* ── Legacy aliases (agar shadcn tetap jalan) ── */
+  /* ── Legacy Shadcn aliases ── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -96,31 +84,68 @@
 }
 
 /* ════════════════════════════════════════
-   :root — Light Mode
+   :root — Light Mode Only
 ════════════════════════════════════════ */
 :root {
   --radius: 0.75rem;
 
-  /* Shadcn tokens remapped to Executive Curator */
-  --background: #f9f9f9; /* surface */
-  --foreground: #1a1c1c; /* on_surface */
-  --card: #ffffff; /* surface_container_lowest */
-  --card-foreground: #1a1c1c;
-  --popover: #ffffff;
-  --popover-foreground: #1a1c1c;
+  /* Surface Hierarchy */
+  --surface: #f9f9f9;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f3f4f3;
+  --surface-container: #edeeee;
+  --surface-container-high: #e7e8e8;
+  --surface-container-highest: #e2e3e2;
+
+  /* On-Surface */
+  --on-surface: #1a1c1c;
+  --on-surface-variant: #3f484a;
+
+  /* Primary */
   --primary: #00444b;
-  --primary-foreground: #ffffff;
-  --secondary: #e0f5ef;
-  --secondary-foreground: #00444b;
-  --muted: #edeeee; /* surface_container_low */
-  --muted-foreground: #444746; /* on_surface_variant */
-  --accent: #edeeee;
-  --accent-foreground: #1a1c1c;
+  --primary-container: #005d67;
+  --on-primary: #ffffff;
+
+  /* Outline */
+  --outline: #6f797a;
+  --outline-variant: #bec8ca;
+
+  /* Status Fixed */
+  --primary-fixed: #a8eefa;
+  --on-primary-fixed-variant: #004f57;
+  --secondary-fixed: #cce7ec;
+  --on-secondary-fixed-variant: #324b4f;
+  --tertiary-fixed: #ffdcc3;
+  --on-tertiary-fixed-variant: #693b11;
+
+  /* Secondary & Tertiary */
+  --secondary: #4a6367;
+  --on-secondary: #ffffff;
+  --secondary-container: #cce7ec;
+  --on-secondary-container: #50696d;
+  --tertiary: #5d3207;
+  --on-tertiary: #ffffff;
+
+  /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: rgba(26, 28, 28, 0.15);
-  --input: #edeeee;
-  --ring: #00444b;
+
+  /* Shadcn tokens */
+  --background: var(--surface);
+  --foreground: var(--on-surface);
+  --card: var(--surface-container-lowest);
+  --card-foreground: var(--on-surface);
+  --popover: var(--surface-container-lowest);
+  --popover-foreground: var(--on-surface);
+  --primary-foreground: var(--on-primary);
+  --secondary-foreground: var(--on-secondary);
+  --muted: var(--surface-container-low);
+  --muted-foreground: var(--on-surface-variant);
+  --accent: var(--surface-container);
+  --accent-foreground: var(--on-surface);
+  --border: var(--outline-variant);
+  --input: var(--surface-container-low);
+  --ring: var(--primary);
 
   /* Chart */
   --chart-1: #00444b;
@@ -129,88 +154,61 @@
   --chart-4: #ef4444;
   --chart-5: #005d67;
 
-  /* Sidebar — surface_container_low + glassmorphism */
-  --sidebar: #edeeee;
-  --sidebar-foreground: #1a1c1c;
-  --sidebar-primary: #00444b;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(0, 68, 75, 0.08);
-  --sidebar-accent-foreground: #00444b;
-  --sidebar-border: rgba(26, 28, 28, 0.08);
-  --sidebar-ring: rgba(0, 68, 75, 0.3);
-}
+  /* Sidebar */
+  --sidebar: var(--surface-container-low);
+  --sidebar-foreground: var(--on-surface);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--on-primary);
+  --sidebar-accent: var(--surface-container);
+  --sidebar-accent-foreground: var(--primary);
+  --sidebar-border: var(--outline-variant);
+  --sidebar-ring: var(--primary);
 
-/* ════════════════════════════════════════
-   .dark — Dark Mode
-════════════════════════════════════════ */
-.dark {
-  --background: #0d1a1b;
-  --foreground: #e2e8e8;
-  --card: #132223;
-  --card-foreground: #e2e8e8;
-  --popover: #132223;
-  --popover-foreground: #e2e8e8;
-  --primary: #4db8c2;
-  --primary-foreground: #001a1d;
-  --secondary: #1a3535;
-  --secondary-foreground: #b2dfdb;
-  --muted: #1a2e2f;
-  --muted-foreground: #7aa8a8;
-  --accent: #1a2e2f;
-  --accent-foreground: #e2e8e8;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: rgba(178, 223, 219, 0.12);
-  --input: #1a2e2f;
-  --ring: #4db8c2;
+  /* Shadow */
+  --shadow-ambient: 0 8px 32px -2px rgba(26, 28, 28, 0.06);
+  --shadow-float: 0 20px 40px -2px rgba(26, 28, 28, 0.06);
 
-  --chart-1: #4db8c2;
-  --chart-2: #4caf90;
-  --chart-3: #f59e0b;
-  --chart-4: #ef4444;
-  --chart-5: #00444b;
-
-  --sidebar: #0d1a1b;
-  --sidebar-foreground: #e2e8e8;
-  --sidebar-primary: #4db8c2;
-  --sidebar-primary-foreground: #001a1d;
-  --sidebar-accent: rgba(77, 184, 194, 0.1);
-  --sidebar-accent-foreground: #4db8c2;
-  --sidebar-border: rgba(178, 223, 219, 0.08);
-  --sidebar-ring: rgba(77, 184, 194, 0.3);
+  /* Glass */
+  --glass-bg: rgba(243, 244, 243, 0.8);
+  --glass-header-bg: rgba(255, 255, 255, 0.8);
 }
 
 /* ════════════════════════════════════════
    Utility Classes — Executive Curator
 ════════════════════════════════════════ */
 @layer utilities {
-  /* Primary gradient — untuk CTA & hero stat */
   .bg-primary-gradient {
-    background: linear-gradient(135deg, #00444b 0%, #005d67 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--primary-container) 100%
+    );
   }
 
-  /* Glassmorphism — sidebar / header */
   .glass {
-    background: rgba(237, 238, 238, 0.72);
+    background: var(--glass-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
-  .dark .glass {
-    background: rgba(13, 26, 27, 0.72);
+
+  .glass-header {
+    background: var(--glass-header-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
-  /* Ambient shadow */
   .shadow-ambient {
     box-shadow: var(--shadow-ambient);
   }
+
   .shadow-float {
     box-shadow: var(--shadow-float);
   }
 
-  /* Font helpers */
   .font-display {
     font-family: var(--font-display), sans-serif;
   }
+
   .font-interface {
     font-family: var(--font-sans), sans-serif;
   }

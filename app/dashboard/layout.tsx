@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/layout/Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TopNavbar } from "@/components/layout/TopNavbar";
 import { PermissionGuard } from "@/components/PermissionGuard";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -15,7 +16,7 @@ export default function DashboardLayout({
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden w-full relative">
           <TopNavbar />
-          <main className="w-full flex-1 overflow-y-auto overflow-x-hidden bg-background">
+          <main className="w-full flex-1 overflow-y-auto overflow-x-hidden bg-surface">
             <div className="mx-auto w-full p-6 lg:p-8 min-h-full">
               {children}
             </div>

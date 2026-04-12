@@ -12,35 +12,32 @@ type Props = {
 export const UsersStats = ({ stats }: Props) => {
   const items = [
     {
-      label: "Total Members",
+      label: "Total Anggota",
       value: stats.total,
       icon: Users,
-      ringClass: "bg-purple-100 dark:bg-purple-900/30 text-primary",
-      hoverClass: "hover:border-primary/50",
+      iconBg: "bg-secondary-container",
+      iconColor: "text-on-secondary-container",
     },
     {
-      label: "Active Users",
+      label: "Anggota Aktif",
       value: stats.active,
       icon: UserCheck,
-      ringClass:
-        "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
-      hoverClass: "hover:border-green-500/50",
+      iconBg: "bg-primary-fixed",
+      iconColor: "text-on-primary-fixed-variant",
     },
     {
-      label: "Pending / Inactive",
+      label: "Nonaktif",
       value: stats.inactive,
       icon: Clock,
-      ringClass:
-        "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
-      hoverClass: "hover:border-orange-500/50",
+      iconBg: "bg-tertiary-fixed",
+      iconColor: "text-on-tertiary-fixed-variant",
     },
     {
       label: "Alumni",
       value: stats.alumni,
       icon: TrendingUp,
-      ringClass:
-        "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-      hoverClass: "hover:border-blue-500/50",
+      iconBg: "bg-secondary-fixed",
+      iconColor: "text-on-secondary-fixed-variant",
     },
   ];
 
@@ -49,20 +46,20 @@ export const UsersStats = ({ stats }: Props) => {
       {items.map((s) => (
         <div
           key={s.label}
-          className={`bg-slate-50/50 dark:bg-slate-800 p-6 rounded-2xl shadow-soft border border-border-light dark:border-border-dark flex items-center justify-between group transition-all ${s.hoverClass}`}
+          className="bg-surface-container-lowest rounded-2xl p-6 flex items-center justify-between shadow-ambient"
         >
           <div>
-            <p className="text-sm font-medium text-subtext-light dark:text-subtext-dark">
+            <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">
               {s.label}
             </p>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {s.value}
+            <h3 className="font-['Manrope'] text-2xl font-bold text-on-surface">
+              {s.value.toLocaleString()}
             </h3>
           </div>
           <div
-            className={`h-12 w-12 rounded-xl flex items-center justify-center ${s.ringClass}`}
+            className={`h-12 w-12 rounded-full flex items-center justify-center ${s.iconBg}`}
           >
-            <s.icon className="h-6 w-6" />
+            <s.icon className={`h-5 w-5 ${s.iconColor}`} />
           </div>
         </div>
       ))}

@@ -8,8 +8,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -47,10 +47,14 @@ const documentSchema = z.object({
 
 type DocumentSchema = z.infer<typeof documentSchema>;
 
-type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
+const inputClass =
+  "w-full bg-surface-container-low border-0 border-b-2 border-outline-variant rounded-none px-0 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus-visible:ring-0 focus:border-primary transition-all";
+const labelClass =
+  "text-xs font-bold uppercase tracking-widest text-on-surface-variant";
+const selectTriggerClass =
+  "border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent";
+
+type Props = { open: boolean; onOpenChange: (open: boolean) => void };
 
 export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
   const { createDocument: createMutation } = useDocumentationContext();
@@ -91,23 +95,37 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-125">
-        <DialogHeader>
-          <DialogTitle>Tambah Documentation</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg bg-surface-container-lowest p-0 max-h-[90vh] overflow-y-auto">
+        <div className="px-8 pt-8 pb-6 bg-surface-container-low sticky top-0 z-10">
+          <DialogHeader>
+            <DialogTitle className="font-['Manrope'] text-xl font-bold text-primary">
+              Tambah Dokumentasi
+            </DialogTitle>
+            <DialogDescription className="text-sm text-on-surface-variant">
+              Tambahkan dokumen baru ke sistem.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="px-8 py-6 space-y-6"
+          >
             <FormField
               control={form.control}
               name="judul"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Judul</FormLabel>
+                <FormItem className="space-y-2">
+                  <FormLabel className={labelClass}>Judul</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: SOP Rapat Rutin" {...field} />
+                    <Input
+                      placeholder="Contoh: SOP Rapat Rutin"
+                      {...field}
+                      className={inputClass}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -116,100 +134,124 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
               control={form.control}
               name="deskripsi"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Deskripsi</FormLabel>
+                <FormItem className="space-y-2">
+                  <FormLabel className={labelClass}>Deskripsi</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Ringkasan singkat dokumen"
                       {...field}
+                      className="bg-surface-container-low border-0 border-b-2 border-outline-variant rounded-none px-0 py-2.5 text-sm placeholder:text-on-surface-variant focus-visible:ring-0 focus:border-primary transition-all resize-none"
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="tipe_dokumen"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipe Dokumen</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih tipe" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="sop">SOP</SelectItem>
-                      <SelectItem value="template">Template</SelectItem>
-                      <SelectItem value="panduan">Panduan</SelectItem>
-                      <SelectItem value="laporan">Laporan</SelectItem>
-                      <SelectItem value="lainnya">Lainnya</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="tipe_dokumen"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className={labelClass}>Tipe Dokumen</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className={selectTriggerClass}>
+                          <SelectValue placeholder="Pilih tipe" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="sop" className="font-interface">
+                          SOP
+                        </SelectItem>
+                        <SelectItem value="template" className="font-interface">
+                          Template
+                        </SelectItem>
+                        <SelectItem value="panduan" className="font-interface">
+                          Panduan
+                        </SelectItem>
+                        <SelectItem value="laporan" className="font-interface">
+                          Laporan
+                        </SelectItem>
+                        <SelectItem value="lainnya" className="font-interface">
+                          Lainnya
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="aktif">Aktif</SelectItem>
-                      <SelectItem value="arsip">Arsip</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className={labelClass}>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className={selectTriggerClass}>
+                          <SelectValue placeholder="Pilih status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="aktif" className="font-interface">
+                          Aktif
+                        </SelectItem>
+                        <SelectItem value="arsip" className="font-interface">
+                          Arsip
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
               name="link_gdrive"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Link Google Drive</FormLabel>
+                <FormItem className="space-y-2">
+                  <FormLabel className={labelClass}>
+                    Link Google Drive
+                  </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="https://drive.google.com/..."
                       {...field}
+                      className={inputClass}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="nama_file"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama File</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className={labelClass}>Nama File</FormLabel>
                     <FormControl>
-                      <Input placeholder="SOP_Rapat_Rutin.pdf" {...field} />
+                      <Input
+                        placeholder="SOP_Rapat.pdf"
+                        {...field}
+                        className={inputClass}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -217,24 +259,30 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
                 control={form.control}
                 name="tipe_file"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipe File</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className={labelClass}>Tipe File</FormLabel>
                     <FormControl>
-                      <Input placeholder="pdf, docx, xlsx" {...field} />
+                      <Input
+                        placeholder="pdf, docx, xlsx"
+                        {...field}
+                        className={inputClass}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="ukuran_file"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ukuran File</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className={labelClass}>
+                      Ukuran File (bytes)
+                    </FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -242,9 +290,10 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
                         placeholder="2048000"
                         {...field}
                         value={field.value ?? ""}
+                        className={inputClass}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
@@ -252,29 +301,35 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
                 control={form.control}
                 name="activity_id"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Activity ID</FormLabel>
+                  <FormItem className="space-y-2">
+                    <FormLabel className={labelClass}>Activity ID</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Kosongkan jika dokumen umum"
+                        placeholder="Kosongkan jika umum"
                         {...field}
+                        className={inputClass}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="outline"
+            <div className="flex justify-end gap-3 pt-2">
+              <button
                 type="button"
                 onClick={() => onOpenChange(false)}
+                className="px-5 py-2.5 text-sm font-medium text-primary border border-outline/20 rounded-xl hover:bg-surface-container transition-colors"
               >
                 Batal
-              </Button>
-              <Button type="submit">Simpan</Button>
+              </button>
+              <button
+                type="submit"
+                className="font-bold px-6 py-2.5 text-sm text-on-primary bg-primary-gradient rounded-xl shadow-ambient hover:opacity-90 active:scale-95 transition-all"
+              >
+                Simpan
+              </button>
             </div>
           </form>
         </Form>

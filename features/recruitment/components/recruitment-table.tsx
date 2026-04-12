@@ -1,15 +1,19 @@
-// @/features/recruitment/components/recruitment-table.tsx
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger, DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal, Pencil, Trash2, Users,
-  LockOpen, Lock, Archive,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Users,
+  LockOpen,
+  Lock,
+  Archive,
 } from "lucide-react";
 import { Recruitment } from "@/features/recruitment/services/recruitmentService";
 import { format } from "date-fns";
@@ -25,99 +29,99 @@ type Props = {
   onArchive: (recruitment: Recruitment) => void;
 };
 
-const statusConfig: Record<string, { label: string; colorClass: string }> = {
+const statusConfig: Record<string, { label: string; className: string }> = {
   open: {
     label: "Dibuka",
-    colorClass:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    className: "bg-primary-fixed text-on-primary-fixed-variant",
   },
   closed: {
     label: "Ditutup",
-    colorClass:
-      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    className: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
   },
   draft: {
     label: "Draft",
-    colorClass:
-      "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
+    className: "bg-surface-container-high text-on-surface-variant",
   },
 };
 
 export const RecruitmentTable = ({
-  recruitments, onEdit, onDelete, onViewRegistrants,
-  onOpen, onClose, onArchive,
+  recruitments,
+  onEdit,
+  onDelete,
+  onViewRegistrants,
+  onOpen,
+  onClose,
+  onArchive,
 }: Props) => {
   return (
-    <div className="w-full rounded-xl border border-border bg-card shadow-sm overflow-hidden mt-6">
-      <Table>
-        <TableHeader className="bg-muted/50 border-b-0">
-          <TableRow className="border-b-0 hover:bg-transparent">
-            <TableHead className="font-semibold text-foreground h-11 pl-4">
+    <div className="overflow-hidden">
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="bg-surface-container-high">
+            <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
               Judul
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
+            </th>
+            <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
               Periode
-            </TableHead>
-            <TableHead className="font-semibold text-foreground h-11">
+            </th>
+            <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
               Status
-            </TableHead>
-            <TableHead className="w-[70px] h-11 pr-4" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            </th>
+            <th className="px-6 py-4 w-16" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-outline-variant/10">
           {recruitments.length === 0 ? (
-            <TableRow>
-              <TableCell
+            <tr>
+              <td
                 colSpan={4}
-                className="h-32 text-center text-muted-foreground font-medium"
+                className="px-6 py-12 text-center text-sm text-on-surface-variant"
               >
                 Tidak ada data rekrutmen.
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : (
             recruitments.map((item) => {
-              const status = statusConfig[item.status] || {
+              const status = statusConfig[item.status] ?? {
                 label: item.status,
-                colorClass: "bg-gray-100 text-gray-800 border-gray-200",
+                className: "bg-surface-container text-on-surface-variant",
               };
               return (
-                <TableRow
+                <tr
                   key={item.id}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                  className="group hover:bg-surface transition-colors"
                 >
-                  <TableCell className="pl-4">
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {item.nama_recruitment}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-medium mt-0.5 max-w-[200px] truncate">
-                        {item.deskripsi}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm font-medium text-muted-foreground">
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-sm text-on-surface">
+                      {item.nama_recruitment}
+                    </p>
+                    <p className="text-xs text-on-surface-variant mt-0.5 max-w-xs truncate">
+                      {item.deskripsi}
+                    </p>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-on-surface-variant">
                     {format(new Date(item.tanggal_buka), "dd MMM yyyy", {
                       locale: idLocale,
-                    })}{" "}
-                    -{" "}
+                    })}
+                    {" – "}
                     {format(new Date(item.tanggal_tutup), "dd MMM yyyy", {
                       locale: idLocale,
                     })}
-                  </TableCell>
-                  <TableCell>
+                  </td>
+                  <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase border ${status.colorClass}`}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${status.className}`}
                     >
                       {status.label}
                     </span>
-                  </TableCell>
-                  <TableCell className="pr-4">
+                  </td>
+                  <td className="px-6 py-4 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 hover:bg-muted"
+                          className="h-8 w-8 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -130,16 +134,13 @@ export const RecruitmentTable = ({
                           <Users className="mr-2 h-4 w-4 text-primary" />
                           Lihat Pendaftar
                         </DropdownMenuItem>
-
                         <DropdownMenuSeparator />
-
-                        {/* Status actions — show based on current status */}
                         {item.status === "draft" && (
                           <DropdownMenuItem
                             className="cursor-pointer"
                             onClick={() => onOpen(item)}
                           >
-                            <LockOpen className="mr-2 h-4 w-4 text-emerald-500" />
+                            <LockOpen className="mr-2 h-4 w-4 text-on-primary-fixed-variant" />
                             Buka Pendaftaran
                           </DropdownMenuItem>
                         )}
@@ -148,28 +149,26 @@ export const RecruitmentTable = ({
                             className="cursor-pointer"
                             onClick={() => onClose(item)}
                           >
-                            <Lock className="mr-2 h-4 w-4 text-amber-500" />
+                            <Lock className="mr-2 h-4 w-4 text-on-tertiary-fixed-variant" />
                             Tutup Pendaftaran
                           </DropdownMenuItem>
                         )}
                         {(item.status === "closed" ||
                           item.status === "draft") && (
-                            <DropdownMenuItem
-                              className="cursor-pointer"
-                              onClick={() => onArchive(item)}
-                            >
-                              <Archive className="mr-2 h-4 w-4 text-slate-500" />
-                              Arsipkan
-                            </DropdownMenuItem>
-                          )}
-
+                          <DropdownMenuItem
+                            className="cursor-pointer"
+                            onClick={() => onArchive(item)}
+                          >
+                            <Archive className="mr-2 h-4 w-4 text-on-surface-variant" />
+                            Arsipkan
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
-
                         <DropdownMenuItem
                           className="cursor-pointer"
                           onClick={() => onEdit(item)}
                         >
-                          <Pencil className="mr-2 h-4 w-4 text-blue-500" />
+                          <Pencil className="mr-2 h-4 w-4 text-primary" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -181,13 +180,13 @@ export const RecruitmentTable = ({
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               );
             })
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };
