@@ -34,7 +34,8 @@ export function getToken(): string | null {
 export function setToken(token: string): void {
   _accessToken = token;
   if (typeof document !== "undefined") {
-    document.cookie = "is_authenticated=true; path=/; max-age=86400; SameSite=Lax";
+    document.cookie =
+      "is_authenticated=true; path=/; max-age=86400; SameSite=Lax";
   }
 }
 
@@ -44,9 +45,6 @@ export function removeToken(): void {
     document.cookie = "is_authenticated=; path=/; max-age=0; SameSite=Lax";
   }
 }
-
-// ── Endpoints yang tidak perlu Authorization header ────────────────────────
-const NO_AUTH_ENDPOINTS = new Set(["/auth/login", "/auth/refresh", "/auth/logout"]);
 
 // ── Refresh token state (single-flight) ───────────────────────────────────
 
@@ -79,8 +77,10 @@ api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const requestUrl = config.url ?? "";
     const token = getToken();
+    const isAuthFlowRoute =
+      requestUrl === "/auth/refresh" || requestUrl === "/auth/login";
 
-    if (token && !NO_AUTH_ENDPOINTS.has(requestUrl)) {
+    if (token && !isAuthFlowRoute) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -108,6 +108,13 @@ api.interceptors.response.use(
 
     const status = error.response?.status;
     const requestUrl = originalRequest.url ?? "";
+    const headerRecord = originalRequest.headers as
+      | Record<string, unknown>
+      | undefined;
+    const hasAuthHeader = Boolean(
+      headerRecord?.Authorization ?? headerRecord?.authorization,
+    );
+    const hasSessionInMemory = Boolean(getToken());
 
     // Jangan handle jika:
     // - bukan 401
@@ -121,6 +128,15 @@ api.interceptors.response.use(
       throw error;
     }
 
+    // Public request tanpa sesi aktif tidak perlu trigger refresh/redirect login.
+    if (!hasAuthHeader && !hasSessionInMemory) {
+      throw error;
+    }
+
+    if (status === 403) {
+      // forbidden → user gak punya permission
+      alert("Kamu tidak punya akses");
+    }
     // Jika sudah ada proses refresh berjalan, masukkan ke antrian
     if (isRefreshing) {
       return new Promise<string>((resolve, reject) => {
@@ -197,9 +213,9 @@ export const getErrorMessage = (error: unknown): string => {
           typeof e === "string"
             ? e
             : typeof e === "object" && e !== null
-              ? (e as Record<string, string>).msg ??
+              ? ((e as Record<string, string>).msg ??
                 (e as Record<string, string>).message ??
-                JSON.stringify(e)
+                JSON.stringify(e))
               : String(e),
         )
         .join(", ");

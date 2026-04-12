@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserPlus, Heart, Megaphone } from "lucide-react";
+import { UserPlus, Heart, ArrowRight } from "lucide-react";
 import type { LandingContent } from "../types";
 import Image from "next/image";
 
@@ -16,54 +16,108 @@ export default function HeroSection({ content }: HeroSectionProps) {
   const imageUrl = content?.image ?? "/images/hero-landing.png";
 
   return (
-    <section className="relative overflow-hidden pt-16 pb-24 lg:pt-32 lg:pb-32">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          {/* Left — Text */}
-          <div className="flex flex-col gap-8">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
-              <Megaphone className="size-4" />
-              Panggilan Kemanusiaan
-            </div>
+    <section
+      className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-surface-bright"
+      id="top"
+    >
+      {/* Background subtle gradient */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(0, 68, 75, 0.04) 0%, rgba(0, 93, 103, 0.08) 100%)",
+        }}
+      />
 
-            <h1 className="text-4xl font-black leading-tight tracking-tight text-text-primary-light dark:text-text-primary-dark md:text-5xl lg:text-6xl">
-              {title}
-            </h1>
+      {/* Decorative blurred circle */}
+      <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] rounded-full bg-secondary-container/30 blur-3xl pointer-events-none" />
 
-            <p className="max-w-xl text-lg leading-relaxed text-text-secondary-light dark:text-text-secondary-dark">
-              {description}
-            </p>
-
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="#activities"
-                className="flex items-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-white transition-transform hover:scale-105"
-              >
-                <UserPlus className="size-5" />
-                Aktivitas
-              </Link>
-              <Link
-                href="#donations"
-                className="flex items-center gap-2 rounded-xl border-2 border-primary px-8 py-4 font-bold text-primary transition-colors hover:bg-primary/5"
-              >
-                <Heart className="size-5" />
-                Donasi
-              </Link>
-            </div>
+      <div className="max-w-7xl mx-auto px-6 w-full relative z-10 grid md:grid-cols-2 gap-12 items-center py-16">
+        {/* Left — Text */}
+        <div className="space-y-8">
+          {/* Badge */}
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant text-xs font-bold tracking-widest uppercase">
+            Panggilan Kemanusiaan
           </div>
 
-          {/* Right — Image */}
-          <div className="relative">
-            <div className="absolute -top-10 -right-10 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-            <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-card-light shadow-2xl dark:bg-card-dark lg:aspect-square">
-              <Image
-                src={imageUrl}
-                alt="Humanitarian action"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold font-['Manrope'] text-on-surface leading-[1.1] tracking-tight">
+            {title.length > 40 ? (
+              <>
+                Aksi Nyata,{" "}
+                <span
+                  className="text-transparent bg-clip-text"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(135deg, #00444b 0%, #005d67 100%)",
+                  }}
+                >
+                  Dampak Sejati.
+                </span>
+              </>
+            ) : (
+              title
+            )}
+          </h1>
+
+          <p className="text-xl text-on-surface-variant max-w-lg leading-relaxed font-['Inter']">
+            {description}
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 pt-2">
+            <Link
+              href="#activities"
+              className="flex items-center justify-center gap-2 px-8 py-4 text-white rounded-xl font-bold text-base shadow-lg shadow-primary/20 hover:opacity-90 hover:scale-105 transition-all"
+              style={{
+                background: "linear-gradient(135deg, #00444b 0%, #005d67 100%)",
+              }}
+            >
+              <UserPlus className="size-5" />
+              Lihat Aktivitas
+              <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href="#donations"
+              className="flex items-center justify-center gap-2 px-8 py-4 border border-outline-variant text-on-surface rounded-xl font-bold text-base hover:bg-surface-container-low transition-all"
+            >
+              <Heart className="size-5 text-primary" />
+              Donasi Sekarang
+            </Link>
+          </div>
+        </div>
+
+        {/* Right — Image */}
+        <div className="hidden md:block relative">
+          <div
+            className="absolute -inset-4 rounded-[2rem] -rotate-3 opacity-50"
+            style={{ background: "rgba(0, 93, 103, 0.06)" }}
+          />
+          <div className="relative aspect-square w-full overflow-hidden rounded-[2rem] shadow-2xl z-10 border border-white/20 bg-surface-container">
+            <Image
+              src={imageUrl}
+              alt="Humanitarian action"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+
+          {/* Floating stat card */}
+          <div className="absolute -bottom-6 -left-6 bg-surface-container-lowest rounded-2xl p-5 shadow-xl border border-white z-20">
+            <p className="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-1">
+              Total Donatur
+            </p>
+            <p
+              className="text-3xl font-extrabold font-['Manrope']"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, #00444b 0%, #005d67 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              2.4k+
+            </p>
           </div>
         </div>
       </div>

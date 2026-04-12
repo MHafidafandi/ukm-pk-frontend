@@ -1,27 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseMutationResult,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  ArrowRight,
-  Edit3,
-  Eye,
-  EyeOff,
-  Image as ImageIcon,
-  Plus,
-  Save,
-  Star,
-  StarOff,
-  Trash2,
-  X,
-  LayoutGrid,
-} from "lucide-react";
 import { queryKeys } from "@/lib/query-keys";
 import {
   getLandingPageContents,
@@ -37,796 +18,347 @@ import type {
 } from "@/features/landing-page/types";
 import { isMultipleType } from "@/features/landing-page/types";
 import { useActivityContext } from "@/features/activities/contexts/ActivityContext";
-import { Activity } from "@/features/activities/services/activityService";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
-type CreateContentPayload = Omit<
-  LandingContent,
-  "id" | "created_at" | "updated_at" | "created_by" | "updated_by"
->;
-
-type UpdateMutationVars = {
-  id: string;
-  data: Partial<LandingContent>;
-  imageFile?: File;
-};
-
-type CreateMutationVars = {
-  data: CreateContentPayload;
-  imageFile?: File;
-};
-
-type ToggleActiveVars = {
-  id: string;
-  active: boolean;
-};
-
-// ── Inline Edit Form ───────────────────────────────────────────────────────
-
-function ContentEditForm({
+// ─── Content Item Row ────────────────────────────────────────────────────────
+function ContentItemRow({
   item,
-  onSave,
-  onCancel,
-  isSaving,
-}: {
-  item: LandingContent;
-  onSave: (data: Partial<LandingContent>, imageFile?: File) => void;
-  onCancel: () => void;
-  isSaving: boolean;
-}) {
-  const [title, setTitle] = useState(item.title);
-  const [description, setDescription] = useState(item.description);
-  const [imageFile, setImageFile] = useState<File | undefined>();
-
-  return (
-    <div className="mt-3 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 dark:bg-primary/10">
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-          Judul
-        </label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-          Deskripsi
-        </label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-          <ImageIcon className="mr-1 inline size-3" />
-          Gambar baru (kosongkan untuk pertahankan yang lama)
-        </label>
-        {item.image && !imageFile && (
-          <p className="mb-1.5 truncate text-xs text-slate-400">{item.image}</p>
-        )}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImageFile(e.target.files?.[0])}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-950"
-        />
-        {imageFile && (
-          <p className="mt-1 text-xs text-slate-500">{imageFile.name}</p>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={() => onSave({ title, description }, imageFile)}
-          disabled={isSaving}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Save className="size-3.5" />
-          {isSaving ? "Menyimpan..." : "Simpan"}
-        </button>
-        <button
-          onClick={onCancel}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-        >
-          <X className="size-3.5" />
-          Batal
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Add Content Form ───────────────────────────────────────────────────────
-
-function AddContentForm({
   type,
-  onAdd,
-  onCancel,
-  isAdding,
-}: {
-  type: ContentType;
-  onAdd: (
-    data: Omit<
-      LandingContent,
-      "id" | "created_at" | "updated_at" | "created_by" | "updated_by"
-    >,
-    imageFile?: File,
-  ) => void;
-  onCancel: () => void;
-  isAdding: boolean;
-}) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [imageFile, setImageFile] = useState<File | undefined>();
-
-  return (
-    <div className="mt-3 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-900/20">
-      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-        + Tambah item baru
-      </p>
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-          Judul
-        </label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-          Deskripsi
-        </label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-          <ImageIcon className="mr-1 inline size-3" />
-          Gambar (opsional)
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImageFile(e.target.files?.[0])}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-950"
-        />
-        {imageFile && (
-          <p className="mt-1 text-xs text-slate-500">{imageFile.name}</p>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={() =>
-            onAdd(
-              { type, title, description, active: true, image: null },
-              imageFile,
-            )
-          }
-          disabled={isAdding || !title.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-        >
-          <Plus className="size-3.5" />
-          {isAdding ? "Menambahkan..." : "Tambah"}
-        </button>
-        <button
-          onClick={onCancel}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-        >
-          <X className="size-3.5" />
-          Batal
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── New Type Form ──────────────────────────────────────────────────────────
-
-function NewTypeForm({
-  existingTypes,
-  onAdd,
-  onCancel,
-  isAdding,
-}: {
-  existingTypes: string[];
-  onAdd: (
-    data: Omit<
-      LandingContent,
-      "id" | "created_at" | "updated_at" | "created_by" | "updated_by"
-    >,
-    imageFile?: File,
-  ) => void;
-  onCancel: () => void;
-  isAdding: boolean;
-}) {
-  const [typeName, setTypeName] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [imageFile, setImageFile] = useState<File | undefined>();
-  const [typeError, setTypeError] = useState("");
-
-  const handleAdd = () => {
-    const normalized = typeName.trim().toLowerCase().replace(/\s+/g, "_");
-    if (!normalized) return setTypeError("Type wajib diisi");
-    if (existingTypes.includes(normalized))
-      return setTypeError("Type sudah ada");
-    setTypeError("");
-    onAdd(
-      { type: normalized, title, description, active: true, image: null },
-      imageFile,
-    );
-  };
-
-  return (
-    <div className="rounded-2xl border border-violet-200 bg-violet-50 p-5 dark:border-violet-900 dark:bg-violet-900/20">
-      <p className="mb-4 text-sm font-bold text-violet-700 dark:text-violet-400">
-        Buat Section Baru
-      </p>
-      <div className="flex flex-col gap-3">
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-            Nama Type{" "}
-            <span className="font-normal text-slate-400">
-              (huruf kecil, underscore, contoh: about_us)
-            </span>
-          </label>
-          <input
-            value={typeName}
-            onChange={(e) => {
-              setTypeName(e.target.value);
-              setTypeError("");
-            }}
-            placeholder="about_us"
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
-          />
-          {typeError && (
-            <p className="mt-1 text-xs text-red-500">{typeError}</p>
-          )}
-          {typeName && (
-            <p className="mt-1 text-xs text-slate-400">
-              Akan disimpan sebagai:{" "}
-              <code className="text-violet-600">
-                {typeName.trim().toLowerCase().replace(/\s+/g, "_")}
-              </code>
-            </p>
-          )}
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-            Judul
-          </label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-            Deskripsi
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-950"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">
-            <ImageIcon className="mr-1 inline size-3" />
-            Gambar (opsional)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImageFile(e.target.files?.[0])}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition dark:border-slate-700 dark:bg-slate-950"
-          />
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleAdd}
-            disabled={isAdding || !typeName.trim() || !title.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-700 disabled:opacity-50"
-          >
-            <Plus className="size-3.5" />
-            {isAdding ? "Membuat..." : "Buat Section"}
-          </button>
-          <button
-            onClick={onCancel}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-          >
-            <X className="size-3.5" />
-            Batal
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Content Section Card ───────────────────────────────────────────────────
-
-function ContentSectionCard({
-  type,
-  items,
-  editingId,
-  addingType,
+  isEditing,
   updateMutation,
-  createMutation,
   deleteMutation,
   toggleActiveMutation,
-  onSetEditingId,
-  onSetAddingType,
-}: {
-  type: string;
-  items: LandingContent[];
-  editingId: string | null;
-  addingType: string | null;
-  updateMutation: UseMutationResult<
-    { message: string },
-    Error,
-    UpdateMutationVars
-  >;
-  createMutation: UseMutationResult<
-    { message: string },
-    Error,
-    CreateMutationVars
-  >;
-  deleteMutation: UseMutationResult<{ message: string }, Error, string>;
-  toggleActiveMutation: UseMutationResult<
-    { message: string },
-    Error,
-    ToggleActiveVars
-  >;
-  onSetEditingId: (id: string | null) => void;
-  onSetAddingType: (type: string | null) => void;
-}) {
-  const multiple = isMultipleType(type);
-  const canAdd = multiple || items.length === 0;
+  onEdit,
+  onCancelEdit,
+}: any) {
+  const canDelete =
+    isMultipleType(type) ||
+    !["hero", "visi", "misi", "struktur_organisasi", "organization"].includes(
+      type,
+    );
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col">
-            <h2 className="font-bold text-slate-900 dark:text-white">
-              {typeLabel(type)}
-            </h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <code className="text-xs text-slate-400">{type}</code>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                {multiple ? "multiple" : "single"}
-              </span>
-            </div>
+    <div className="space-y-2 mt-3">
+      <div className="bg-surface-container-lowest p-5 rounded-2xl flex items-center justify-between hover:translate-x-1 transition-transform group shadow-sm">
+        <div className="flex items-center space-x-5">
+          <div className="w-12 h-12 bg-surface-container rounded-xl flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-on-surface-variant text-xl">
+              article
+            </span>
+          </div>
+          <div className="min-w-0 max-w-sm">
+            <p className="font-bold text-on-surface font-['Manrope'] truncate">
+              {item.title || "Tanpa Judul"}
+            </p>
+            <p className="text-xs text-on-surface-variant line-clamp-1 mt-0.5">
+              {item.description || "—"}
+            </p>
           </div>
         </div>
-        {canAdd && addingType !== type && (
-          <button
-            onClick={() => onSetAddingType(type)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold transition hover:border-primary hover:text-primary dark:border-slate-700"
+
+        <div className="flex items-center space-x-3">
+          <span
+            className={`px-3 py-1 text-[10px] font-black rounded-full tracking-wider ${
+              item.active
+                ? "bg-primary-fixed text-on-primary-fixed-variant"
+                : "bg-tertiary-fixed text-on-tertiary-fixed-variant"
+            }`}
           >
-            <Plus className="size-3.5" />
-            Tambah
-          </button>
-        )}
-      </div>
-
-      <div className="p-5">
-        {items.length === 0 && addingType !== type ? (
-          <p className="py-4 text-center text-sm text-slate-400">
-            Belum ada konten.{" "}
+            {item.active ? "ACTIVE" : "DRAFT"}
+          </span>
+          <div className="h-8 w-px bg-outline-variant/20 hidden sm:block" />
+          <div className="flex gap-1">
             <button
-              onClick={() => onSetAddingType(type)}
-              className="font-semibold text-primary hover:underline"
+              onClick={() =>
+                toggleActiveMutation?.mutate({
+                  id: item.id,
+                  active: !item.active,
+                })
+              }
+              className="p-2 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors"
+              title="Toggle Status"
             >
-              Tambah sekarang
+              <span className="material-symbols-outlined text-sm">
+                {item.active ? "visibility_off" : "visibility"}
+              </span>
             </button>
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.id}>
-                <div
-                  className={`flex items-start justify-between gap-4 rounded-xl border p-4 transition-colors ${
-                    item.active
-                      ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950"
-                      : "border-slate-100 bg-slate-50/50 opacity-60 dark:border-slate-800"
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                        {item.title || (
-                          <span className="italic text-slate-400">
-                            Tanpa judul
-                          </span>
-                        )}
-                      </p>
-                      {!item.active && (
-                        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-400">
-                          Nonaktif
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
-                      {item.description}
-                    </p>
-                    {item.image && (
-                      <p className="mt-1 truncate text-xs text-primary/70">
-                        {item.image}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      onClick={() =>
-                        toggleActiveMutation.mutate({
-                          id: item.id,
-                          active: !item.active,
-                        })
-                      }
-                      title={item.active ? "Nonaktifkan" : "Aktifkan"}
-                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
-                    >
-                      {item.active ? (
-                        <Eye className="size-4" />
-                      ) : (
-                        <EyeOff className="size-4" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() =>
-                        onSetEditingId(editingId === item.id ? null : item.id)
-                      }
-                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800"
-                    >
-                      <Edit3 className="size-4" />
-                    </button>
-                    {/* Hapus hanya untuk multiple type atau custom type */}
-                    {(multiple ||
-                      !["hero", "visi", "misi", "struktur_organisasi"].includes(
-                        type,
-                      )) && (
-                      <button
-                        onClick={() => {
-                          if (confirm(`Hapus "${item.title}"?`))
-                            deleteMutation.mutate(item.id);
-                        }}
-                        className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {editingId === item.id && (
-                  <ContentEditForm
-                    item={item}
-                    onSave={(data, imageFile) =>
-                      updateMutation.mutate({ id: item.id, data, imageFile })
-                    }
-                    onCancel={() => onSetEditingId(null)}
-                    isSaving={updateMutation.isPending}
-                  />
-                )}
-              </div>
-            ))}
+            <button
+              onClick={isEditing ? onCancelEdit : onEdit}
+              className="p-2 hover:bg-surface-container rounded-full text-primary transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">
+                {isEditing ? "close" : "edit"}
+              </span>
+            </button>
+            {canDelete && (
+              <button
+                onClick={() => {
+                  if (confirm("Hapus konten ini?"))
+                    deleteMutation?.mutate(item.id);
+                }}
+                className="p-2 hover:bg-error-container rounded-full text-error transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  delete
+                </span>
+              </button>
+            )}
           </div>
-        )}
-
-        {addingType === type && (
-          <AddContentForm
-            type={type}
-            onAdd={(data, imageFile) =>
-              createMutation.mutate({ data, imageFile })
-            }
-            onCancel={() => onSetAddingType(null)}
-            isAdding={createMutation.isPending}
-          />
-        )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────
-
+// ─── Main Component ────────────────────────────────────────────────────────
 export default function LandingPageManagerPage() {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingType, setAddingType] = useState<string | null>(null);
-  const [showNewTypeForm, setShowNewTypeForm] = useState(false);
 
-  // ── Contents ──
   const { data: contentsData, isLoading: isLoadingContents } = useQuery({
     queryKey: [...queryKeys.landingContents.list(), "all"],
     queryFn: () => getLandingPageContents(),
   });
 
-  const allContents = useMemo<LandingContent[]>(
+  const { activities, updateActivityFeatured, isFetchingActivities } =
+    useActivityContext();
+
+  const allContents = useMemo(
     () => contentsData?.data ?? [],
     [contentsData?.data],
   );
-
-  // Group by type dynamically
-  const contentsByType = useMemo(() => {
-    const map: Record<string, LandingContent[]> = {};
-    allContents.forEach((c) => {
-      if (!map[c.type]) map[c.type] = [];
-      map[c.type].push(c);
-    });
-    return map;
-  }, [allContents]);
-
   const existingTypes = useMemo(
     () => getUniqueTypes(allContents),
     [allContents],
   );
 
-  const invalidateContents = () =>
-    queryClient.invalidateQueries({
-      queryKey: [...queryKeys.landingContents.list(), "all"],
-    });
-
-  // ── Mutations ──
-  const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      data,
-      imageFile,
-    }: {
-      id: string;
-      data: Partial<LandingContent>;
-      imageFile?: File;
-    }) => updateContent(id, data, imageFile),
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      updateContent(id, { active }),
     onSuccess: () => {
-      invalidateContents();
-      setEditingId(null);
-      toast.success("Konten diperbarui");
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.landingContents.list(),
+      });
+      toast.success("Status diperbarui");
     },
-    onError: () => toast.error("Gagal memperbarui konten"),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: ({ data, imageFile }: CreateMutationVars) =>
-      createContent(data, imageFile),
-    onSuccess: () => {
-      invalidateContents();
-      setAddingType(null);
-      setShowNewTypeForm(false);
-      toast.success("Konten ditambahkan");
-    },
-    onError: () => toast.error("Gagal menambah konten"),
+    onError: () => toast.error("Gagal memperbarui status"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteContent(id),
     onSuccess: () => {
-      invalidateContents();
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.landingContents.list(),
+      });
       toast.success("Konten dihapus");
     },
     onError: () => toast.error("Gagal menghapus konten"),
   });
 
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
-      updateContent(id, { active }),
-    onSuccess: () => {
-      invalidateContents();
-      toast.success("Status diperbarui");
-    },
-    onError: () => toast.error("Gagal mengubah status"),
-  });
-
-  // ── Activities (dari context) ──
-  const { activities, updateActivityFeatured, isFetchingActivities } =
-    useActivityContext();
-
-  const featuredCount = activities.filter((a) => a.is_featured).length;
-
-  const handleToggleFeatured = async (id: string, isFeatured: boolean) => {
-    try {
-      await updateActivityFeatured({ id, data: { is_featured: isFeatured } });
-      toast.success("Status featured diperbarui");
-    } catch {
-      toast.error("Gagal mengubah featured");
-    }
-  };
-
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <main className="flex-grow p-8 space-y-8 bg-surface min-h-screen">
+      {/* Breadcrumbs & Title */}
+      <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Landing Page Manager
-          </h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Kelola semua konten landing page secara dinamis.
-          </p>
+          <nav className="flex text-xs text-on-surface-variant/60 mb-2 space-x-2 font-['Inter']">
+            <span>Portal</span>
+            <span>/</span>
+            <span className="text-primary font-semibold">Content Manager</span>
+          </nav>
+          <h2 className="text-4xl font-bold text-on-surface tracking-tight font-['Manrope']">
+            Landing Page Curator
+          </h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center px-4 py-2 bg-secondary-container rounded-full text-on-secondary-container text-xs font-bold">
+            <span
+              className="material-symbols-outlined text-sm mr-2"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              check_circle
+            </span>
+            Live
+          </div>
           <button
-            onClick={() => {
-              setShowNewTypeForm(true);
-              setAddingType(null);
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all"
+            style={{
+              background: "linear-gradient(135deg, #00444b 0%, #005d67 100%)",
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700"
           >
-            <LayoutGrid className="size-4" />
-            Section Baru
+            <span className="material-symbols-outlined text-sm">add</span>
+            New Section
           </button>
-          <a
-            href="/"
-            target="_blank"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary dark:border-slate-700"
-          >
-            <Eye className="size-4" />
-            Preview
-            <ArrowRight className="size-3.5" />
-          </a>
         </div>
       </div>
 
-      {/* New Type Form */}
-      {showNewTypeForm && (
-        <NewTypeForm
-          existingTypes={existingTypes}
-          onAdd={(data, imageFile) =>
-            createMutation.mutate({ data, imageFile })
-          }
-          onCancel={() => setShowNewTypeForm(false)}
-          isAdding={createMutation.isPending}
-        />
-      )}
-
-      {/* Dynamic Content Sections */}
-      {isLoadingContents ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-32 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800"
-            />
-          ))}
-        </div>
-      ) : existingTypes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 dark:border-slate-700">
-          <LayoutGrid className="mb-3 size-10 text-slate-300 dark:text-slate-700" />
-          <p className="font-semibold text-slate-500 dark:text-slate-400">
-            Belum ada section
-          </p>
-          <p className="mt-1 text-sm text-slate-400">
-            Klik{" "}
-            <button
-              onClick={() => setShowNewTypeForm(true)}
-              className="font-semibold text-primary hover:underline"
+      <div className="grid grid-cols-12 gap-6">
+        {/* Featured Activities */}
+        <section className="col-span-12 bg-surface-container-low rounded-3xl p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-xl font-bold text-on-surface font-['Manrope'] flex items-center">
+                <span className="material-symbols-outlined mr-3 text-primary">
+                  auto_awesome
+                </span>
+                Featured Activities
+              </h3>
+              <p className="text-sm text-on-surface-variant mt-1">
+                Pilih aktivitas yang ditampilkan di halaman utama.
+              </p>
+            </div>
+            <Link
+              href="/activities"
+              className="flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
             >
-              Section Baru
-            </button>{" "}
-            untuk mulai.
-          </p>
-        </div>
-      ) : (
-        existingTypes.map((type) => (
-          <ContentSectionCard
-            key={type}
-            type={type}
-            items={contentsByType[type] ?? []}
-            editingId={editingId}
-            addingType={addingType}
-            updateMutation={updateMutation}
-            createMutation={createMutation}
-            deleteMutation={deleteMutation}
-            toggleActiveMutation={toggleActiveMutation}
-            onSetEditingId={setEditingId}
-            onSetAddingType={setAddingType}
-          />
-        ))
-      )}
-
-      {/* Featured Activities */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-          <div>
-            <h2 className="font-bold text-slate-900 dark:text-white">
-              Featured Activities
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Pilih aktivitas yang tampil di landing page.{" "}
-              <span className="font-semibold text-primary">
-                {featuredCount} dipilih
-              </span>{" "}
-              (disarankan maks. 3)
-            </p>
+              <span className="material-symbols-outlined text-sm">
+                open_in_new
+              </span>
+              Kelola Aktivitas
+            </Link>
           </div>
-          <Link
-            href="/dashboard/activities"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold transition hover:border-primary hover:text-primary dark:border-slate-700"
-          >
-            Kelola <ArrowRight className="size-3.5" />
-          </Link>
-        </div>
 
-        <div className="p-5">
-          {isFetchingActivities ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-14 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800"
-                />
-              ))}
-            </div>
-          ) : activities.length === 0 ? (
-            <p className="py-4 text-center text-sm text-slate-400">
-              Belum ada aktivitas.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {activities.map((activity: Activity) => (
-                <div
-                  key={activity.id}
-                  className={`flex items-center justify-between rounded-xl border p-3.5 transition-all ${
-                    activity.is_featured
-                      ? "border-primary/30 bg-primary/5 dark:bg-primary/10"
-                      : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      {activity.is_featured && (
-                        <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
-                      )}
-                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                        {activity.judul}
-                      </p>
-                    </div>
-                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                      {activity.status} ·{" "}
-                      {new Date(activity.tanggal).toLocaleDateString("id-ID")}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() =>
-                      handleToggleFeatured(activity.id, !activity.is_featured)
-                    }
-                    className={`ml-3 inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                      activity.is_featured
-                        ? "bg-primary text-white hover:bg-primary/90"
-                        : "border border-slate-200 bg-white text-slate-600 hover:border-primary hover:text-primary dark:border-slate-700 dark:bg-slate-900"
-                    }`}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {isFetchingActivities ? (
+              <div className="col-span-3 text-center py-12">
+                <Loader2 className="animate-spin w-8 h-8 mx-auto text-primary" />
+              </div>
+            ) : (
+              activities
+                .filter((a) => a.is_featured)
+                .map((activity, index) => (
+                  <div
+                    key={activity.id}
+                    className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm group hover:shadow-md transition-all cursor-pointer relative"
                   >
-                    {activity.is_featured ? (
-                      <>
-                        <StarOff className="size-3.5" /> Unfeature
-                      </>
-                    ) : (
-                      <>
-                        <Star className="size-3.5" /> Feature
-                      </>
-                    )}
-                  </button>
+                    <div className="absolute top-4 right-4 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold z-10">
+                      {index + 1}
+                    </div>
+                    <h4 className="font-bold font-['Manrope'] text-on-surface mb-1 truncate pr-8">
+                      {activity.judul}
+                    </h4>
+                    <p className="text-xs text-on-surface-variant line-clamp-2">
+                      {activity.deskripsi}
+                    </p>
+                    <div className="mt-4 flex justify-between items-center">
+                      <span className="px-2 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] font-bold rounded-full tracking-wider">
+                        FEATURED
+                      </span>
+                      <button
+                        onClick={() =>
+                          updateActivityFeatured({
+                            id: activity.id,
+                            data: { is_featured: false },
+                          })
+                        }
+                        className="text-error hover:underline text-xs font-bold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))
+            )}
+
+            {/* Empty slot */}
+            <div className="bg-surface-container-lowest rounded-2xl p-6 border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center text-center hover:border-primary transition-all cursor-pointer group">
+              <Link
+                href="/activities"
+                className="flex flex-col items-center gap-2"
+              >
+                <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-all">
+                  <span className="material-symbols-outlined text-on-surface-variant group-hover:text-white">
+                    add_circle
+                  </span>
                 </div>
-              ))}
+                <p className="text-sm font-bold text-on-surface-variant">
+                  Select Activities
+                </p>
+              </Link>
             </div>
-          )}
+          </div>
+        </section>
+
+        {/* Dynamic Content Blocks by type */}
+        {isLoadingContents ? (
+          <div className="col-span-12 text-center py-12">
+            <Loader2 className="animate-spin w-8 h-8 mx-auto text-primary" />
+          </div>
+        ) : (
+          existingTypes.map((type) => (
+            <section
+              key={type}
+              className="col-span-12 bg-surface-container-high rounded-3xl p-8"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-on-surface font-['Manrope'] flex items-center capitalize">
+                  <span className="material-symbols-outlined mr-3 text-on-tertiary-fixed-variant">
+                    stacks
+                  </span>
+                  {typeLabel(type)}
+                  <span className="ml-3 px-2 py-0.5 bg-surface-variant text-on-surface-variant text-[10px] rounded-full font-['Inter']">
+                    {isMultipleType(type) ? "Multiple" : "Single"}
+                  </span>
+                </h3>
+                {(!contentsData?.data.filter((c) => c.type === type).length ||
+                  isMultipleType(type)) && (
+                  <button
+                    onClick={() => setAddingType(type)}
+                    className="text-sm font-semibold text-primary flex items-center hover:underline"
+                  >
+                    <span className="material-symbols-outlined text-sm mr-1">
+                      add
+                    </span>
+                    Add Block
+                  </button>
+                )}
+              </div>
+
+              {contentsData?.data
+                .filter((c) => c.type === type)
+                .map((item) => (
+                  <ContentItemRow
+                    key={item.id}
+                    item={item}
+                    type={type}
+                    isEditing={editingId === item.id}
+                    onEdit={() => setEditingId(item.id)}
+                    onCancelEdit={() => setEditingId(null)}
+                    toggleActiveMutation={toggleActiveMutation}
+                    deleteMutation={deleteMutation}
+                  />
+                ))}
+            </section>
+          ))
+        )}
+      </div>
+
+      {/* Fixed Footer Actions */}
+      <div className="fixed bottom-0 left-0 right-0 ml-64 bg-surface/90 backdrop-blur-md px-8 py-4 border-t border-outline-variant/10 flex items-center justify-between z-40">
+        <div className="flex items-center space-x-2 text-xs text-on-surface-variant font-['Inter']">
+          <span className="material-symbols-outlined text-sm text-secondary">
+            history
+          </span>
+          <span>Auto-saved</span>
         </div>
-      </section>
-    </div>
+        <div className="flex items-center space-x-3">
+          <button className="px-6 py-2 rounded-xl text-on-surface text-sm font-semibold hover:bg-surface-container-high transition-colors">
+            Discard
+          </button>
+          <button className="px-6 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm font-bold hover:bg-surface-container-high transition-all">
+            Save Draft
+          </button>
+          <button
+            className="px-8 py-2.5 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all"
+            style={{
+              background: "linear-gradient(135deg, #00444b 0%, #005d67 100%)",
+            }}
+          >
+            Publish to Public Site
+          </button>
+        </div>
+      </div>
+    </main>
   );
 }
