@@ -6,17 +6,7 @@ import {
 import { usePermission } from "@/hooks/usePermission";
 import { PERMISSIONS } from "@/lib/permissions";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 import {
   DropdownMenu,
@@ -36,6 +26,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { env } from "@/configs/env";
 
 /* ================= CONFIG ================= */
 
@@ -58,13 +50,6 @@ const statusConfig: Record<
     colorClass:
       "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
   },
-};
-
-const roleLabels: Record<string, string> = {
-  super_admin: "Super Admin",
-  administrator: "Administrator",
-  member: "Anggota",
-  guest: "Tamu",
 };
 
 /* ================= TYPES ================= */
@@ -114,6 +99,20 @@ export const UsersTable = ({
   const start = users.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
 
   const end = Math.min(currentPage * pageSize, totalData);
+
+  const getAvatarSrc = (user: User) => {
+    if (!user.avatar_url) return "";
+    return user.avatar_url.startsWith("http")
+      ? user.avatar_url
+      : `${env.MEDIA_URL}${user.avatar_url}`;
+  };
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "U";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  };
 
   return (
     <>
@@ -192,7 +191,7 @@ export const UsersTable = ({
                     ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800"
                     : "bg-gray-100 text-gray-800 border-gray-200";
 
-              const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nama || "User")}&background=random`;
+              const avatarSrc = getAvatarSrc(user);
 
               return (
                 <tr
@@ -201,13 +200,15 @@ export const UsersTable = ({
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <img
-                          alt=""
-                          src={avatarUrl}
-                          className="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+                      <Avatar className="h-10 w-10 shrink-0 border-2 border-white shadow-sm dark:border-gray-700">
+                        <AvatarImage
+                          src={avatarSrc || undefined}
+                          alt={user.nama}
                         />
-                      </div>
+                        <AvatarFallback className="bg-slate-100 text-sm font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                          {getInitials(user.nama || "User")}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="ml-4">
                         <div className="text-sm font-semibold text-gray-900 dark:text-white">
                           {user.nama}
@@ -369,10 +370,11 @@ export const UsersTable = ({
                   <button
                     key={page}
                     onClick={() => onPageChange(page)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                      ? "z-10 bg-primary/10 border-primary text-primary"
-                      : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      }`}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      currentPage === page
+                        ? "z-10 bg-primary/10 border-primary text-primary"
+                        : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    }`}
                   >
                     {page}
                   </button>

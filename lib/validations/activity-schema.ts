@@ -29,6 +29,13 @@ export type UpdateActivityStatusInput = z.infer<
   typeof UpdateActivityStatusSchema
 >;
 
+export const UpdateActivityFeaturedSchema = z.object({
+  is_featured: z.boolean(),
+});
+export type UpdateActivityFeaturedInput = z.infer<
+  typeof UpdateActivityFeaturedSchema
+>;
+
 // --- Progress Report ---
 export const CreateProgressReportSchema = z.object({
   activity_id: z.string().min(1, "Activity ID wajib diisi"),

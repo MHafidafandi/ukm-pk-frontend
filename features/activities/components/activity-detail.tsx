@@ -22,12 +22,13 @@ import { ProgressReportList } from "./progress-report-list";
 import { LpjViewer } from "./lpj-viewer";
 import { ActivityFormDialog } from "./activity-form-dialog";
 import { CreateActivityInput } from "@/lib/validations/activity-schema";
+import { env } from "@/configs/env";
 
 type Props = {
   id: string;
 };
 
-const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
+const MEDIA_BASE_URL = env.MEDIA_URL;
 
 export const ActivityDetail = ({ id }: Props) => {
   const router = useRouter();
@@ -39,27 +40,29 @@ export const ActivityDetail = ({ id }: Props) => {
   } = useActivityContext();
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<CreateActivityInput>(() => {
-    if (activity) {
-      return {
-        judul: activity.judul,
-        deskripsi: activity.deskripsi,
-        tanggal: new Date(activity.tanggal),
-        lokasi: activity.lokasi,
-      };
-    }
-    return {
-      judul: "",
-      deskripsi: "",
-      tanggal: new Date(),
-      lokasi: "",
-    };
+  const [editForm, setEditForm] = useState<CreateActivityInput>({
+    judul: "",
+    deskripsi: "",
+    tanggal: new Date(),
+    lokasi: "",
   });
 
   useEffect(() => {
     setActiveActivityId(id);
     return () => setActiveActivityId(null);
   }, [id, setActiveActivityId]);
+
+  const openEditDialog = () => {
+    if (!activity) return;
+    setEditForm({
+      judul: activity.judul,
+      deskripsi: activity.deskripsi,
+      tanggal: new Date(activity.tanggal),
+      lokasi: activity.lokasi,
+      thumbnail: undefined,
+    });
+    setEditOpen(true);
+  };
 
   const handleEditSave = async () => {
     try {
@@ -208,7 +211,7 @@ export const ActivityDetail = ({ id }: Props) => {
           </div>
 
           <button
-            onClick={() => setEditOpen(true)}
+            onClick={openEditDialog}
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-lg transition-colors shadow-sm"
           >
             <Pencil className="size-4" />

@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -76,7 +83,7 @@ interface AuthContextType {
   // Actions
   login: (data: LoginInput) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: unknown) => Promise<unknown>;
+  updateProfile: (data: Record<string, unknown>) => Promise<unknown>;
   changePassword: (data: {
     current_password: string;
     new_password: string;
@@ -152,7 +159,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Coba silent refresh untuk restore sesi dari refresh token cookie
       try {
         const res = await refreshTokenService();
-        const token = (res as { access_token?: string }).access_token ?? (res as unknown as { data?: { access_token?: string } }).data?.access_token;
+        const token =
+          (res as { access_token?: string }).access_token ??
+          (res as unknown as { data?: { access_token?: string } }).data
+            ?.access_token;
         if (token) {
           setToken(token);
           setHasToken(true);
@@ -180,16 +190,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     queryKey: ["auth", "me"],
     queryFn: getMe,
     enabled: isInitialized && hasToken,
-    staleTime: 5 * 60 * 1000,       // 5 menit — tidak refetch jika data masih fresh
-    gcTime: 30 * 60 * 1000,         // 30 menit cache
+    staleTime: 5 * 60 * 1000, // 5 menit — tidak refetch jika data masih fresh
+    gcTime: 30 * 60 * 1000, // 30 menit cache
     refetchOnWindowFocus: false,
-    retry: false,                    // Jangan retry — interceptor sudah handle 401
+    retry: false, // Jangan retry — interceptor sudah handle 401
   });
 
   // Jika getMe gagal dengan 401 setelah refresh, paksa logout
   useEffect(() => {
     if (isError && error) {
-      const status = (error as { response?: { status?: number } }).response?.status;
+      const status = (error as { response?: { status?: number } }).response
+        ?.status;
       if (status === 401) {
         removeToken();
         setHasToken(false);
@@ -206,13 +217,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     mutationFn: loginService,
     onSuccess: async (data) => {
       // data sudah di-unwrap oleh response interceptor
-      const tokenData = data as { access_token?: string } | { data?: { access_token?: string } };
+      const tokenData = data as
+        | { access_token?: string }
+        | { data?: { access_token?: string } };
       const token =
         (tokenData as { access_token?: string }).access_token ??
         (tokenData as { data?: { access_token?: string } }).data?.access_token;
 
       if (!token) {
-        toast.error("Login berhasil tapi tidak ada token. Hubungi administrator.");
+        toast.error(
+          "Login berhasil tapi tidak ada token. Hubungi administrator.",
+        );
         return;
       }
 
@@ -222,7 +237,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Fetch user data untuk redirect logic
       try {
-        const user = await getMe() as User & { permissions?: string[] };
+        const user = (await getMe()) as User & { permissions?: string[] };
         queryClient.setQueryData(["auth", "me"], user);
 
         // Redirect berdasarkan permissions
@@ -238,11 +253,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     },
     onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { message?: string; error?: string } } };
+      const axiosError = error as {
+        response?: { data?: { message?: string; error?: string } };
+      };
       toast.error(
         axiosError?.response?.data?.message ??
-        axiosError?.response?.data?.error ??
-        "Kombinasi email dan password tidak sesuai",
+          axiosError?.response?.data?.error ??
+          "Kombinasi email dan password tidak sesuai",
       );
     },
   });
@@ -268,8 +285,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Profil berhasil diperbarui");
     },
     onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(axiosError?.response?.data?.message ?? "Gagal memperbarui profil");
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(
+        axiosError?.response?.data?.message ?? "Gagal memperbarui profil",
+      );
     },
   });
 
@@ -279,8 +300,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Password berhasil diubah");
     },
     onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(axiosError?.response?.data?.message ?? "Gagal mengubah password");
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(
+        axiosError?.response?.data?.message ?? "Gagal mengubah password",
+      );
     },
   });
 
@@ -291,8 +316,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Avatar berhasil diupload");
     },
     onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(axiosError?.response?.data?.message ?? "Gagal mengupload avatar");
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(
+        axiosError?.response?.data?.message ?? "Gagal mengupload avatar",
+      );
     },
   });
 
@@ -303,8 +332,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Avatar berhasil dihapus");
     },
     onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(axiosError?.response?.data?.message ?? "Gagal menghapus avatar");
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(
+        axiosError?.response?.data?.message ?? "Gagal menghapus avatar",
+      );
     },
   });
 

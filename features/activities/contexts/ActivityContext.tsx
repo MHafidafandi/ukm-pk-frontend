@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { createContext, useContext, useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import {
   createActivity,
   updateActivity,
   updateActivityStatus,
+  updateActivityFeatured,
   deleteActivity,
   getProgressReports,
   getProgressReport,
@@ -40,9 +42,17 @@ interface ActivityContextType {
   limit: number;
   statusFilter: string;
   setStatusFilter: (s: string) => void;
+  sort: string;
+  setSort: (s: string) => void;
+  order: "ASC" | "DESC";
+  setOrder: (o: "ASC" | "DESC") => void;
   createActivity: (data: any) => Promise<any>;
   updateActivity: (args: { id: string; data: any }) => Promise<any>;
   updateActivityStatus: (args: { id: string; data: any }) => Promise<any>;
+  updateActivityFeatured: (args: {
+    id: string;
+    data: { is_featured: boolean };
+  }) => Promise<any>;
   deleteActivity: (id: string) => Promise<any>;
   // -- Active Activity --
   activeActivityId: string | null;
@@ -101,6 +111,8 @@ export const ActivityProvider = ({
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("");
+  const [sort, setSort] = useState("tanggal");
+  const [order, setOrder] = useState<"ASC" | "DESC">("DESC");
   const [debounceSearch] = useDebounce(search, 500);
 
   // Active Context State
@@ -111,7 +123,16 @@ export const ActivityProvider = ({
 
   // -- Queries --
   const { data: activitiesData, isLoading: isFetchingActivities } = useQuery({
-    queryKey: ["activities", "list", page, limit, debounceSearch, statusFilter],
+    queryKey: [
+      "activities",
+      "list",
+      page,
+      limit,
+      debounceSearch,
+      statusFilter,
+      sort,
+      order,
+    ],
     queryFn: () =>
       getActivities({
         page,
@@ -119,6 +140,8 @@ export const ActivityProvider = ({
         search: debounceSearch || undefined,
         status:
           statusFilter && statusFilter !== "all" ? statusFilter : undefined,
+        sort: sort || undefined,
+        order: order || undefined,
       }),
   });
 
@@ -154,12 +177,23 @@ export const ActivityProvider = ({
   });
 
   // -- Derived Data --
-  const activities = activitiesData?.data?.activities || [];
-  const pagination = activitiesData?.data?.pagination || null;
+  const activities = useMemo(
+    () => activitiesData?.data?.activities || [],
+    [activitiesData?.data?.activities],
+  );
+  const pagination = useMemo(
+    () => activitiesData?.data?.pagination || null,
+    [activitiesData?.data?.pagination],
+  );
   const activeActivityDetails = activeActivityData?.data || null;
-  const progressReports = progressReportsData?.data?.reports || [];
-  const progressReportsPagination =
-    progressReportsData?.data?.pagination || null;
+  const progressReports = useMemo(
+    () => progressReportsData?.data?.reports || [],
+    [progressReportsData?.data?.reports],
+  );
+  const progressReportsPagination = useMemo(
+    () => progressReportsData?.data?.pagination || null,
+    [progressReportsData?.data?.pagination],
+  );
   const lpj = lpjData?.data ?? null; // ✅ single LPJ | null
 
   // -- Invalidators --
@@ -185,6 +219,50 @@ export const ActivityProvider = ({
   const updateActivityMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       updateActivity(id, data),
+    onMutate: async ({ id, data }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["activities", "list"] });
+
+      // Snapshot previous state
+      const previousQueries = queryClient.getQueriesData<any>({
+        queryKey: ["activities", "list"],
+      });
+
+      // Extract form data into object for optimistic update
+      let updatedFields: any = {};
+      if (data instanceof FormData) {
+        for (const [key, value] of data.entries()) {
+          updatedFields[key] = value;
+        }
+      } else {
+        updatedFields = data;
+      }
+
+      // Optimistic update
+      queryClient.setQueriesData<any>(
+        { queryKey: ["activities", "list"] },
+        (old: any) => {
+          if (!old?.data?.activities) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              activities: old.data.activities.map((a: Activity) =>
+                a.id === id ? { ...a, ...updatedFields } : a,
+              ),
+            },
+          };
+        },
+      );
+
+      return { previousQueries };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      context?.previousQueries?.forEach(([queryKey, value]: [any, any]) => {
+        queryClient.setQueryData(queryKey, value);
+      });
+    },
     onSuccess: () => {
       invalidateActivities();
       // ✅ Invalidate detail juga supaya ActivityDetail ikut update
@@ -197,11 +275,100 @@ export const ActivityProvider = ({
   const updateActivityStatusMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       updateActivityStatus(id, data),
+    onMutate: async ({ id, data }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["activities", "list"] });
+
+      // Snapshot previous state
+      const previousQueries = queryClient.getQueriesData<any>({
+        queryKey: ["activities", "list"],
+      });
+
+      // Optimistic update - map status ke UI format
+      queryClient.setQueriesData<any>(
+        { queryKey: ["activities", "list"] },
+        (old: any) => {
+          if (!old?.data?.activities) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              activities: old.data.activities.map((a: Activity) =>
+                a.id === id ? { ...a, status: data.status } : a,
+              ),
+            },
+          };
+        },
+      );
+
+      return { previousQueries };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      context?.previousQueries?.forEach(([queryKey, value]: [any, any]) => {
+        queryClient.setQueryData(queryKey, value);
+      });
+    },
     onSuccess: () => {
       invalidateActivities();
       queryClient.invalidateQueries({
         queryKey: ["activities", activeActivityId],
       });
+    },
+  });
+
+  const updateActivityFeaturedMutation = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { is_featured: boolean };
+    }) => updateActivityFeatured(id, data),
+
+    onMutate: async ({ id, data }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["activities", "list"] });
+
+      // Snapshot semua query dengan prefix ["activities", "list"] untuk rollback
+      const previousQueries = queryClient.getQueriesData<any>({
+        queryKey: ["activities", "list"],
+      });
+
+      // Optimistic update semua page yang ada di cache
+      queryClient.setQueriesData<any>(
+        { queryKey: ["activities", "list"] },
+        (old: any) => {
+          if (!old?.data?.activities) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              activities: old.data.activities.map((a: Activity) =>
+                a.id === id ? { ...a, is_featured: data.is_featured } : a,
+              ),
+            },
+          };
+        },
+      );
+
+      return { previousQueries };
+    },
+
+    onError: (_err, _vars, context) => {
+      // Rollback semua query ke snapshot sebelumnya
+      context?.previousQueries?.forEach(([queryKey, value]: [any, any]) => {
+        queryClient.setQueryData(queryKey, value);
+      });
+    },
+
+    onSuccess: () => {
+      invalidateActivities();
+      queryClient.invalidateQueries({
+        queryKey: ["activities", activeActivityId],
+      });
+      // Invalidate landing page juga biar sync
+      queryClient.invalidateQueries({ queryKey: ["landing", "activities"] });
     },
   });
 
@@ -254,9 +421,14 @@ export const ActivityProvider = ({
       limit,
       statusFilter,
       setStatusFilter,
+      sort,
+      setSort,
+      order,
+      setOrder,
       createActivity: createActivityMutation.mutateAsync,
       updateActivity: updateActivityMutation.mutateAsync,
       updateActivityStatus: updateActivityStatusMutation.mutateAsync,
+      updateActivityFeatured: updateActivityFeaturedMutation.mutateAsync,
       deleteActivity: deleteActivityMutation.mutateAsync,
       // Active Context
       activeActivityId,
@@ -296,6 +468,10 @@ export const ActivityProvider = ({
       page,
       limit,
       statusFilter,
+      sort,
+      setSort,
+      order,
+      setOrder,
       activeActivityId,
       activeActivityDetails,
       progressReports,
@@ -305,6 +481,7 @@ export const ActivityProvider = ({
       createActivityMutation,
       updateActivityMutation,
       updateActivityStatusMutation,
+      updateActivityFeaturedMutation,
       deleteActivityMutation,
       createProgressReportMutation,
       updateProgressReportMutation,

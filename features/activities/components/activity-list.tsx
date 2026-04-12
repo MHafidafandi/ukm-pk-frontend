@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
@@ -11,6 +12,7 @@ import { getErrorMessage } from "@/lib/api/client";
 import { useActivityContext } from "../contexts/ActivityContext";
 import { Activity } from "../services/activityService";
 import {
+  ActivityStatus,
   CreateActivityInput,
   CreateActivitySchema,
 } from "@/lib/validations/activity-schema";
@@ -20,6 +22,7 @@ import { ActivityFormDialog } from "./activity-form-dialog";
 import { ActivityDeleteDialog } from "./activity-delete-dialog";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
+import { useQueryClient } from "@tanstack/react-query";
 
 const emptyForm: CreateActivityInput = {
   judul: "",
@@ -42,12 +45,18 @@ export const ActivityList = () => {
     pagination,
     createActivity,
     updateActivity,
+    updateActivityStatus,
+    updateActivityFeatured,
     deleteActivity,
     isFetchingActivities,
     search,
     setSearch,
     statusFilter,
     setStatusFilter,
+    sort,
+    setSort,
+    order,
+    setOrder,
     page,
     setPage,
   } = useActivityContext();
@@ -144,6 +153,57 @@ export const ActivityList = () => {
     }
   };
 
+  const handleStatusChange = async (item: Activity, status: ActivityStatus) => {
+    try {
+      await updateActivityStatus({ id: item.id, data: { status } });
+      toast.success("Status activity berhasil diperbarui");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || "Gagal memperbarui status activity");
+    }
+  };
+
+  // Di dalam komponen, tambah:
+  const queryClient = useQueryClient();
+
+  // Ganti handleFeaturedChange:
+  const handleFeaturedChange = async (item: Activity, isFeatured: boolean) => {
+    // Optimistic update — langsung update UI sebelum server response
+    queryClient.setQueriesData(
+      { queryKey: ["activities"] }, // sesuaikan queryKey di context kamu
+      (old: any) => {
+        if (!old) return old;
+        // Handle struktur { data: { activities: [...] } } atau { activities: [...] }
+        const updateList = (list: Activity[]) =>
+          list.map((a) =>
+            a.id === item.id ? { ...a, is_featured: isFeatured } : a,
+          );
+
+        if (old?.data?.activities) {
+          return {
+            ...old,
+            data: { ...old.data, activities: updateList(old.data.activities) },
+          };
+        }
+        if (Array.isArray(old)) return updateList(old);
+        return old;
+      },
+    );
+
+    try {
+      await updateActivityFeatured({
+        id: item.id,
+        data: { is_featured: isFeatured },
+      });
+      toast.success("Featured activity berhasil diperbarui");
+    } catch (err: unknown) {
+      // Rollback jika gagal
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      toast.error(
+        getErrorMessage(err) || "Gagal memperbarui featured activity",
+      );
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleting) return;
     try {
@@ -227,14 +287,35 @@ export const ActivityList = () => {
             <button
               key={s.id}
               onClick={() => setStatusFilter(s.id)}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${statusFilter === s.id
-                ? "bg-primary text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
-                }`}
+              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                statusFilter === s.id
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10"
+              }`}
             >
               {s.label}
             </button>
           ))}
+        </div>
+
+        {/* Sort Controls */}
+        <div className="flex w-full flex-wrap gap-2 lg:w-auto">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+          >
+            <option value="tanggal">Sort by Date</option>
+            <option value="judul">Sort by Title</option>
+            <option value="status">Sort by Status</option>
+          </select>
+
+          <button
+            onClick={() => setOrder(order === "ASC" ? "DESC" : "ASC")}
+            className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
+          >
+            {order === "ASC" ? "↑ Ascending" : "↓ Descending"}
+          </button>
         </div>
       </div>
 
@@ -249,6 +330,8 @@ export const ActivityList = () => {
           onEdit={openEdit}
           onDelete={openDelete}
           onViewDetail={handleViewDetail}
+          onStatusChange={handleStatusChange}
+          onFeaturedChange={handleFeaturedChange}
         />
       )}
 
@@ -276,14 +359,15 @@ export const ActivityList = () => {
               <button
                 key={p}
                 onClick={() => setPage(p)}
-                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
-                  }`}
+                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === p
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5"
+                }`}
               >
                 {p}
               </button>
-            )
+            ),
           )}
 
           <button

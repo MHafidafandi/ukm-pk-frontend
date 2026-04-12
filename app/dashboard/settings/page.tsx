@@ -20,6 +20,10 @@ import {
   MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { getMyUserInfo } from "@/features/auth/services/authService";
+import { env } from "@/configs/env";
 
 export default function SettingsPage() {
   const {
@@ -36,10 +40,10 @@ export default function SettingsPage() {
   } = useAuth();
 
   // Profile form state
-  const [nama, setNama] = useState(currentUser?.nama ?? "");
-  const [nomorTelepon, setNomorTelepon] = useState(currentUser?.nomor_telepon ?? "");
-  const [alamat, setAlamat] = useState(currentUser?.alamat ?? "");
-  const [angkatan, setAngkatan] = useState(String(currentUser?.angkatan ?? ""));
+  const [nama, setNama] = useState<string | null>(null);
+  const [nomorTelepon, setNomorTelepon] = useState<string | null>(null);
+  const [alamat, setAlamat] = useState<string | null>(null);
+  const [angkatan, setAngkatan] = useState<string | null>(null);
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -52,16 +56,52 @@ export default function SettingsPage() {
   // Avatar
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { data: userInfo } = useQuery({
+    queryKey: ["auth", "users", "me", currentUser?.id, currentUser?.updated_at],
+    queryFn: getMyUserInfo,
+    enabled: Boolean(currentUser),
+  });
+
+  const profileUser = userInfo ?? currentUser;
+  const avatarSrc = userInfo?.avatar_url
+    ? `${env.MEDIA_URL}${userInfo.avatar_url}`
+    : "";
+
+  const getAvatarInitials = () => {
+    const parts = (profileUser?.nama ?? "User")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (parts.length === 0) return "U";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  };
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const resolvedNama = (nama ?? profileUser?.nama ?? "").trim();
+      const resolvedNomorTelepon = (
+        nomorTelepon ??
+        profileUser?.nomor_telepon ??
+        ""
+      ).trim();
+      const resolvedAlamat = (alamat ?? profileUser?.alamat ?? "").trim();
+      const resolvedAngkatan = (
+        angkatan ?? String(profileUser?.angkatan ?? "")
+      ).trim();
+
       await updateProfile({
-        nama,
-        nomor_telepon: nomorTelepon || undefined,
-        alamat: alamat || undefined,
-        angkatan: angkatan ? Number(angkatan) : undefined,
+        nama: resolvedNama,
+        nomor_telepon: resolvedNomorTelepon || undefined,
+        alamat: resolvedAlamat || undefined,
+        angkatan: resolvedAngkatan ? Number(resolvedAngkatan) : undefined,
       });
       refreshUser();
+      setNama(null);
+      setNomorTelepon(null);
+      setAlamat(null);
+      setAngkatan(null);
     } catch {
       // Error handled by AuthContext mutation
     }
@@ -126,18 +166,18 @@ export default function SettingsPage() {
 
   const getDivisionName = () => {
     if (
-      currentUser?.division &&
-      typeof currentUser.division === "object" &&
-      "nama_divisi" in currentUser.division
+      profileUser?.division &&
+      typeof profileUser.division === "object" &&
+      "nama_divisi" in profileUser.division
     ) {
-      return currentUser.division.nama_divisi;
+      return profileUser.division.nama_divisi;
     }
     if (
-      currentUser?.division &&
-      typeof currentUser.division === "object" &&
-      "name" in currentUser.division
+      profileUser?.division &&
+      typeof profileUser.division === "object" &&
+      "name" in profileUser.division
     ) {
-      return (currentUser.division as any).name;
+      return (profileUser.division as { name?: string }).name ?? "Tanpa Divisi";
     }
     return "Tanpa Divisi";
   };
@@ -177,17 +217,15 @@ export default function SettingsPage() {
               {/* Avatar Section */}
               <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-end -mt-10 mb-8 relative z-10">
                 <div className="relative group">
-                  <div className="w-32 h-32 rounded-full border-4 border-surface-light dark:border-surface-dark bg-gray-200 overflow-hidden shadow-md">
-                    <img
-                      alt="User Profile Picture"
-                      className="w-full h-full object-cover"
-                      src={
-                        currentUser?.avatar_url
-                          ? `${process.env.NEXT_PUBLIC_API_URL || ""}${currentUser.avatar_url}`
-                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.nama || "User")}&background=random`
-                      }
+                  <Avatar className="h-32 w-32 border-4 border-surface-light bg-slate-200 shadow-md dark:border-surface-dark">
+                    <AvatarImage
+                      src={avatarSrc || undefined}
+                      alt={profileUser?.nama || "User"}
                     />
-                  </div>
+                    <AvatarFallback className="text-xl font-bold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                      {getAvatarInitials()}
+                    </AvatarFallback>
+                  </Avatar>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingAvatar}
@@ -221,7 +259,7 @@ export default function SettingsPage() {
                   </button>
                   <button
                     onClick={handleDeleteAvatar}
-                    disabled={isDeletingAvatar || !currentUser?.avatar_url}
+                    disabled={isDeletingAvatar || !avatarSrc}
                     className="flex-1 sm:flex-none items-center justify-center px-4 py-2.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold border border-transparent hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
                   >
                     {isDeletingAvatar ? "Menghapus..." : "Hapus Foto"}
@@ -249,7 +287,7 @@ export default function SettingsPage() {
                         id="fullName"
                         placeholder="Masukkan nama lengkap"
                         type="text"
-                        value={nama}
+                        value={nama ?? profileUser?.nama ?? ""}
                         onChange={(e) => setNama(e.target.value)}
                       />
                     </div>
@@ -267,7 +305,10 @@ export default function SettingsPage() {
                       <input
                         className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-800/50 text-text-secondary-light dark:text-text-secondary-dark cursor-not-allowed"
                         id="role"
-                        defaultValue={currentUser?.roles?.map((r) => r.name).join(", ") || "-"}
+                        value={
+                          profileUser?.roles?.map((r) => r.name).join(", ") ||
+                          "-"
+                        }
                         readOnly
                       />
                     </div>
@@ -285,7 +326,7 @@ export default function SettingsPage() {
                       <input
                         className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-800/50 text-text-secondary-light dark:text-text-secondary-dark cursor-not-allowed"
                         id="email"
-                        defaultValue={currentUser?.email}
+                        value={profileUser?.email || "-"}
                         readOnly
                       />
                     </div>
@@ -305,7 +346,7 @@ export default function SettingsPage() {
                         id="angkatan"
                         placeholder="Tahun angkatan"
                         type="number"
-                        value={angkatan}
+                        value={angkatan ?? String(profileUser?.angkatan ?? "")}
                         onChange={(e) => setAngkatan(e.target.value)}
                       />
                     </div>
@@ -325,7 +366,7 @@ export default function SettingsPage() {
                         id="phone"
                         placeholder="Masukkan nomor telepon"
                         type="text"
-                        value={nomorTelepon}
+                        value={nomorTelepon ?? profileUser?.nomor_telepon ?? ""}
                         onChange={(e) => setNomorTelepon(e.target.value)}
                       />
                     </div>
@@ -345,7 +386,7 @@ export default function SettingsPage() {
                         id="address"
                         placeholder="Masukkan alamat"
                         type="text"
-                        value={alamat}
+                        value={alamat ?? profileUser?.alamat ?? ""}
                         onChange={(e) => setAlamat(e.target.value)}
                       />
                     </div>
@@ -366,10 +407,10 @@ export default function SettingsPage() {
                         {getDivisionName()}
                       </span>
                     </div>
-                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark border border-border-light dark:border-border-dark">
                       <ShieldCheck className="w-4 h-4 mr-1.5" />
                       <span className="text-xs font-bold uppercase tracking-wide">
-                        {currentUser?.status || "Status Unknown"}
+                        {profileUser?.status || "Status Unknown"}
                       </span>
                     </div>
                   </div>
@@ -381,7 +422,9 @@ export default function SettingsPage() {
                     type="submit"
                     disabled={isUpdatingProfile}
                   >
-                    {isUpdatingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {isUpdatingProfile && (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    )}
                     {isUpdatingProfile ? "Menyimpan..." : "Simpan Perubahan"}
                   </button>
                 </div>
@@ -429,9 +472,15 @@ export default function SettingsPage() {
                     <button
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"
                       type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      onClick={() =>
+                        setShowCurrentPassword(!showCurrentPassword)
+                      }
                     >
-                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showCurrentPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -458,7 +507,11 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
                     >
-                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showNewPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                   <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">
@@ -486,9 +539,15 @@ export default function SettingsPage() {
                     <button
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                     >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -497,9 +556,16 @@ export default function SettingsPage() {
                   <button
                     className="w-full px-6 py-2.5 bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark border border-border-light dark:border-border-dark hover:border-primary dark:hover:border-primary hover:text-primary dark:hover:text-primary rounded-lg font-bold text-sm transition-all focus:ring-2 focus:ring-primary/30 disabled:opacity-50 flex items-center justify-center gap-2"
                     type="submit"
-                    disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                    disabled={
+                      isChangingPassword ||
+                      !currentPassword ||
+                      !newPassword ||
+                      !confirmPassword
+                    }
                   >
-                    {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {isChangingPassword && (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    )}
                     {isChangingPassword ? "Mengupdate..." : "Update Password"}
                   </button>
                 </div>

@@ -67,6 +67,8 @@ export type DonationParams = {
   page?: number;
   limit?: number;
   search?: string;
+  sort?: string;
+  order?: "ASC" | "DESC";
   status?: string;
   metode?: string;
   start_date?: string;

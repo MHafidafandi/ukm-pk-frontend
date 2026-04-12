@@ -4,7 +4,7 @@ import { Heart, Globe, AtSign, MessageCircle, Send } from "lucide-react";
 
 export default function LandingFooter() {
   return (
-    <footer className="bg-[#0f172a] pt-20 pb-10 text-slate-300">
+    <footer id="contact" className="bg-[#0f172a] pt-20 pb-10 text-slate-300">
       <div className="mx-auto mb-16 grid max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
         {/* Brand */}
         <div className="flex flex-col gap-6">

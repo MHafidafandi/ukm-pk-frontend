@@ -3,14 +3,18 @@
 import { useState } from "react";
 import { Eye, Calendar, LocateIcon, Pencil } from "lucide-react";
 import { Activity } from "../services/activityService";
+import { ActivityStatus } from "@/lib/validations/activity-schema";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { env } from "@/configs/env";
 
 type Props = {
   activities: Activity[];
   onEdit: (activity: Activity) => void;
   onDelete: (activity: Activity) => void;
   onViewDetail: (activity: Activity) => void;
+  onStatusChange: (activity: Activity, status: ActivityStatus) => void;
+  onFeaturedChange: (activity: Activity, isFeatured: boolean) => void;
 };
 
 export const ActivityGrid = ({
@@ -18,8 +22,20 @@ export const ActivityGrid = ({
   onEdit,
   onDelete,
   onViewDetail,
+  onStatusChange,
+  onFeaturedChange,
 }: Props) => {
+  console.log("Rendering ActivityGrid with activities:", activities);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
+  const normalizeStatusForSelect = (status: string): ActivityStatus => {
+    const statusLower = status.toLowerCase();
+    if (statusLower === "perencanaan") return "pending";
+    if (statusLower === "berjalan") return "ongoing";
+    if (statusLower === "selesai") return "completed";
+    if (statusLower === "dibatalkan") return "cancelled";
+    return statusLower as ActivityStatus;
+  };
 
   if (activities.length === 0) {
     return (
@@ -33,9 +49,12 @@ export const ActivityGrid = ({
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
       {activities.map((item) => {
         const statusLower = item.status.toLowerCase();
-        const isOngoing = statusLower === "ongoing" || statusLower === "berjalan";
-        const isCompleted = statusLower === "selesai" || statusLower === "completed";
-        const isPending = statusLower === "perencanaan" || statusLower === "pending";
+        const isOngoing =
+          statusLower === "ongoing" || statusLower === "berjalan";
+        const isCompleted =
+          statusLower === "selesai" || statusLower === "completed";
+        const isPending =
+          statusLower === "perencanaan" || statusLower === "pending";
 
         let statusConfig: { label: string; colorClass: string } = {
           label: item.status,
@@ -44,14 +63,23 @@ export const ActivityGrid = ({
         if (isOngoing)
           statusConfig = { label: "Ongoing", colorClass: "bg-blue-500/90" };
         else if (isCompleted)
-          statusConfig = { label: "Completed", colorClass: "bg-emerald-500/90" };
+          statusConfig = {
+            label: "Completed",
+            colorClass: "bg-emerald-500/90",
+          };
         else if (isPending)
           statusConfig = { label: "Planning", colorClass: "bg-amber-500/90" };
         else
           statusConfig = { label: "Cancelled", colorClass: "bg-rose-500/90" };
 
+        const featuredValue = item.is_featured as unknown;
+        const isFeatured =
+          featuredValue === true ||
+          featuredValue === 1 ||
+          featuredValue === "true";
+
         const imgUrl = item.thumbnail
-          ? `${process.env.NEXT_PUBLIC_MEDIA_URL ?? ""}${item.thumbnail}`
+          ? `${env.MEDIA_URL}${item.thumbnail}`
           : null;
 
         const showFallback = !imgUrl || imgErrors[item.id];
@@ -74,7 +102,7 @@ export const ActivityGrid = ({
                   }
                 />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-linear-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
                   <Calendar className="size-10 text-slate-300 dark:text-slate-600" />
                   <span className="text-xs text-slate-400 dark:text-slate-500">
                     No thumbnail
@@ -88,6 +116,12 @@ export const ActivityGrid = ({
               >
                 {statusConfig.label}
               </div>
+
+              {isFeatured && (
+                <div className="absolute left-3 top-3 rounded-full bg-amber-500/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                  Featured
+                </div>
+              )}
             </div>
 
             {/* ── Content ── */}
@@ -102,7 +136,7 @@ export const ActivityGrid = ({
                   </span>
                   <span className="mx-1">•</span>
                   <LocateIcon className="size-4" />
-                  <span className="truncate max-w-[120px]">{item.lokasi}</span>
+                  <span className="truncate max-w-30">{item.lokasi}</span>
                 </div>
                 <h3 className="line-clamp-2 text-lg font-bold text-slate-900 dark:text-white">
                   {item.judul}
@@ -110,6 +144,31 @@ export const ActivityGrid = ({
                 <p className="mt-2 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
                   {item.deskripsi}
                 </p>
+
+                <div className="mt-3">
+                  <select
+                    value={normalizeStatusForSelect(item.status)}
+                    onChange={(e) =>
+                      onStatusChange(item, e.target.value as ActivityStatus)
+                    }
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    <option value="pending">Planning</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                <label className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => onFeaturedChange(item, e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  Featured
+                </label>
               </div>
 
               <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -126,6 +185,12 @@ export const ActivityGrid = ({
                 >
                   <Eye className="size-4" />
                   Details
+                </button>
+                <button
+                  onClick={() => onDelete(item)}
+                  className="flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-300 dark:hover:bg-rose-900/30"
+                >
+                  Delete
                 </button>
               </div>
             </div>

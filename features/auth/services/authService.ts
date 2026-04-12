@@ -15,6 +15,28 @@ type AuthTokenResponse = {
   expires_in?: number;
 };
 
+type UserProfileResponse = {
+  id: string;
+  nama: string;
+  username: string;
+  email: string;
+  nomor_telepon?: string | null;
+  alamat?: string | null;
+  angkatan?: number | null;
+  status?: string;
+  avatar_url?: string | null;
+  division?: {
+    id: string;
+    nama_divisi: string;
+  } | null;
+  roles?: Array<{
+    id: string;
+    name: string;
+  }>;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export const login = async (body: LoginInput) => {
   const payload = (await api.post("/auth/login", body, {
     withCredentials: true,
@@ -47,7 +69,7 @@ export const logoutAll = async (userId: string) => {
   return unwrapPayload(payload);
 };
 
-export const updateProfile = async (body: any) => {
+export const updateProfile = async (body: Record<string, unknown>) => {
   const payload = await api.put("/users/me", body);
   return unwrapPayload(payload);
 };
@@ -73,4 +95,13 @@ export const uploadAvatar = async (file: File) => {
 export const deleteAvatar = async () => {
   const payload = await api.delete("/users/me/avatar");
   return unwrapPayload(payload);
+};
+
+export const getMyUserInfo = async () => {
+  try {
+    const payload = await api.get("/users/me");
+    return unwrapPayload(payload) as UserProfileResponse;
+  } catch {
+    return null;
+  }
 };

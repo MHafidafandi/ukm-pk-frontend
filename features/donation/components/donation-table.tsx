@@ -1,6 +1,7 @@
 import { Donation, DonationStatus } from "../services/donationService";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
+import { env } from "@/configs/env";
 
 type Props = {
   donations: Donation[];
@@ -396,7 +397,7 @@ export const DonationTable = ({
                               window.open(
                                 proofUrl.startsWith("http")
                                   ? proofUrl
-                                  : `${process.env.NEXT_PUBLIC_MEDIA_URL}${proofUrl}`,
+                                  : `${env.MEDIA_URL}${proofUrl}`,
                                 "_blank",
                               )
                             }

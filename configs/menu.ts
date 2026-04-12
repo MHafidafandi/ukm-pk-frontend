@@ -58,7 +58,7 @@ export const MENU_ITEMS = [
   },
   {
     title: "Company Profile Content",
-    url: "/dashboard/company-profile",
+    url: "/dashboard/landing",
     icon: Info,
     // Leaving permission undefined so anyone with dashboard access can theoretically access it if they have UI, or adjust if you have a specific permission.
   },

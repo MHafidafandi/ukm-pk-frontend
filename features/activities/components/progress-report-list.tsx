@@ -30,8 +30,9 @@ import {
   CreateProgressReportSchema,
 } from "@/lib/validations/activity-schema";
 import { ProgressDocument } from "../services/activityService";
+import { env } from "@/configs/env";
 
-const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
+const MEDIA_BASE_URL = env.MEDIA_URL;
 
 type Props = {
   activityId: string;

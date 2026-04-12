@@ -81,6 +81,9 @@ export interface AssetFilters {
 export interface LoanFilters {
   page?: number;
   limit?: number;
+  search?: string;
+  sort?: string;
+  order?: string;
 }
 
 export interface PaginationMeta {
@@ -124,7 +127,6 @@ export interface AssetsStatsResponse {
   };
 }
 
-
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /** NOTE: Kalau base URL di api client kamu sudah include "/api/v1",
@@ -146,7 +148,9 @@ function buildParams(filters?: Record<string, any>): string {
 // ── Assets API ─────────────────────────────────────────────────────────────
 
 /** GET /assets?page=1&limit=10&kondisi=...&search=... */
-export async function getAssets(filters?: AssetFilters): Promise<AssetsResponse> {
+export async function getAssets(
+  filters?: AssetFilters,
+): Promise<AssetsResponse> {
   const data = await api.get(`/assets${buildParams(filters)}`);
   return data as any;
 }
@@ -257,7 +261,7 @@ export async function returnLoan(
 /** POST /loans/:id/mark-lost */
 export async function markLoanAsLost(
   id: string,
-  body: { catatan: string }
+  body: { catatan: string },
 ): Promise<{ data: Loan }> {
   const data = await api.post(`/loans/${id}/mark-lost`, body);
   return data as any;

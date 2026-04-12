@@ -19,6 +19,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { User } from "@/features/auth/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { getMyUserInfo } from "@/features/auth/services/authService";
+import { env } from "@/configs/env";
 import Link from "next/link";
 
 type NavUserProps = {
@@ -26,8 +29,23 @@ type NavUserProps = {
   readonly logout: () => void;
 };
 
+const getAvatarInitials = (name?: string) => {
+  const parts = (name ?? "User").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+};
+
 export function NavUser({ user, logout }: NavUserProps) {
   const { isMobile } = useSidebar();
+  const { data: userInfo } = useQuery({
+    queryKey: ["auth", "users", "me", user?.id, user?.updated_at],
+    queryFn: getMyUserInfo,
+    enabled: Boolean(user),
+  });
+  const avatarSrc = userInfo?.avatar_url
+    ? `${env.MEDIA_URL}${userInfo.avatar_url}`
+    : "";
 
   return (
     <SidebarMenu>
@@ -39,8 +57,13 @@ export function NavUser({ user, logout }: NavUserProps) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user?.avatar_url} alt={user?.nama} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarImage
+                  src={avatarSrc || undefined}
+                  alt={user?.nama || "User"}
+                />
+                <AvatarFallback className="rounded-lg">
+                  {getAvatarInitials(user?.nama)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user?.nama}</span>
@@ -58,8 +81,13 @@ export function NavUser({ user, logout }: NavUserProps) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user?.avatar_url} alt={user?.nama} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarImage
+                    src={avatarSrc || undefined}
+                    alt={user?.nama || "User"}
+                  />
+                  <AvatarFallback className="rounded-lg">
+                    {getAvatarInitials(user?.nama)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user?.nama}</span>

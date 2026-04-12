@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/select";
 import { useAssetContext } from "@/features/inventory/contexts/AssetContext";
 import { Asset } from "@/features/inventory/services/assetService";
+import { env } from "@/configs/env";
+const MEDIA_BASE_URL = env.MEDIA_URL;
 
 // ── Schema ─────────────────────────────────────────────────────────────────
 const assetSchema = z.object({
@@ -69,8 +71,6 @@ const EMPTY_DEFAULTS: AssetSchema = {
   jumlah: 1,
   kondisi: "baik",
 };
-
-const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
 
 // ── Component ──────────────────────────────────────────────────────────────
 export const AssetFormDialog = ({
@@ -135,7 +135,7 @@ export const AssetFormDialog = ({
       }
       onOpenChange(nextOpen);
     },
-    [onOpenChange, resetAll]
+    [onOpenChange, resetAll],
   );
 
   // ── Handle foto change ─────────────────────────────────────────────────
@@ -284,11 +284,15 @@ export const AssetFormDialog = ({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="baik">Baik</SelectItem>
-                        <SelectItem value="rusak_ringan">Rusak Ringan</SelectItem>
+                        <SelectItem value="rusak_ringan">
+                          Rusak Ringan
+                        </SelectItem>
                         <SelectItem value="rusak_berat">Rusak Berat</SelectItem>
                         <SelectItem value="hilang">Hilang</SelectItem>
                         <SelectItem value="dipinjam">Dipinjam</SelectItem>
-                        <SelectItem value="dalam_perbaikan">Dalam Perbaikan</SelectItem>
+                        <SelectItem value="dalam_perbaikan">
+                          Dalam Perbaikan
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -355,7 +359,6 @@ export const AssetFormDialog = ({
               </div>
               {fotoPreview && (
                 <div className="mt-2 rounded-md border overflow-hidden w-fit">
-
                   <img
                     src={`${MEDIA_BASE_URL}${fotoPreview}`}
                     alt="Preview foto aset"

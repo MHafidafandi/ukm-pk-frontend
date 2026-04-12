@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { UserPlus, Heart, Megaphone } from "lucide-react";
 import type { LandingContent } from "../types";
 import Image from "next/image";
@@ -34,14 +35,20 @@ export default function HeroSection({ content }: HeroSectionProps) {
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <button className="flex items-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-white transition-transform hover:scale-105">
+              <Link
+                href="#activities"
+                className="flex items-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-white transition-transform hover:scale-105"
+              >
                 <UserPlus className="size-5" />
-                Rekrutmen
-              </button>
-              <button className="flex items-center gap-2 rounded-xl border-2 border-primary px-8 py-4 font-bold text-primary transition-colors hover:bg-primary/5">
+                Aktivitas
+              </Link>
+              <Link
+                href="#donations"
+                className="flex items-center gap-2 rounded-xl border-2 border-primary px-8 py-4 font-bold text-primary transition-colors hover:bg-primary/5"
+              >
                 <Heart className="size-5" />
                 Donasi
-              </button>
+              </Link>
             </div>
           </div>
 

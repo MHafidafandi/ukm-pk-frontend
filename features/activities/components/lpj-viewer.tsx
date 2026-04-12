@@ -15,8 +15,9 @@ import { useRef, useState } from "react";
 import { FileCheck, ExternalLink, Trash2, Upload, Loader2 } from "lucide-react";
 import { format, Locale } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { env } from "@/configs/env";
 
-const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
+const MEDIA_BASE_URL = env.MEDIA_URL;
 
 type Props = {
   activityId: string;
@@ -134,9 +135,10 @@ export const LpjViewer = ({ activityId }: Props) => {
             <div
               onClick={!isUploading ? handleClickUpload : undefined}
               className={`flex-1 min-h-50 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center p-6 text-center group
-                ${isUploading
-                  ? "border-primary/50 bg-primary/5 dark:bg-primary/10 cursor-wait"
-                  : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
+                ${
+                  isUploading
+                    ? "border-primary/50 bg-primary/5 dark:bg-primary/10 cursor-wait"
+                    : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary/50 cursor-pointer"
                 }`}
             >
               {isUploading ? (

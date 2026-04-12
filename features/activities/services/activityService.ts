@@ -4,6 +4,7 @@ import {
   CreateActivityInput,
   UpdateActivityInput,
   UpdateActivityStatusInput,
+  UpdateActivityFeaturedInput,
   CreateProgressReportInput,
   UpdateProgressReportInput,
   CreateLpjInput,
@@ -14,6 +15,7 @@ export type {
   CreateActivityInput,
   UpdateActivityInput,
   UpdateActivityStatusInput,
+  UpdateActivityFeaturedInput,
   CreateProgressReportInput,
   UpdateProgressReportInput,
   CreateLpjInput,
@@ -29,10 +31,35 @@ export interface Activity {
   tanggal: string;
   lokasi: string;
   status: ActivityStatus;
+  is_featured: boolean;
   thumbnail: string;
   created_at: string;
   updated_at: string;
 }
+
+type ActivityApiItem = Omit<Activity, "status" | "is_featured"> & {
+  status?: string;
+  is_featured?: boolean | number | string;
+};
+
+const normalizeBoolean = (value: unknown): boolean => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string")
+    return value.toLowerCase() === "true" || value === "1";
+  return false;
+};
+
+const normalizeActivity = (activity: ActivityApiItem): Activity => {
+  const status = String(
+    activity.status ?? "pending",
+  ).toLowerCase() as ActivityStatus;
+  return {
+    ...activity,
+    status,
+    is_featured: normalizeBoolean(activity.is_featured),
+  };
+};
 
 export interface ProgressReport {
   id: string;
@@ -66,6 +93,8 @@ export type ActivityParams = {
   page?: number;
   limit?: number;
   search?: string;
+  sort?: string;
+  order?: "ASC" | "DESC";
   status?: string;
 };
 
@@ -83,13 +112,26 @@ export async function getActivities(
   params?: ActivityParams,
 ): Promise<{ data: { activities: Activity[]; pagination: PaginationMeta } }> {
   const data = await api.get("/activities", { params });
-  return data;
+  const activities =
+    data?.data?.activities?.map((activity: ActivityApiItem) =>
+      normalizeActivity(activity),
+    ) ?? [];
+  return {
+    ...data,
+    data: {
+      ...data.data,
+      activities,
+    },
+  };
 }
 
 /** GET /activities/:id */
 export async function getActivity(id: string): Promise<{ data: Activity }> {
   const data = await api.get(`/activities/${id}`);
-  return data;
+  return {
+    ...data,
+    data: normalizeActivity(data.data as ActivityApiItem),
+  };
 }
 
 /** POST /activities */
@@ -122,7 +164,44 @@ export async function updateActivityStatus(
   id: string,
   body: UpdateActivityStatusInput,
 ): Promise<{ message: string }> {
-  return await api.patch(`/activities/${id}/status`, body);
+  const statusMap: Record<string, string> = {
+    pending: "perencanaan",
+    ongoing: "berjalan",
+    completed: "selesai",
+    cancelled: "dibatalkan",
+    perencanaan: "pending",
+    berjalan: "ongoing",
+    selesai: "completed",
+    dibatalkan: "cancelled",
+  };
+
+  try {
+    return await api.patch(`/activities/${id}/status`, body);
+  } catch {
+    const fallbackStatus =
+      statusMap[String(body.status)] ?? String(body.status);
+    return await api.patch(`/activities/${id}/status`, {
+      status: fallbackStatus,
+    });
+  }
+}
+
+/** PATCH /activities/:id/featured */
+export async function updateActivityFeatured(
+  id: string,
+  body: UpdateActivityFeaturedInput,
+): Promise<{ message: string }> {
+  try {
+    return await api.patch(`/activities/${id}/featured`, body);
+  } catch {
+    try {
+      return await api.patch(`/activities/${id}/featured`, {
+        featured: body.is_featured,
+      });
+    } catch {
+      return await api.patch(`/activities/${id}/featured`);
+    }
+  }
 }
 
 /** DELETE /activities/:id */
@@ -136,6 +215,9 @@ export async function getProgressReports(params?: {
   activity_id?: string;
   page?: number;
   limit?: number;
+  search?: string;
+  sort?: string;
+  order?: "ASC" | "DESC";
 }): Promise<{
   data: { reports: ProgressReport[]; pagination: PaginationMeta };
 }> {
@@ -179,8 +261,10 @@ export async function getLpjByActivity(
   try {
     const data = await api.get(`/lpj/activity/${activityId}`);
     return data;
-  } catch (err: any) {
-    if (err?.response?.status === 404) return { data: null };
+  } catch (err: unknown) {
+    const status = (err as { response?: { status?: number } })?.response
+      ?.status;
+    if (status === 404) return { data: null };
     throw err;
   }
 }
