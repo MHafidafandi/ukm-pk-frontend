@@ -5,10 +5,27 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
 import type { Registrant } from "@/features/recruitment/services/recruitmentService";
 import { RegistrantsTable } from "./registrants-table";
+import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useRoleContext } from "@/features/roles/contexts/RoleContext";
 
 type Props = {
   recruitmentId: string;
@@ -19,6 +36,7 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
   const {
     setActiveRecruitmentId,
     registrants,
+    // divisions,
     activeRecruitmentDetails,
     isFetchingRegistrants,
     isFetchingRecruitmentDetails,
@@ -32,22 +50,47 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     setRegistrantStatusFilter,
     registrantPagination,
   } = useRecruitmentContext();
+  const { divisions } = useDivisionContext();
+  const { roles } = useRoleContext();
+
+  const [selectedRegistrant, setSelectedRegistrant] = useState<Registrant | null>(null);
+  const [division, setDivision] = useState("");
+  const [role, setRole] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     setActiveRecruitmentId(recruitmentId);
     return () => setActiveRecruitmentId(null);
   }, [recruitmentId]);
 
+
   const recruitment = activeRecruitmentDetails;
 
-  const handleAcceptRegistrant = async (registrant: Registrant) => {
+  const handleAcceptClick = (registrant: Registrant) => {
+    setSelectedRegistrant(registrant);
+    setDivision("");
+    setRole([]);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmAccept = async () => {
+    if (!division || role.length === 0) {
+      toast.error("Please select both division and role");
+      return;
+    }
+
     try {
-      await acceptRegistrant(registrant.id);
+      if (!selectedRegistrant) return;
+      await acceptRegistrant({
+        registrantId: selectedRegistrant.id,
+        division_id: division,
+        role_ids: role,
+      });
+      setIsModalOpen(false);
     } catch {
       toast.error("Failed to accept registrant");
     }
   };
-
   const handleRejectRegistrant = async (registrant: Registrant) => {
     try {
       await rejectRegistrant(registrant.id);
@@ -63,6 +106,8 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
       </div>
     );
   }
+
+
 
   return (
     <div className="space-y-6">
@@ -96,9 +141,62 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
         onSearchChange={setRegistrantSearch}
         statusFilter={registrantStatusFilter}
         onStatusFilterChange={setRegistrantStatusFilter}
-        onAcceptRegistrant={handleAcceptRegistrant}
+        onAcceptRegistrant={handleAcceptClick}
         onRejectRegistrant={handleRejectRegistrant}
       />
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Division and Role</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4 mt-2">
+            <Select value={division} onValueChange={setDivision}>
+              <label className="text-sm font-medium">Select Division</label>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Division" />
+              </SelectTrigger>
+              <SelectContent>
+                {divisions.map((div) => (
+                  <SelectItem key={div.id} value={div.id}>
+                    {div.nama_divisi}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Select Roles</label>
+              <div className="flex flex-col gap-2 rounded-md border p-3">
+                {roles.map((r) => (
+                  <div key={r.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`role-${r.id}`}
+                      checked={role.includes(r.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setRole([...role, r.id]);
+                        } else {
+                          setRole(role.filter(id => id !== r.id));
+                        }
+                      }}
+                    />
+                    <label htmlFor={`role-${r.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{r.name}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmAccept}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
