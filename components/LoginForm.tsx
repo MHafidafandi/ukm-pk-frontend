@@ -85,10 +85,18 @@ export function LoginForm({
     try {
       await login(formData);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const loginError = error as {
+        response?: {
+          data?: {
+            message?: string;
+            error?: string;
+          };
+        };
+      };
       setServerError(
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
+        loginError.response?.data?.message ||
+          loginError.response?.data?.error ||
           "Gagal masuk",
       );
       triggerShake();
@@ -108,12 +116,14 @@ export function LoginForm({
       {serverError && (
         <div
           role="alert"
-          className="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm"
+          className="p-4 bg-error-container border-l-4 border-error rounded-r-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm"
         >
-          <LucideAlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <LucideAlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="text-sm font-bold text-red-800">Gagal Masuk</h3>
-            <p className="text-xs font-medium text-red-700 mt-0.5 leading-relaxed">
+            <h3 className="font-interface text-sm font-bold text-on-error-container">
+              Gagal Masuk
+            </h3>
+            <p className="font-interface text-xs font-medium text-on-error-container mt-0.5 leading-relaxed">
               {serverError}
             </p>
           </div>
@@ -121,12 +131,12 @@ export function LoginForm({
       )}
 
       <div>
-        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+        <label className="font-interface block text-sm font-semibold text-on-surface-variant mb-1.5">
           Email
         </label>
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <LucideMail className="text-slate-400 group-focus-within:text-primary transition-colors size-5" />
+            <LucideMail className="text-on-surface-variant group-focus-within:text-primary transition-colors size-5" />
           </div>
           <input
             ref={emailInputRef}
@@ -138,26 +148,26 @@ export function LoginForm({
             disabled={isLoading}
             autoComplete="email"
             aria-invalid={!!errors.email}
-            className={`block w-full pl-11 pr-11 py-3 bg-slate-50 dark:bg-slate-800/50 border rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none ${
+            className={`font-interface block w-full pl-11 pr-11 py-3 bg-surface-container-low border-0 border-b-2 rounded-none text-on-surface placeholder:text-on-surface-variant focus:ring-0 focus:border-primary transition-all outline-none ${
               errors.email
-                ? "border-red-400"
-                : "border-slate-200 dark:border-slate-700"
+                ? "border-error"
+                : "border-outline-variant"
             }`}
             placeholder="m@sipeduli.com"
           />
           <div className="absolute inset-y-0 right-0 pr-4 flex items-center gap-1.5 pointer-events-none">
             {errors.email && (
-              <LucideAlertCircle className="text-red-500 animate-in zoom-in duration-300 size-5" />
+              <LucideAlertCircle className="text-error animate-in zoom-in duration-300 size-5" />
             )}
             {isEmailValid && (
-              <LucideCheckCircle2 className="text-green-500 animate-in zoom-in duration-300 size-5" />
+              <LucideCheckCircle2 className="text-primary animate-in zoom-in duration-300 size-5" />
             )}
           </div>
         </div>
         <div className="min-h-5 mt-1">
           {errors.email && (
-            <p className="text-[12px] font-semibold text-red-500 flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200">
-              <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+            <p className="font-interface text-[12px] font-semibold text-error flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200">
+              <span className="w-1 h-1 bg-error rounded-full"></span>
               {errors.email}
             </p>
           )}
@@ -166,13 +176,13 @@ export function LoginForm({
 
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+          <label className="font-interface block text-sm font-semibold text-on-surface-variant">
             Password
           </label>
         </div>
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <LucideLock className="text-slate-400 group-focus-within:text-primary transition-colors size-5" />
+            <LucideLock className="text-on-surface-variant group-focus-within:text-primary transition-colors size-5" />
           </div>
           <input
             ref={passwordInputRef}
@@ -184,10 +194,10 @@ export function LoginForm({
             disabled={isLoading}
             autoComplete="new-password"
             aria-invalid={!!errors.password}
-            className={`block w-full pl-11 pr-12 py-3 bg-slate-50 dark:bg-slate-800/50 border rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none font-medium ${
+            className={`font-interface block w-full pl-11 pr-12 py-3 bg-surface-container-low border-0 border-b-2 rounded-none text-on-surface placeholder:text-on-surface-variant focus:ring-0 focus:border-primary transition-all outline-none font-medium ${
               errors.password
-                ? "border-red-400"
-                : "border-slate-200 dark:border-slate-700"
+                ? "border-error"
+                : "border-outline-variant"
             }`}
             placeholder="••••••••"
           />
@@ -197,16 +207,16 @@ export function LoginForm({
             className="absolute inset-y-0 right-0 pr-4 flex items-center"
           >
             {showPassword ? (
-              <LucideEyeOff className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors size-5" />
+              <LucideEyeOff className="text-on-surface-variant hover:text-on-surface transition-colors size-5" />
             ) : (
-              <LucideEye className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors size-5" />
+              <LucideEye className="text-on-surface-variant hover:text-on-surface transition-colors size-5" />
             )}
           </button>
         </div>
         <div className="min-h-5 mt-1">
           {errors.password && (
-            <p className="text-[12px] font-semibold text-red-500 flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200">
-              <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+            <p className="font-interface text-[12px] font-semibold text-error flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-200">
+              <span className="w-1 h-1 bg-error rounded-full"></span>
               {errors.password}
             </p>
           )}
@@ -215,13 +225,13 @@ export function LoginForm({
 
       <div className="flex items-center pb-2">
         <input
-          className="h-4 w-4 text-primary focus:ring-primary border-slate-300 rounded"
+          className="h-4 w-4 text-primary focus:ring-primary border-outline-variant rounded"
           id="remember-me"
           name="remember-me"
           type="checkbox"
         />
         <label
-          className="ml-2 block text-sm text-slate-600 dark:text-slate-400"
+          className="font-interface ml-2 block text-sm text-on-surface-variant"
           htmlFor="remember-me"
         >
           Remember me for 30 days
