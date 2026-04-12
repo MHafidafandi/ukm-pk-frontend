@@ -13,6 +13,12 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/contexts/AuthContext";
 import { useEffect } from "react";
+import { UserProvider } from "@/features/users/contexts/UserContext";
+import { DivisionProvider } from "@/features/divisions/contexts/DivisionContext";
+import { ActivityProvider } from "@/features/activities/contexts/ActivityContext";
+import { ActivityStats, DivisionStats, DonationStats, InventoryStats, UserStats } from "@/features/dashboard/dashboard-list";
+import { DonationProvider } from "@/features/donation/contexts/DonationContext";
+import { AssetProvider } from "@/features/inventory/contexts/AssetContext";
 
 export default function DashboardPage() {
   const { userPermissions } = usePermission();
@@ -41,87 +47,37 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
         {/* User Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_USERS}>
-          <div className="bg-linear-to-br from-[#9F7AEA] to-[#7C3AED] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-start justify-between">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Users className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <h3 className="text-3xl font-bold">--</h3>
-              <p className="text-sm text-white/80 font-medium mt-1">
-                Total Users
-              </p>
-            </div>
-          </div>
+          <UserProvider>
+            <UserStats />
+          </UserProvider>
         </PermissionGate>
 
         {/* Division Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_DIVISIONS}>
-          <div className="bg-linear-to-br from-[#60A5FA] to-[#3B82F6] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-start justify-between">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Briefcase className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <h3 className="text-3xl font-bold">--</h3>
-              <p className="text-sm text-white/80 font-medium mt-1">
-                Divisions
-              </p>
-            </div>
-          </div>
+          <DivisionProvider>
+            <DivisionStats />
+          </DivisionProvider>
         </PermissionGate>
 
         {/* Activity Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_ACTIVITIES}>
-          <div className="bg-linear-to-br from-[#34D399] to-[#10B981] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-start justify-between">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <FileText className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <h3 className="text-3xl font-bold">--</h3>
-              <p className="text-sm text-white/80 font-medium mt-1">
-                Activities
-              </p>
-            </div>
-          </div>
+          <ActivityProvider>
+            <ActivityStats />
+          </ActivityProvider>
         </PermissionGate>
 
         {/* Donation Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_DONATIONS}>
-          <div className="bg-linear-to-br from-[#FB923C] to-[#F97316] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-start justify-between">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <HeartHandshake className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <h3 className="text-3xl font-bold">--</h3>
-              <p className="text-sm text-white/80 font-medium mt-1">
-                Donations
-              </p>
-            </div>
-          </div>
+          <DonationProvider>
+            <DonationStats />
+          </DonationProvider>
         </PermissionGate>
 
         {/* Inventory Stats Widget */}
         <PermissionGate permission={PERMISSIONS.VIEW_ASSETS}>
-          <div className="bg-linear-to-br from-[#F87171] to-[#EF4444] rounded-2xl p-6 text-white shadow-sm transform hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-start justify-between">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Package className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <h3 className="text-3xl font-bold">--</h3>
-              <p className="text-sm text-white/80 font-medium mt-1">
-                Inventory
-              </p>
-            </div>
-          </div>
+          <AssetProvider>
+            <InventoryStats />
+          </AssetProvider>
         </PermissionGate>
       </div>
 

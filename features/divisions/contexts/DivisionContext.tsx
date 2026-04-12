@@ -14,7 +14,7 @@ import {
 
 interface DivisionContextType {
   divisions: Division[];
-  stats: DivisionStats | null;
+  divisionStats: DivisionStats | null;
   search: string;
   setSearch: (s: string) => void;
   createDivision: (data: any) => Promise<any>;
@@ -55,7 +55,7 @@ export const DivisionProvider = ({
   });
 
   // ✅ Konsisten, stats juga pakai select
-  const { data: stats = null, isLoading: isFetchingStats } = useQuery({
+  const { data: divisionStats = null, isLoading: isFetchingStats } = useQuery({
     queryKey: ["divisions", "stats"],
     queryFn: getDivisionsStatistics,
     select: (response): DivisionStats | null => response.data ?? null,
@@ -98,7 +98,7 @@ export const DivisionProvider = ({
   const contextValue = useMemo(
     () => ({
       divisions: filteredDivisions,
-      stats,
+      divisionStats,
       search,
       setSearch,
       createDivision: createMutation.mutateAsync,
@@ -112,7 +112,7 @@ export const DivisionProvider = ({
     }),
     [
       filteredDivisions,
-      stats,
+      divisionStats,
       search,
       createMutation,
       updateMutation,

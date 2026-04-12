@@ -81,7 +81,7 @@ export const DivisionsList = () => {
 
   const {
     divisions,
-    stats,
+    divisionStats,
     search,
     setSearch,
     createDivision,
@@ -177,14 +177,14 @@ export const DivisionsList = () => {
             <>
               <StatCard
                 label="Total Divisi"
-                value={stats?.total_divisions ?? 0}
+                value={divisionStats?.total_divisions ?? 0}
                 icon={LayoutGrid}
                 color="text-purple-600"
                 bg="bg-purple-50 dark:bg-purple-900/20"
               />
               <StatCard
                 label="Total Anggota"
-                value={stats?.total_users ?? 0}
+                value={divisionStats?.total_users ?? 0}
                 icon={Users}
                 color="text-blue-600"
                 bg="bg-blue-50 dark:bg-blue-900/20"
@@ -192,11 +192,11 @@ export const DivisionsList = () => {
               <StatCard
                 label="Rata-rata per Divisi"
                 value={
-                  (stats?.total_divisions ?? 0) > 0
+                  (divisionStats?.total_divisions ?? 0) > 0
                     ? Math.round(
-                        (stats?.total_users ?? 0) /
-                          (stats?.total_divisions ?? 1),
-                      )
+                      (divisionStats?.total_users ?? 0) /
+                      (divisionStats?.total_divisions ?? 1),
+                    )
                     : 0
                 }
                 icon={TrendingUp}
@@ -241,7 +241,7 @@ export const DivisionsList = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {divisions.map((division, index) => {
-              const statEntry = stats?.divisions?.find(
+              const statEntry = divisionStats?.divisions?.find(
                 (s) => s.division_id === division.id,
               );
 

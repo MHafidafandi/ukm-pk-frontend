@@ -1,4 +1,5 @@
 import { api } from "@/lib/api/client";
+import { Division } from "@/features/divisions/services/divisionService";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -120,6 +121,11 @@ export async function getRecruitmentById(id: string): Promise<Recruitment> {
   return result.data; // body = { data: Recruitment }
 }
 
+export async function getSelectDivisions(): Promise<Division[]> {
+  const result: any = await api.get(`/divisions/select`);
+  return result.data; // body = { data: Division[] }
+}
+
 // --- Create ---
 
 export async function createRecruitment(
@@ -188,8 +194,17 @@ export async function getRegistrants(
   return result as any;
 }
 
-export async function acceptRegistrant(registrantId: string): Promise<any> {
-  return api.patch(`${BASE}/registrants/${registrantId}/accept`);
+export interface AcceptRegistrantPayload {
+  registrantId: string;
+  division_id: string;
+  role_ids: string[];
+}
+
+export async function acceptRegistrant(payload: AcceptRegistrantPayload): Promise<any> {
+  return api.patch(`${BASE}/registrants/${payload.registrantId}/accept`, {
+    division_id: payload.division_id,
+    role_ids: payload.role_ids,
+  });
 }
 
 export async function rejectRegistrant(registrantId: string): Promise<any> {

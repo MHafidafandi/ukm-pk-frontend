@@ -13,6 +13,9 @@ import {
   Trash2,
   ArrowRight,
   MoreVertical,
+  LockOpen,
+  Lock,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -305,6 +308,15 @@ export const RecruitmentList = () => {
                   <div className="flex items-center gap-3">
                     <PermissionGate permission={PERMISSIONS.EDIT_RECRUITMENTS}>
                       <button
+                        onClick={() => handleCloseStatus(recruitment)}
+                        title="Tutup Pendaftaran"
+                        className="p-2 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Lock className="w-5 h-5" />
+                      </button>
+                    </PermissionGate>
+                    <PermissionGate permission={PERMISSIONS.EDIT_RECRUITMENTS}>
+                      <button
                         onClick={() => openEdit(recruitment)}
                         className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
@@ -395,7 +407,7 @@ export const RecruitmentList = () => {
               const isDraft = recruitment.status === "draft";
               const badgeBg = isDraft
                 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+                : "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-300";
 
               return (
                 <div
@@ -412,6 +424,24 @@ export const RecruitmentList = () => {
                           recruitment.status.slice(1)}
                       </span>
                       <div className="flex items-center gap-1">
+                        <PermissionGate permission={PERMISSIONS.EDIT_RECRUITMENTS}>
+                          <button
+                            onClick={() => handleOpenStatus(recruitment)}
+                            title="Buka Pendaftaran"
+                            className="p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded transition-colors"
+                          >
+                            <LockOpen className="w-4 h-4" />
+                          </button>
+                        </PermissionGate>
+                        <PermissionGate permission={PERMISSIONS.EDIT_RECRUITMENTS}>
+                          <button
+                            onClick={() => handleArchiveStatus(recruitment)}
+                            title="Arsipkan"
+                            className="p-1 text-gray-400 hover:text-slate-600 dark:hover:text-slate-400 rounded transition-colors"
+                          >
+                            <Archive className="w-4 h-4" />
+                          </button>
+                        </PermissionGate>
                         <PermissionGate
                           permission={PERMISSIONS.EDIT_RECRUITMENTS}
                         >

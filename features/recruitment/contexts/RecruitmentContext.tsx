@@ -30,6 +30,7 @@ import {
   acceptRegistrant as apiAccept,
   rejectRegistrant as apiReject,
   getRegistrants,
+  AcceptRegistrantPayload,
 } from "@/features/recruitment/services/recruitmentService";
 
 // ========================
@@ -77,7 +78,7 @@ type RecruitmentContextType = {
   archiveRecruitment: (id: string) => Promise<any>;
 
   // Registrant actions
-  acceptRegistrant: (registrantId: string) => Promise<any>;
+  acceptRegistrant: (payload: AcceptRegistrantPayload) => Promise<any>;
   rejectRegistrant: (registrantId: string) => Promise<any>;
 };
 
@@ -136,7 +137,6 @@ export const RecruitmentProvider = ({
       }),
     placeholderData: keepPreviousData,
   });
-
   // Recruitment detail
   const recruitmentDetailQuery = useQuery({
     queryKey: ["recruitment", activeRecruitmentId],
@@ -258,7 +258,7 @@ export const RecruitmentProvider = ({
   });
 
   const acceptMut = useMutation({
-    mutationFn: (registrantId: string) => apiAccept(registrantId),
+    mutationFn: (payload: AcceptRegistrantPayload) => apiAccept(payload),
     onSuccess: () => {
       invalidateRegistrants();
       invalidateDetail();
@@ -294,7 +294,6 @@ export const RecruitmentProvider = ({
       setStatusFilter,
       page,
       setPage,
-
       // Detail
       activeRecruitmentId,
       setActiveRecruitmentId,
