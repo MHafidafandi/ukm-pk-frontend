@@ -10,7 +10,6 @@ import type {
 import { KNOWN_TYPES } from "../types";
 
 // ── Media URL ──────────────────────────────────────────────────────────────
-
 const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
 
 export function resolveMediaUrl(path: string | null | undefined): string {
@@ -20,7 +19,6 @@ export function resolveMediaUrl(path: string | null | undefined): string {
 }
 
 // ── API ────────────────────────────────────────────────────────────────────
-
 export async function getLandingPageContents(params?: {
   type?: ContentType;
   active?: boolean;
@@ -62,6 +60,13 @@ export async function updateContent(
   >,
   imageFile?: File,
 ): Promise<{ message: string }> {
+  // Toggle-only request: gunakan JSON body agar boolean tetap boolean
+  if (Object.keys(body).length === 1 && body.active !== undefined) {
+    const { data } = await api.put(`/contents/${id}`, { active: body.active });
+    return data;
+  }
+
+  // Multi-field update dengan image: gunakan FormData
   const formData = new FormData();
   if (body.title !== undefined) formData.append("title", body.title);
   if (body.description !== undefined)
@@ -78,14 +83,11 @@ export async function deleteContent(id: string): Promise<{ message: string }> {
 }
 
 // ── Grouping ───────────────────────────────────────────────────────────────
-
 export function groupContentByType(items: LandingContent[]): GroupedContent {
   const active = items.filter((c) => c.active);
-
   const knownSet = new Set<string>(KNOWN_TYPES);
   const custom: Record<string, LandingContent[]> = {};
 
-  // Collect custom types (tidak ada di KNOWN_TYPES)
   active
     .filter((c) => !knownSet.has(c.type))
     .forEach((c) => {
@@ -94,6 +96,7 @@ export function groupContentByType(items: LandingContent[]): GroupedContent {
     });
 
   return {
+    organization: active.find((c) => c.type === "organization") ?? null,
     hero: active.find((c) => c.type === "hero") ?? null,
     visi: active.find((c) => c.type === "visi") ?? null,
     misi: active.find((c) => c.type === "misi") ?? null,
@@ -105,16 +108,14 @@ export function groupContentByType(items: LandingContent[]): GroupedContent {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-/** Semua unique types dari list content */
 export function getUniqueTypes(items: LandingContent[]): string[] {
   return [...new Set(items.map((c) => c.type))];
 }
 
-/** Label display untuk type */
 export function typeLabel(type: string): string {
   const labels: Record<string, string> = {
-    hero: "Hero",
+    organization: "Identitas Organisasi",
+    hero: "Hero Banner",
     visi: "Visi",
     misi: "Misi",
     struktur_organisasi: "Struktur Organisasi",
@@ -127,7 +128,6 @@ export function typeLabel(type: string): string {
 }
 
 // ── Fallback ───────────────────────────────────────────────────────────────
-
 const makeFallback = (
   type: KnownContentType,
   title: string,
@@ -148,9 +148,15 @@ const makeFallback = (
 
 const FALLBACK_CONTENTS: LandingContent[] = [
   makeFallback(
+    "organization",
+    "UKM Peduli Kemanusiaan UNESA",
+    "Wadah mahasiswa UNESA untuk berkontribusi secara nyata dalam aksi kemanusiaan dan kepedulian sosial.",
+    null,
+  ),
+  makeFallback(
     "hero",
     "UNIT KEGIATAN MAHASISWA PEDULI KEMANUSIAAN UNESA",
-    "Bergabunglah bersama kami dalam misi kemanusiaan dan kepedulian sosial.",
+    "Bergabunglah bersama kami dalam misi kemanusiaan dan kepedulian sosial di lingkungan kampus UNESA dan masyarakat luas. Bersama, kita wujudkan perubahan nyata.",
     "/images/hero-landing.png",
   ),
   makeFallback("visi", "Visi", "Menjadi UKM terdepan dalam kepedulian sosial."),

@@ -2,6 +2,7 @@
 
 // Type yang punya render khusus di landing page
 export const KNOWN_TYPES = [
+  "organization", // nama, deskripsi singkat, logo organisasi
   "hero",
   "visi",
   "misi",
@@ -14,7 +15,7 @@ export type KnownContentType = (typeof KNOWN_TYPES)[number];
 // Type bisa apa saja — admin bebas ketik
 export type ContentType = KnownContentType | string;
 
-// donation_story adalah satu-satunya type yang multiple
+// Type yang boleh punya banyak item
 export const MULTIPLE_TYPES: ContentType[] = ["donation_story"];
 
 export function isMultipleType(type: ContentType): boolean {
@@ -34,13 +35,13 @@ export interface LandingContent {
   updated_by: string | null;
 }
 
-// Grouped by type — known types punya field khusus, sisanya di "custom"
+// Grouped by type
 export interface GroupedContent {
+  organization: LandingContent | null; // nama & logo organisasi
   hero: LandingContent | null;
   visi: LandingContent | null;
   misi: LandingContent | null;
   struktur_organisasi: LandingContent | null;
   donation_stories: LandingContent[];
-  // Semua type lain yang tidak dikenal, grouped by type name
   custom: Record<string, LandingContent[]>;
 }
