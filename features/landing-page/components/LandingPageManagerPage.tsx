@@ -59,11 +59,10 @@ function ContentItemRow({
 
         <div className="flex items-center space-x-3">
           <span
-            className={`px-3 py-1 text-[10px] font-black rounded-full tracking-wider ${
-              item.active
+            className={`px-3 py-1 text-[10px] font-black rounded-full tracking-wider ${item.active
                 ? "bg-primary-fixed text-on-primary-fixed-variant"
                 : "bg-tertiary-fixed text-on-tertiary-fixed-variant"
-            }`}
+              }`}
           >
             {item.active ? "ACTIVE" : "DRAFT"}
           </span>
@@ -158,7 +157,7 @@ export default function LandingPageManagerPage() {
   });
 
   return (
-    <main className="flex-grow p-8 space-y-8 bg-surface min-h-screen">
+    <main className="flex-grow space-y-8 bg-surface min-h-screen">
       {/* Breadcrumbs & Title */}
       <div className="flex items-end justify-between">
         <div>
@@ -303,16 +302,16 @@ export default function LandingPageManagerPage() {
                 </h3>
                 {(!contentsData?.data.filter((c) => c.type === type).length ||
                   isMultipleType(type)) && (
-                  <button
-                    onClick={() => setAddingType(type)}
-                    className="text-sm font-semibold text-primary flex items-center hover:underline"
-                  >
-                    <span className="material-symbols-outlined text-sm mr-1">
-                      add
-                    </span>
-                    Add Block
-                  </button>
-                )}
+                    <button
+                      onClick={() => setAddingType(type)}
+                      className="text-sm font-semibold text-primary flex items-center hover:underline"
+                    >
+                      <span className="material-symbols-outlined text-sm mr-1">
+                        add
+                      </span>
+                      Add Block
+                    </button>
+                  )}
               </div>
 
               {contentsData?.data

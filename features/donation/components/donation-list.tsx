@@ -72,11 +72,10 @@ const FilterPill = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${
-      active
-        ? "bg-primary text-on-primary shadow-sm"
-        : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
-    }`}
+    className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${active
+      ? "bg-primary text-on-primary shadow-sm"
+      : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
+      }`}
   >
     {label === "all" ? "Semua" : label}
   </button>
@@ -195,9 +194,9 @@ export const DonationList = () => {
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ??
-          err?.response?.data?.error ??
-          err?.message ??
-          "Gagal menyimpan donasi",
+        err?.response?.data?.error ??
+        err?.message ??
+        "Gagal menyimpan donasi",
       );
     }
   };
@@ -242,8 +241,8 @@ export const DonationList = () => {
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ??
-          err?.message ??
-          "Gagal membatalkan donasi",
+        err?.message ??
+        "Gagal membatalkan donasi",
       );
     }
   };
@@ -290,7 +289,7 @@ export const DonationList = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex-1 flex flex-col gap-8 p-8 bg-surface min-h-full">
+    <div className="flex-1 flex flex-col gap-8 bg-surface min-h-full">
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -380,11 +379,10 @@ export const DonationList = () => {
             </div>
             <button
               onClick={() => setFilterOpen((v) => !v)}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                filterOpen
-                  ? "bg-primary text-on-primary"
-                  : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterOpen
+                ? "bg-primary text-on-primary"
+                : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
+                }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               Filter
@@ -493,11 +491,10 @@ export const DonationList = () => {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${
-                      currentPage === p
-                        ? "bg-primary text-on-primary shadow-sm"
-                        : "text-on-surface-variant hover:bg-surface-container-highest"
-                    }`}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${currentPage === p
+                      ? "bg-primary text-on-primary shadow-sm"
+                      : "text-on-surface-variant hover:bg-surface-container-highest"
+                      }`}
                   >
                     {p}
                   </button>
