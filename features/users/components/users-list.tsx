@@ -74,14 +74,6 @@ export const UsersList = () => {
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const { divisions: rawDivisions } = useDivisionContext();
-  const { roles: rawRoles } = useRoleContext();
-  const roles = rawRoles;
-  const divisions = rawDivisions.map((d: any) => ({
-    id: d.id,
-    nama: d.nama_divisi,
-  }));
-
   const stats = useMemo(() => {
     const s = statsData;
     return {
@@ -271,8 +263,6 @@ export const UsersList = () => {
         isEdit={!!editing}
         form={form}
         setForm={setForm}
-        divisions={divisions ?? []}
-        roles={roles ?? []}
         errors={formErrors}
         onSubmit={handleSave}
       />
@@ -288,14 +278,12 @@ export const UsersList = () => {
         open={roleOpen}
         onOpenChange={setRoleOpen}
         user={managingRole}
-        roles={roles ?? []}
       />
 
       <UserDivisionDialog
         open={divisionOpen}
         onOpenChange={setDivisionOpen}
         user={assigningDivision}
-        divisions={divisions}
       />
     </>
   );

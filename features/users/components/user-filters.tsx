@@ -1,5 +1,5 @@
 import { Search, FilterX } from "lucide-react";
-import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
+import { useDivisionsSelect } from "@/lib/services/selectService";
 
 type Props = {
   search: string;
@@ -11,7 +11,6 @@ type Props = {
   onDivisionChange: (v: string) => void;
   onAngkatanChange: (v?: number) => void;
 };
-
 export const UsersFilters = ({
   search,
   status,
@@ -22,7 +21,7 @@ export const UsersFilters = ({
   onDivisionChange,
   onAngkatanChange,
 }: Props) => {
-  const { divisions } = useDivisionContext();
+  const { data: divisions = [] } = useDivisionsSelect();
   const currentYear = new Date().getFullYear();
   const angkatanOptions = Array.from(
     { length: currentYear - 2000 + 1 },
@@ -74,7 +73,7 @@ export const UsersFilters = ({
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {divisions.map((d: any) => (
             <option key={d.id} value={d.id}>
-              {d.nama_divisi}
+              {d.name}
             </option>
           ))}
         </select>

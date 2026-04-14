@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CreateUserInput } from "@/lib/validations/users-schema";
+import { useDivisionsSelect, useRolesSelect } from "@/lib/services/selectService";
 
 type Props = {
   open: boolean;
@@ -24,8 +25,6 @@ type Props = {
   isEdit: boolean;
   form: Omit<CreateUserInput, "id">;
   setForm: React.Dispatch<React.SetStateAction<Omit<CreateUserInput, "id">>>;
-  divisions: { id: string; nama: string }[];
-  roles: Role[];
   errors: Record<string, string>;
   onSubmit: () => void;
 };
@@ -43,11 +42,11 @@ export const UserFormDialog = ({
   isEdit,
   form,
   setForm,
-  divisions,
-  roles,
   errors,
   onSubmit,
 }: Props) => {
+  const { data: divisions = [], isLoading: loadingDivisions } = useDivisionsSelect(open);
+  const { data: roles = [], isLoading: loadingRoles } = useRolesSelect(open);
   const update = (field: Partial<typeof form>) =>
     setForm((prev) => ({ ...prev, ...field }));
 
@@ -209,7 +208,7 @@ export const UserFormDialog = ({
                 onValueChange={(v) => update({ division_id: v })}
               >
                 <SelectTrigger className="border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
-                  <SelectValue placeholder="Pilih divisi" />
+                  <SelectValue placeholder={loadingDivisions ? "Memuat..." : "Pilih divisi"} />
                 </SelectTrigger>
                 <SelectContent>
                   {divisions.map((d) => (
@@ -218,7 +217,7 @@ export const UserFormDialog = ({
                       value={d.id}
                       className="font-interface"
                     >
-                      {d.nama}
+                      {d.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -244,7 +243,7 @@ export const UserFormDialog = ({
                 onValueChange={(v) => update({ role_ids: [v] })}
               >
                 <SelectTrigger className="border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
-                  <SelectValue placeholder="Pilih role" />
+                  <SelectValue placeholder={loadingRoles ? "Memuat..." : "Pilih role"} />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (

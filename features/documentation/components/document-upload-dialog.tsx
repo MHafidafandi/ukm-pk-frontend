@@ -27,7 +27,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useEffect } from "react";
 import { useDocumentationContext } from "../contexts/DocumentationContext";
+import { useActivitiesSelect } from "@/lib/services/selectService";
+import { Documentation } from "../services/documentationService";
 
 const documentSchema = z.object({
   judul: z.string().min(1, "Judul dokumen wajib diisi"),
@@ -54,43 +57,87 @@ const labelClass =
 const selectTriggerClass =
   "border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent";
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void };
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isEdit?: boolean;
+  initialData?: Documentation | null;
+};
 
-export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
-  const { createDocument: createMutation } = useDocumentationContext();
+export const DocumentUploadDialog = ({
+  open,
+  onOpenChange,
+  isEdit,
+  initialData,
+}: Props) => {
+  const { createDocument: createMutation, updateDocument: updateMutation } =
+    useDocumentationContext();
+  const { data: activitiesOptions = [], isLoading: loadingActivities } =
+    useActivitiesSelect(open);
+
+  const defaultValues = {
+    judul: "",
+    deskripsi: "",
+    tipe_dokumen: "lainnya" as const,
+    link_gdrive: "",
+    nama_file: "",
+    ukuran_file: "",
+    tipe_file: "",
+    activity_id: "",
+    status: "aktif" as const,
+  };
 
   const form = useForm<DocumentSchema>({
     resolver: zodResolver(documentSchema),
-    defaultValues: {
-      judul: "",
-      deskripsi: "",
-      tipe_dokumen: "lainnya",
-      link_gdrive: "",
-      nama_file: "",
-      ukuran_file: "",
-      tipe_file: "",
-      activity_id: "",
-      status: "aktif",
-    },
+    defaultValues,
   });
 
+  useEffect(() => {
+    if (open) {
+      if (isEdit && initialData) {
+        form.reset({
+          judul: initialData.judul,
+          deskripsi: initialData.deskripsi,
+          tipe_dokumen: initialData.tipe_dokumen as any,
+          link_gdrive: initialData.link_gdrive || "",
+          nama_file: initialData.nama_file || "",
+          ukuran_file: initialData.ukuran_file?.toString() || "",
+          tipe_file: initialData.tipe_file || "",
+          activity_id: initialData.activity_id || "",
+          status: initialData.status,
+        });
+      } else {
+        form.reset(defaultValues);
+      }
+    }
+  }, [open, isEdit, initialData, form]);
+
   const onSubmit: SubmitHandler<DocumentSchema> = (data) => {
-    void createMutation({
-      data: {
-        judul: data.judul,
-        deskripsi: data.deskripsi,
-        tipe_dokumen: data.tipe_dokumen,
-        link_gdrive: data.link_gdrive || undefined,
-        nama_file: data.nama_file || undefined,
-        ukuran_file: undefined,
-        tipe_file: data.tipe_file || undefined,
-        activity_id: data.activity_id || undefined,
-        status: data.status,
-      },
-    }).then(() => {
-      form.reset();
-      onOpenChange(false);
-    });
+    const payload: any = {
+      judul: data.judul,
+      deskripsi: data.deskripsi,
+      tipe_dokumen: data.tipe_dokumen,
+      link_gdrive: data.link_gdrive || "",
+      activity_id: data.activity_id || "",
+    };
+
+    if (data.nama_file) payload.nama_file = data.nama_file;
+    if (data.ukuran_file)
+      payload.ukuran_file = parseInt(String(data.ukuran_file));
+    if (data.tipe_file) payload.tipe_file = data.tipe_file;
+
+    if (isEdit && initialData) {
+      payload.status = data.status;
+      void updateMutation({ id: initialData.id, data: payload }).then(() => {
+        form.reset();
+        onOpenChange(false);
+      });
+    } else {
+      void createMutation({ data: payload }).then(() => {
+        form.reset();
+        onOpenChange(false);
+      });
+    }
   };
 
   return (
@@ -99,7 +146,7 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
         <div className="px-8 pt-8 pb-6 bg-surface-container-low sticky top-0 z-10">
           <DialogHeader>
             <DialogTitle className="font-['Manrope'] text-xl font-bold text-primary">
-              Tambah Dokumentasi
+              {isEdit ? "Edit Dokumentasi" : "Tambah Dokumentasi"}
             </DialogTitle>
             <DialogDescription className="text-sm text-on-surface-variant">
               Tambahkan dokumen baru ke sistem.
@@ -301,18 +348,41 @@ export const DocumentUploadDialog = ({ open, onOpenChange }: Props) => {
                 control={form.control}
                 name="activity_id"
                 render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className={labelClass}>Activity ID</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Kosongkan jika umum"
-                        {...field}
-                        className={inputClass}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
+                    <FormItem className="space-y-2">
+                      <FormLabel className={labelClass}>Aktivitas</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className={selectTriggerClass}>
+                            <SelectValue
+                              placeholder={
+                                loadingActivities
+                                  ? "Memuat..."
+                                  : "Pilih aktivitas (opsional)"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none" className="font-interface">
+                            — Tanpa Aktivitas —
+                          </SelectItem>
+                          {activitiesOptions.map((a) => (
+                            <SelectItem
+                              key={a.id}
+                              value={a.id}
+                              className="font-interface"
+                            >
+                              {a.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
               />
             </div>
 

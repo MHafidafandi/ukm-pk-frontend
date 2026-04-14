@@ -8,14 +8,15 @@ import type {
   KnownContentType,
 } from "../types";
 import { KNOWN_TYPES } from "../types";
+import { env } from "@/configs/env";
 
 // ── Media URL ──────────────────────────────────────────────────────────────
-const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? "";
+const mediaUrl = env.MEDIA_URL;
 
-export function resolveMediaUrl(path: string | null | undefined): string {
-  if (!path) return "";
+export function resolveMediaUrl(path: string | null | undefined | any): string {
+  if (!path || typeof path !== "string") return "";
   if (path.startsWith("http")) return path;
-  return `${MEDIA_URL}${path}`;
+  return `${mediaUrl}${path}`;
 }
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -43,13 +44,26 @@ export async function createContent(
   >,
   imageFile?: File,
 ): Promise<{ message: string }> {
-  const formData = new FormData();
-  formData.append("type", body.type);
-  formData.append("title", body.title);
-  formData.append("description", body.description);
-  formData.append("active", String(body.active));
-  if (imageFile) formData.append("image", imageFile);
-  const { data } = await api.post("/contents", formData);
+  // Always use FormData when there's a file to upload
+  if (imageFile) {
+    const formData = new FormData();
+    formData.append("type", body.type);
+    formData.append("title", body.title);
+    formData.append("description", body.description);
+    formData.append("active", body.active ? "true" : "false");
+    formData.append("image", imageFile);
+    const { data } = await api.post("/contents", formData, {
+      headers: { "Content-Type": undefined },
+    });
+    return data;
+  }
+
+  // No file: send clean JSON — strip `image` field and ensure `active` is boolean
+  const { image: _stripImage, ...rest } = body;
+  const { data } = await api.post("/contents", {
+    ...rest,
+    active: Boolean(rest.active),
+  });
   return data;
 }
 
@@ -60,20 +74,26 @@ export async function updateContent(
   >,
   imageFile?: File,
 ): Promise<{ message: string }> {
-  // Toggle-only request: gunakan JSON body agar boolean tetap boolean
-  if (Object.keys(body).length === 1 && body.active !== undefined) {
-    const { data } = await api.put(`/contents/${id}`, { active: body.active });
+  // Always use FormData when there's a file to upload
+  if (imageFile) {
+    const formData = new FormData();
+    if (body.title !== undefined) formData.append("title", body.title);
+    if (body.description !== undefined)
+      formData.append("description", body.description);
+    if (body.active !== undefined)
+      formData.append("active", body.active ? "true" : "false");
+    formData.append("image", imageFile);
+    const { data } = await api.put(`/contents/${id}`, formData, {
+      headers: { "Content-Type": undefined },
+    });
     return data;
   }
 
-  // Multi-field update dengan image: gunakan FormData
-  const formData = new FormData();
-  if (body.title !== undefined) formData.append("title", body.title);
-  if (body.description !== undefined)
-    formData.append("description", body.description);
-  if (body.active !== undefined) formData.append("active", String(body.active));
-  if (imageFile) formData.append("image", imageFile);
-  const { data } = await api.put(`/contents/${id}`, formData);
+  // No file: send clean JSON — strip `image` field and ensure `active` is boolean
+  const { image: _stripImage, ...rest } = body;
+  const payload: Record<string, any> = { ...rest };
+  if (payload.active !== undefined) payload.active = Boolean(payload.active);
+  const { data } = await api.put(`/contents/${id}`, payload);
   return data;
 }
 
@@ -82,28 +102,19 @@ export async function deleteContent(id: string): Promise<{ message: string }> {
   return data;
 }
 
-// ── Grouping ───────────────────────────────────────────────────────────────
-export function groupContentByType(items: LandingContent[]): GroupedContent {
-  const active = items.filter((c) => c.active);
-  const knownSet = new Set<string>(KNOWN_TYPES);
-  const custom: Record<string, LandingContent[]> = {};
-
-  active
-    .filter((c) => !knownSet.has(c.type))
-    .forEach((c) => {
-      if (!custom[c.type]) custom[c.type] = [];
-      custom[c.type].push(c);
-    });
-
+export function groupContentByType(contents: LandingContent[]) {
   return {
-    organization: active.find((c) => c.type === "organization") ?? null,
-    hero: active.find((c) => c.type === "hero") ?? null,
-    visi: active.find((c) => c.type === "visi") ?? null,
-    misi: active.find((c) => c.type === "misi") ?? null,
+    hero: contents.find((c) => c.type === "hero") ?? null,
+    visi: contents.find((c) => c.type === "visi") ?? null,
+    misi: contents.find((c) => c.type === "misi") ?? null,
     struktur_organisasi:
-      active.find((c) => c.type === "struktur_organisasi") ?? null,
-    donation_stories: active.filter((c) => c.type === "donation_story"),
-    custom,
+      contents.find((c) => c.type === "struktur_organisasi") ?? null,
+    organization: contents.find((c) => c.type === "organization") ?? null,
+    // ↓ Tipe baru
+    donation_banner: contents.find((c) => c.type === "donation_banner") ?? null,
+    donation_stories: contents.filter((c) => c.type === "donation_stories"),
+    recruitment_banner:
+      contents.find((c) => c.type === "recruitment_banner") ?? null,
   };
 }
 

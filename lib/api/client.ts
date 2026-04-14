@@ -226,8 +226,8 @@ export const getErrorMessage = (error: unknown): string => {
     }
 
     return (
-      data?.error ??
       data?.message ??
+      data?.error ??
       error.message ??
       "Terjadi kesalahan pada server"
     );

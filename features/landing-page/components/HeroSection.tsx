@@ -2,18 +2,22 @@ import Link from "next/link";
 import { UserPlus, Heart, ArrowRight } from "lucide-react";
 import type { LandingContent } from "../types";
 import Image from "next/image";
+import { resolveMediaUrl } from "../services/landingPageService";
 
 interface HeroSectionProps {
   content: LandingContent | null;
 }
 
 export default function HeroSection({ content }: HeroSectionProps) {
+  console.log(content);
   const title =
     content?.title ?? "UNIT KEGIATAN MAHASISWA PEDULI KEMANUSIAAN UNESA";
   const description =
     content?.description ??
     "Bergabunglah bersama kami dalam misi kemanusiaan dan kepedulian sosial di lingkungan kampus UNESA dan masyarakat luas. Bersama, kita wujudkan perubahan nyata.";
-  const imageUrl = content?.image ?? "/images/hero-landing.png";
+  const imageUrl = content?.image
+    ? resolveMediaUrl(content.image)
+    : "/images/hero-landing.png";
 
   return (
     <section

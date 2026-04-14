@@ -17,20 +17,20 @@ import { User } from "@/features/auth/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useUserContext } from "@/features/users/contexts/UserContext";
+import { useDivisionsSelect } from "@/lib/services/selectService";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
-  divisions: { id: string; nama: string }[];
 };
 
 export const UserDivisionDialog = ({
   open,
   onOpenChange,
   user,
-  divisions,
 }: Props) => {
+  const { data: divisions = [], isLoading: loadingDivisions } = useDivisionsSelect(open);
   const [selectedDivision, setSelectedDivision] = useState("");
   const { assignUserDivision: assignDivision, isAssigningDivision } =
     useUserContext();
@@ -77,12 +77,12 @@ export const UserDivisionDialog = ({
           </Label>
           <Select value={selectedDivision} onValueChange={setSelectedDivision}>
             <SelectTrigger className=" border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
-              <SelectValue placeholder="Pilih divisi" />
+              <SelectValue placeholder={loadingDivisions ? "Memuat..." : "Pilih divisi"} />
             </SelectTrigger>
             <SelectContent>
               {divisions.map((d) => (
                 <SelectItem key={d.id} value={d.id} className="">
-                  {d.nama}
+                  {d.name}
                 </SelectItem>
               ))}
             </SelectContent>
