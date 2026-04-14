@@ -18,16 +18,17 @@ import { User } from "@/features/auth/contexts/AuthContext";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useUserContext } from "@/features/users/contexts/UserContext";
+import { useRolesSelect } from "@/lib/services/selectService";
 import { Role } from "@/features/roles/services/roleService";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
-  roles: Role[];
 };
 
-export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
+export const UserRoleDialog = ({ open, onOpenChange, user }: Props) => {
+  const { data: roles = [], isLoading: loadingRoles } = useRolesSelect(open);
   const [selectedRole, setSelectedRole] = useState("");
   const {
     assignUserRole: assignRole,
@@ -37,7 +38,7 @@ export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentRoles: any[] = Array.isArray(user?.roles) ? user!.roles : [];
-  const availableRoles = roles.filter(
+  const availableRoles = (roles as Role[]).filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (role) => !currentRoles.some((ur: any) => ur.id === role.id),
   );
@@ -118,7 +119,9 @@ export const UserRoleDialog = ({ open, onOpenChange, user, roles }: Props) => {
               <div className="flex-1">
                 <Select value={selectedRole} onValueChange={setSelectedRole}>
                   <SelectTrigger className="border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
-                    <SelectValue placeholder="Pilih role..." />
+                    <SelectValue
+                      placeholder={loadingRoles ? "Memuat..." : "Pilih role..."}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {availableRoles.length === 0 ? (

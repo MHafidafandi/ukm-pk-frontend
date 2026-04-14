@@ -8,7 +8,10 @@ import { useEffect, useState } from "react";
 import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
 import type { Registrant } from "@/features/recruitment/services/recruitmentService";
 import { RegistrantsTable } from "./registrants-table";
-import { useDivisionContext } from "@/features/divisions/contexts/DivisionContext";
+import {
+  useDivisionsSelect,
+  useRolesSelect,
+} from "@/lib/services/selectService";
 import {
   Dialog,
   DialogContent,
@@ -47,15 +50,16 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     setRegistrantStatusFilter,
     registrantPagination,
   } = useRecruitmentContext();
-  const { divisions } = useDivisionContext();
-  const { roles } = useRoleContext();
 
   const [selectedRegistrant, setSelectedRegistrant] =
     useState<Registrant | null>(null);
   const [division, setDivision] = useState("");
   const [role, setRole] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const { data: divisions = [], isLoading: loadingDivisions } =
+    useDivisionsSelect(isModalOpen);
+  const { data: roles = [], isLoading: loadingRoles } =
+    useRolesSelect(isModalOpen);
   useEffect(() => {
     setActiveRecruitmentId(recruitmentId);
     return () => setActiveRecruitmentId(null);
@@ -159,12 +163,16 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
               </Label>
               <Select value={division} onValueChange={setDivision}>
                 <SelectTrigger className=" border-0 border-b-2 border-outline-variant rounded-none px-0 focus:border-primary focus:ring-0 bg-transparent">
-                  <SelectValue placeholder="Pilih divisi" />
+                  <SelectValue
+                    placeholder={
+                      loadingDivisions ? "Memuat..." : "Pilih divisi"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {divisions.map((div) => (
                     <SelectItem key={div.id} value={div.id} className="">
-                      {div.nama_divisi}
+                      {div.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -176,24 +184,30 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
                 Pilih Role
               </Label>
               <div className="flex flex-col gap-2 rounded-xl bg-surface-container-low p-4">
-                {roles.map((r) => (
-                  <div key={r.id} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`role-${r.id}`}
-                      checked={role.includes(r.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) setRole([...role, r.id]);
-                        else setRole(role.filter((id) => id !== r.id));
-                      }}
-                    />
-                    <label
-                      htmlFor={`role-${r.id}`}
-                      className=" text-sm font-medium text-on-surface cursor-pointer"
-                    >
-                      {r.name}
-                    </label>
-                  </div>
-                ))}
+                {loadingRoles ? (
+                  <p className="text-sm text-on-surface-variant">
+                    Memuat role...
+                  </p>
+                ) : (
+                  roles.map((r) => (
+                    <div key={r.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`role-${r.id}`}
+                        checked={role.includes(r.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) setRole([...role, r.id]);
+                          else setRole(role.filter((id) => id !== r.id));
+                        }}
+                      />
+                      <label
+                        htmlFor={`role-${r.id}`}
+                        className=" text-sm font-medium text-on-surface cursor-pointer"
+                      >
+                        {r.name}
+                      </label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

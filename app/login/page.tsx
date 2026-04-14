@@ -1,16 +1,66 @@
 "use client";
 
 import { LoginForm } from "@/components/LoginForm";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getLandingPageContents,
+  resolveMediaUrl,
+} from "@/features/landing-page/services/landingPageService";
+import type { LandingContent } from "@/features/landing-page/types";
+
+/** Helper: find first active content by type */
+function findByType(contents: LandingContent[], type: string) {
+  return contents.find((c) => c.type === type && c.active) ?? null;
+}
 
 const LoginPage = () => {
+  const { data } = useQuery({
+    queryKey: ["public", "landing-contents", "login"],
+    queryFn: () => getLandingPageContents({ active: true }),
+    staleTime: 5 * 60_000,
+  });
+
+  const contents = data?.data ?? [];
+
+  // ── CMS content by type ──
+  const org = findByType(contents, "organization");
+  const headline = findByType(contents, "login_headline");
+  const bg = findByType(contents, "login_background");
+  const stat1 = findByType(contents, "login_stat_1");
+  const stat2 = findByType(contents, "login_stat_2");
+  const welcome = findByType(contents, "login_welcome");
+
+  // ── Resolved values with defaults ──
+  const orgName = org?.title ?? "SI-PEDULI";
+  const orgLogo = org?.image ? resolveMediaUrl(org.image) : null;
+
+  const heroTitle =
+    headline?.title ?? "Kepedulian yang Terstruktur, Dampak yang Nyata";
+  const heroDesc =
+    headline?.description ??
+    "Platform digital bagi UKM untuk berkontribusi dalam aksi sosial, donasi, dan pemberdayaan masyarakat secara terintegrasi.";
+
+  const heroImage = bg?.image
+    ? resolveMediaUrl(bg.image)
+    : "https://lh3.googleusercontent.com/aida-public/AB6AXuCbYLudT4P98_f-E-0VgYVUaVpsqHVAlYl4H4ah3_euzbw8eqwzABasWUG_ALqpNk9uNd5tZjy6j4kZSieLrgXRmuTVnoi7gUfjjvXLgj1ABAcpRh02JYltLUIYiEoCwvMONDADVrxbve7LJE2kpybqG04MfU95u5C_uVh2SsGWOBL3_v5S6wDQOO29AQpNhuG1x70oXy-IIV8QKE02lyQKpfqfTmdEAgeeUcsAgyvD5g2_AI_bdIo-bU3wDSGSd2qJlhTH-2v-HQtp";
+
+  const stat1Value = stat1?.title ?? "1.200+";
+  const stat1Label = stat1?.description ?? "UKM Terdaftar";
+  const stat2Value = stat2?.title ?? "Rp 4,8M";
+  const stat2Label = stat2?.description ?? "Dana Tersalurkan";
+
+  const welcomeTitle = welcome?.title ?? "Selamat Datang";
+  const welcomeDesc =
+    welcome?.description ??
+    `Masukkan kredensial Anda untuk mengakses portal ${orgName}.`;
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#f9f9f9] font-[family-name:var(--font-inter)] text-[#1a1c1c] antialiased">
       {/* ── Left Side: Full Photo + Brand Overlay ── */}
       <section
         className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-16 overflow-hidden"
         style={{
-          backgroundImage:
-            "linear-gradient(to bottom, rgba(0,68,75,0.88) 0%, rgba(0,93,103,0.92) 100%), url(https://lh3.googleusercontent.com/aida-public/AB6AXuCbYLudT4P98_f-E-0VgYVUaVpsqHVAlYl4H4ah3_euzbw8eqwzABasWUG_ALqpNk9uNd5tZjy6j4kZSieLrgXRmuTVnoi7gUfjjvXLgj1ABAcpRh02JYltLUIYiEoCwvMONDADVrxbve7LJE2kpybqG04MfU95u5C_uVh2SsGWOBL3_v5S6wDQOO29AQpNhuG1x70oXy-IIV8QKE02lyQKpfqfTmdEAgeeUcsAgyvD5g2_AI_bdIo-bU3wDSGSd2qJlhTH-2v-HQtp)",
+          backgroundImage: `linear-gradient(to bottom, rgba(0,68,75,0.88) 0%, rgba(0,93,103,0.92) 100%), url(${heroImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -18,32 +68,48 @@ const LoginPage = () => {
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div
-              className="p-2.5 rounded-xl border border-white/20"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              <svg
-                className="w-7 h-7 text-white"
-                fill="currentColor"
-                viewBox="0 0 48 48"
+            {orgLogo ? (
+              <div
+                className="p-1 rounded-xl border border-white/20 overflow-hidden"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(12px)",
+                }}
               >
-                <path
-                  clipRule="evenodd"
-                  fillRule="evenodd"
-                  d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z"
+                <img
+                  src={orgLogo}
+                  alt={orgName}
+                  className="w-9 h-9 object-contain rounded-lg"
                 />
-                <path
-                  clipRule="evenodd"
-                  fillRule="evenodd"
-                  d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z"
-                />
-              </svg>
-            </div>
+              </div>
+            ) : (
+              <div
+                className="p-2.5 rounded-xl border border-white/20"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                <svg
+                  className="w-7 h-7 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 48 48"
+                >
+                  <path
+                    clipRule="evenodd"
+                    fillRule="evenodd"
+                    d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z"
+                  />
+                  <path
+                    clipRule="evenodd"
+                    fillRule="evenodd"
+                    d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z"
+                  />
+                </svg>
+              </div>
+            )}
             <span className="font-[family-name:var(--font-manrope)] font-extrabold text-xl text-white tracking-tight">
-              SI-PEDULI
+              {orgName}
             </span>
           </div>
         </div>
@@ -51,11 +117,10 @@ const LoginPage = () => {
         {/* Headline & Description */}
         <div className="relative z-10">
           <h1 className="font-[family-name:var(--font-manrope)] text-5xl font-extrabold text-white leading-tight mb-5">
-            Kepedulian yang Terstruktur, Dampak yang Nyata
+            {heroTitle}
           </h1>
           <p className="text-white/70 text-base font-medium max-w-sm leading-relaxed">
-            Platform digital bagi UKM untuk berkontribusi dalam aksi sosial,
-            donasi, dan pemberdayaan masyarakat secara terintegrasi.
+            {heroDesc}
           </p>
         </div>
 
@@ -69,10 +134,10 @@ const LoginPage = () => {
             }}
           >
             <p className="font-[family-name:var(--font-manrope)] font-extrabold text-2xl text-white mb-1">
-              1.200+
+              {stat1Value}
             </p>
             <p className="text-white/60 text-xs font-semibold uppercase tracking-widest">
-              UKM Terdaftar
+              {stat1Label}
             </p>
           </div>
           <div
@@ -83,10 +148,10 @@ const LoginPage = () => {
             }}
           >
             <p className="font-[family-name:var(--font-manrope)] font-extrabold text-2xl text-white mb-1">
-              Rp 4,8M
+              {stat2Value}
             </p>
             <p className="text-white/60 text-xs font-semibold uppercase tracking-widest">
-              Dana Tersalurkan
+              {stat2Label}
             </p>
           </div>
         </div>
@@ -101,21 +166,31 @@ const LoginPage = () => {
       <section className="w-full lg:w-1/2 h-full overflow-y-auto flex flex-col items-center justify-center p-8 lg:p-20 bg-[#f9f9f9]">
         {/* Mobile Logo */}
         <div className="flex items-center gap-3 lg:hidden mb-10">
-          <div className="size-10 bg-[#00444b] rounded-xl flex items-center justify-center">
-            <svg
-              className="size-6 text-white"
-              fill="currentColor"
-              viewBox="0 0 48 48"
-            >
-              <path
-                clipRule="evenodd"
-                fillRule="evenodd"
-                d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z"
+          {orgLogo ? (
+            <div className="size-10 rounded-xl flex items-center justify-center overflow-hidden bg-[#00444b]">
+              <img
+                src={orgLogo}
+                alt={orgName}
+                className="size-8 object-contain"
               />
-            </svg>
-          </div>
+            </div>
+          ) : (
+            <div className="size-10 bg-[#00444b] rounded-xl flex items-center justify-center">
+              <svg
+                className="size-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 48 48"
+              >
+                <path
+                  clipRule="evenodd"
+                  fillRule="evenodd"
+                  d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z"
+                />
+              </svg>
+            </div>
+          )}
           <span className="font-[family-name:var(--font-manrope)] text-xl font-extrabold text-[#1a1c1c]">
-            SI-PEDULI
+            {orgName}
           </span>
         </div>
 
@@ -123,11 +198,9 @@ const LoginPage = () => {
           {/* Heading */}
           <div className="mb-10">
             <h2 className="font-[family-name:var(--font-manrope)] text-3xl font-extrabold text-[#1a1c1c] mb-2">
-              Selamat Datang
+              {welcomeTitle}
             </h2>
-            <p className="text-[#444746] text-sm font-medium">
-              Masukkan kredensial Anda untuk mengakses portal UKM-PK.
-            </p>
+            <p className="text-[#444746] text-sm font-medium">{welcomeDesc}</p>
           </div>
 
           {/* Form — logic tidak diubah */}

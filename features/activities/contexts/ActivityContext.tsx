@@ -197,8 +197,10 @@ export const ActivityProvider = ({
   const lpj = lpjData?.data ?? null; // ✅ single LPJ | null
 
   // -- Invalidators --
-  const invalidateActivities = () =>
+  const invalidateActivities = () => {
     queryClient.invalidateQueries({ queryKey: ["activities", "list"] });
+    queryClient.invalidateQueries({ queryKey: ["public", "activities"] });
+  };
 
   const invalidateProgressReports = () =>
     queryClient.invalidateQueries({

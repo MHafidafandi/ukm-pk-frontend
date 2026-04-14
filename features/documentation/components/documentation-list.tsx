@@ -8,11 +8,15 @@ import {
   Search,
   Users,
   Activity,
-  BookOpen,
   Clock3,
+  BookOpen,
 } from "lucide-react";
 import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
+import {
+  useActivitiesSelect,
+  useUsersSelect,
+} from "@/lib/services/selectService";
 import { useDocumentationContext } from "../contexts/DocumentationContext";
 import { DocumentTable } from "./document-table";
 import { DocumentUploadDialog } from "./document-upload-dialog";
@@ -21,6 +25,7 @@ import { usePermission } from "@/hooks/usePermission";
 
 export const DocumentationList = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<any>(null);
   const { can } = usePermission();
 
   const {
@@ -33,11 +38,15 @@ export const DocumentationList = () => {
     setTypeFilter,
     statusFilter,
     setStatusFilter,
-    activityFilter,
-    setActivityFilter,
     creatorFilter,
     setCreatorFilter,
+    activityFilter,
+    setActivityFilter,
   } = useDocumentationContext();
+
+  const { data: activities = [], isLoading: loadingActivities } =
+    useActivitiesSelect();
+  const { data: users = [], isLoading: loadingUsers } = useUsersSelect();
 
   const canViewAll = can(PERMISSIONS.VIEW_ALL_DOCUMENTATIONS);
 
@@ -98,7 +107,10 @@ export const DocumentationList = () => {
         </div>
         <PermissionGate permission={PERMISSIONS.CREATE_DOCUMENTATIONS}>
           <button
-            onClick={() => setUploadOpen(true)}
+            onClick={() => {
+              setEditingDoc(null);
+              setUploadOpen(true);
+            }}
             className="bg-primary-gradient text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-ambient hover:opacity-90 active:scale-95 transition-all"
           >
             <Plus className="h-4 w-4" />
@@ -190,25 +202,39 @@ export const DocumentationList = () => {
             </select>
 
             <div className="relative shrink-0">
-              <Activity className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-on-surface-variant" />
-              <input
-                type="text"
-                placeholder="ID Aktivitas..."
+              <Activity className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-on-surface-variant z-10" />
+              <select
                 value={activityFilter}
                 onChange={(e) => setActivityFilter(e.target.value)}
-                className="w-40 bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 py-2 pl-8 pr-3 rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant outline-none transition-all"
-              />
+                className="w-44 bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 py-2 pl-8 pr-8 rounded-xl text-sm text-on-surface cursor-pointer outline-none transition-all appearance-none"
+              >
+                <option value="">
+                  {loadingActivities ? "Memuat..." : "Semua Aktivitas"}
+                </option>
+                {activities.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="relative shrink-0">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-on-surface-variant" />
-              <input
-                type="text"
-                placeholder="ID Pembuat..."
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-on-surface-variant z-10" />
+              <select
                 value={creatorFilter}
                 onChange={(e) => setCreatorFilter(e.target.value)}
-                className="w-40 bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 py-2 pl-8 pr-3 rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant outline-none transition-all"
-              />
+                className="w-44 bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 py-2 pl-8 pr-8 rounded-xl text-sm text-on-surface cursor-pointer outline-none transition-all appearance-none"
+              >
+                <option value="">
+                  {loadingUsers ? "Memuat..." : "Semua Pembuat"}
+                </option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         ) : (
@@ -253,7 +279,13 @@ export const DocumentationList = () => {
             </p>
           </div>
         ) : (
-          <DocumentTable documents={documents} />
+          <DocumentTable
+            documents={documents}
+            onEdit={(doc) => {
+              setEditingDoc(doc);
+              setUploadOpen(true);
+            }}
+          />
         )}
       </div>
 
@@ -291,7 +323,15 @@ export const DocumentationList = () => {
         </div>
       ) : null}
 
-      <DocumentUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+      <DocumentUploadDialog
+        open={uploadOpen}
+        onOpenChange={(op) => {
+          setUploadOpen(op);
+          if (!op) setTimeout(() => setEditingDoc(null), 300);
+        }}
+        isEdit={!!editingDoc}
+        initialData={editingDoc}
+      />
     </>
   );
 };
