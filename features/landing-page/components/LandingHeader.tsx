@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { Heart, Menu, X } from "lucide-react";
 import type { LandingContent } from "../types";
@@ -14,6 +15,7 @@ interface LandingHeaderProps {
 export default function LandingHeader({ organization }: LandingHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   const orgName = organization?.title || "Sipeduli";
   const orgLogo = organization?.image
@@ -27,12 +29,16 @@ export default function LandingHeader({ organization }: LandingHeaderProps) {
   }, []);
 
   const navLinks = [
-    { label: "Home", href: "#top" },
-    { label: "Aktivitas", href: "#activities" },
-    { label: "Donasi", href: "#donations" },
-    { label: "Rekrutmen", href: "/login" },
-    { label: "Contact", href: "#contact" },
+    { label: "Home", href: "/" },
+    { label: "Aktivitas", href: "/activities" },
+    { label: "Donasi", href: "/donations" },
+    { label: "Rekrutmen", href: "/recruitments" },
   ];
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
 
   return (
     <header
@@ -63,25 +69,25 @@ export default function LandingHeader({ organization }: LandingHeaderProps) {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((l, i) => (
-            <a
+          {navLinks.map((l) => (
+            <Link
               key={l.label}
               href={l.href}
               className={`font-['Manrope'] font-bold text-sm transition-colors ${
-                i === 0
+                isActive(l.href)
                   ? "text-primary border-b-2 border-primary pb-0.5"
                   : "text-on-surface-variant hover:text-primary"
               }`}
             >
               {l.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
         {/* Right side */}
         <div className="flex items-center gap-3">
           <Link
-            href="/donate"
+            href="/donation"
             className="hidden sm:inline-block px-5 py-2 text-sm font-bold text-primary hover:bg-surface-container-low rounded-xl transition-all"
           >
             Donasi
@@ -114,14 +120,18 @@ export default function LandingHeader({ organization }: LandingHeaderProps) {
         <div className="md:hidden bg-surface/95 backdrop-blur-xl px-6 py-6 border-t border-outline-variant/10">
           <nav className="flex flex-col gap-5">
             {navLinks.map((l) => (
-              <a
+              <Link
                 key={l.label}
                 href={l.href}
                 onClick={() => setMobileOpen(false)}
-                className="font-['Manrope'] font-semibold text-sm text-on-surface-variant hover:text-primary transition-colors"
+                className={`font-['Manrope'] font-semibold text-sm transition-colors ${
+                  isActive(l.href)
+                    ? "text-primary"
+                    : "text-on-surface-variant hover:text-primary"
+                }`}
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
             <Link
               href="/dashboard"

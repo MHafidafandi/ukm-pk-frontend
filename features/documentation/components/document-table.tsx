@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Archive, CheckCircle2, ExternalLink, Trash2 } from "lucide-react";
+import {
+  Archive,
+  CheckCircle2,
+  ExternalLink,
+  Trash2,
+  Edit2,
+} from "lucide-react";
 import { useDocumentationContext } from "../contexts/DocumentationContext";
 import {
   AlertDialog,
@@ -17,7 +23,10 @@ import { PermissionGate } from "@/components/PermissionGate";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Documentation } from "../services/documentationService";
 
-type Props = { documents: Documentation[] };
+type Props = {
+  documents: Documentation[];
+  onEdit: (doc: Documentation) => void;
+};
 
 const getCategoryLabel = (type: string) => {
   const map: Record<string, string> = {
@@ -40,7 +49,7 @@ const formatSize = (size?: number) => {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-export const DocumentTable = ({ documents }: Props) => {
+export const DocumentTable = ({ documents, onEdit }: Props) => {
   const {
     deleteDocument,
     archiveDocument,
@@ -250,6 +259,17 @@ export const DocumentTable = ({ documents }: Props) => {
                             </button>
                           </PermissionGate>
                         )}
+                        <PermissionGate
+                          permission={PERMISSIONS.EDIT_DOCUMENTATIONS}
+                        >
+                          <button
+                            onClick={() => onEdit(doc)}
+                            title="Edit"
+                            className="rounded-lg p-1.5 text-on-surface-variant hover:bg-primary/5 hover:text-primary transition-colors"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                        </PermissionGate>
                         <PermissionGate
                           permission={PERMISSIONS.DELETE_DOCUMENTS}
                         >

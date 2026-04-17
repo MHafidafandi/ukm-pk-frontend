@@ -1,11 +1,10 @@
-// app/dashboard/landing/page.tsx
-import { ActivityProvider } from "@/features/activities/contexts/ActivityContext";
+import { LandingPageProvider } from "@/features/landing-page/contexts/LandingPageContext";
 import LandingPageManagerPage from "@/features/landing-page/components/LandingPageManagerPage";
 
 export default function Page() {
   return (
-    <ActivityProvider>
+    <LandingPageProvider>
       <LandingPageManagerPage />
-    </ActivityProvider>
+    </LandingPageProvider>
   );
 }

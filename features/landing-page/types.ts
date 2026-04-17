@@ -8,6 +8,14 @@ export const KNOWN_TYPES = [
   "misi",
   "struktur_organisasi",
   "donation_story",
+  "donation_banner",
+  "recruitment_banner",
+  // Login page elements
+  "login_headline",        // title = headline, description = subtitle
+  "login_background",      // image = background image
+  "login_stat_1",          // title = value (e.g. "1.200+"), description = label
+  "login_stat_2",          // title = value, description = label
+  "login_welcome",         // title = welcome heading, description = subtitle
 ] as const;
 
 export type KnownContentType = (typeof KNOWN_TYPES)[number];
@@ -43,5 +51,7 @@ export interface GroupedContent {
   misi: LandingContent | null;
   struktur_organisasi: LandingContent | null;
   donation_stories: LandingContent[];
+  donation_banner: LandingContent | null;
+  recruitment_banner: LandingContent | null;
   custom: Record<string, LandingContent[]>;
 }

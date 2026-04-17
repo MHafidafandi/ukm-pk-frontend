@@ -12,6 +12,7 @@ import {
 import { Form, FormField } from "@/components/ui/form";
 import { Loader2, PackageSearch } from "lucide-react";
 import { Asset } from "../services/assetService";
+import { useUsersActiveSelect } from "@/lib/services/selectService";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 const loanSchema = z.object({
@@ -68,6 +69,7 @@ export const LoanFormDialog = ({
   onSubmit,
   isLoading = false,
 }: LoanFormDialogProps) => {
+  const { data: users = [], isLoading: loadingUsers } = useUsersActiveSelect(open);
   const form = useForm<LoanFormValues>({
     resolver: zodResolver(loanSchema as any),
     defaultValues: {
@@ -146,14 +148,19 @@ export const LoanFormDialog = ({
               name="user_id"
               render={({ field }) => (
                 <FieldWrapper
-                  label="ID Peminjam"
+                  label="Peminjam"
                   error={errors.user_id?.message}
                 >
-                  <input
-                    {...field}
-                    className={inputClass}
-                    placeholder="Masukkan User ID peminjam"
-                  />
+                   <select {...field} className={inputClass}>
+                    <option value="">
+                      {loadingUsers ? "Memuat..." : "— Pilih pengampu/peminjam —"}
+                    </option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
                 </FieldWrapper>
               )}
             />
