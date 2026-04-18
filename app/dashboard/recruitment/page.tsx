@@ -8,7 +8,7 @@ export default function RecruitmentPage() {
   return (
     <PermissionGuard permission={PERMISSIONS.VIEW_RECRUITMENTS}>
       <RecruitmentProvider>
-        <div className="flex-1 p-8 bg-surface min-h-full">
+        <div className="flex-1 bg-surface min-h-full">
           <RecruitmentList />
         </div>
       </RecruitmentProvider>
