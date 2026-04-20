@@ -36,6 +36,10 @@ interface UserContextType {
   setPage: (p: number) => void;
   limit: number;
   setLimit: (l: number) => void;
+  sort: string;
+  setSort: (s: string) => void;
+  order: "ASC" | "DESC";
+  setOrder: (o: "ASC" | "DESC") => void;
   statusFilter: string;
   setStatusFilter: (s: string) => void;
   divisionFilter: string;
@@ -100,6 +104,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [search, setSearchRaw] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimitRaw] = useState(10);
+  const [sort, setSortRaw] = useState("created_at");
+  const [order, setOrderRaw] = useState<"ASC" | "DESC">("DESC");
   const [statusFilter, setStatusFilterRaw] = useState("");
   const [divisionFilter, setDivisionFilterRaw] = useState("");
   const [angkatanFilter, setAngkatanFilterRaw] = useState<number | undefined>(
@@ -115,6 +121,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
   const setLimit = (l: number) => {
     setLimitRaw(l);
+    setPage(1);
+  };
+  const setSort = (value: string) => {
+    setSortRaw(value);
+    setPage(1);
+  };
+  const setOrder = (value: "ASC" | "DESC") => {
+    setOrderRaw(value);
     setPage(1);
   };
   const setStatusFilter = (s: string) => {
@@ -144,6 +158,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         page,
         limit,
         debounceSearch,
+        sort,
+        order,
         statusFilter,
         divisionFilter,
         angkatanFilter,
@@ -154,6 +170,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         page,
         limit,
         search: debounceSearch || undefined,
+        sort: sort || undefined,
+        order,
         status: statusFilter || undefined,
         division_id: divisionFilter || undefined,
         angkatan: angkatanFilter,
@@ -254,6 +272,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setPage,
       limit,
       setLimit,
+      sort,
+      setSort,
+      order,
+      setOrder,
       statusFilter,
       setStatusFilter,
       divisionFilter,
@@ -294,6 +316,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       search,
       page,
       limit,
+      sort,
+      order,
       statusFilter,
       divisionFilter,
       angkatanFilter,

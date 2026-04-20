@@ -49,6 +49,10 @@ type RecruitmentContextType = {
   setStatusFilter: (val: string) => void;
   page: number;
   setPage: (p: number) => void;
+  recruitmentSort: string;
+  setRecruitmentSort: (s: string) => void;
+  recruitmentOrder: "ASC" | "DESC";
+  setRecruitmentOrder: (o: "ASC" | "DESC") => void;
 
   // Single recruitment detail
   activeRecruitmentId: string | null;
@@ -66,6 +70,10 @@ type RecruitmentContextType = {
   setRegistrantPage: (p: number) => void;
   registrantStatusFilter: string;
   setRegistrantStatusFilter: (s: string) => void;
+  registrantSort: string;
+  setRegistrantSort: (s: string) => void;
+  registrantOrder: "ASC" | "DESC";
+  setRegistrantOrder: (o: "ASC" | "DESC") => void;
 
   // Recruitment CRUD
   createRecruitment: (data: CreateRecruitmentDTO) => Promise<any>;
@@ -88,7 +96,7 @@ export const useRecruitmentContext = () => {
   const ctx = useContext(RecruitmentContext);
   if (!ctx)
     throw new Error(
-      "useRecruitmentContext must be used within RecruitmentProvider"
+      "useRecruitmentContext must be used within RecruitmentProvider",
     );
   return ctx;
 };
@@ -108,18 +116,26 @@ export const RecruitmentProvider = ({
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
+  const [recruitmentSort, setRecruitmentSortRaw] = useState("created_at");
+  const [recruitmentOrder, setRecruitmentOrderRaw] = useState<"ASC" | "DESC">(
+    "DESC",
+  );
   const [debouncedSearch] = useDebounce(searchQuery, 500);
 
   // --- Registrant filter states ---
   const [registrantSearch, setRegistrantSearch] = useState("");
   const [registrantPage, setRegistrantPage] = useState(1);
   const [registrantStatusFilter, setRegistrantStatusFilter] = useState("all");
+  const [registrantSort, setRegistrantSortRaw] = useState("created_at");
+  const [registrantOrder, setRegistrantOrderRaw] = useState<"ASC" | "DESC">(
+    "DESC",
+  );
   const [debouncedRegistrantSearch] = useDebounce(registrantSearch, 500);
 
   // --- Active recruitment ---
-  const [activeRecruitmentId, setActiveRecruitmentId] = useState<
-    string | null
-  >(null);
+  const [activeRecruitmentId, setActiveRecruitmentId] = useState<string | null>(
+    null,
+  );
 
   // ========================
   // QUERIES
@@ -127,13 +143,23 @@ export const RecruitmentProvider = ({
 
   // Recruitment list
   const recruitmentsQuery = useQuery({
-    queryKey: ["recruitments", page, limit, debouncedSearch, statusFilter],
+    queryKey: [
+      "recruitments",
+      page,
+      limit,
+      debouncedSearch,
+      statusFilter,
+      recruitmentSort,
+      recruitmentOrder,
+    ],
     queryFn: () =>
       getRecruitments({
         page,
         limit,
         search: debouncedSearch || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
+        sort: recruitmentSort || undefined,
+        order: recruitmentOrder,
       }),
     placeholderData: keepPreviousData,
   });
@@ -153,14 +179,19 @@ export const RecruitmentProvider = ({
       limit,
       debouncedRegistrantSearch,
       registrantStatusFilter,
+      registrantSort,
+      registrantOrder,
     ],
     queryFn: () =>
       getRegistrants({
         page: registrantPage,
         limit,
         search: debouncedRegistrantSearch || undefined,
-        status: registrantStatusFilter !== "all" ? registrantStatusFilter : undefined,
+        status:
+          registrantStatusFilter !== "all" ? registrantStatusFilter : undefined,
         recruitment_id: activeRecruitmentId!,
+        sort: registrantSort || undefined,
+        order: registrantOrder,
       }),
     enabled: !!activeRecruitmentId,
     placeholderData: keepPreviousData,
@@ -173,12 +204,10 @@ export const RecruitmentProvider = ({
   const recruitmentPagination =
     recruitmentsQuery.data?.data?.pagination ?? null;
 
-  const activeRecruitmentDetails =
-    recruitmentDetailQuery.data ?? null;
+  const activeRecruitmentDetails = recruitmentDetailQuery.data ?? null;
 
   const registrants = registrantsQuery.data?.data?.registrants ?? [];
-  const registrantPagination =
-    registrantsQuery.data?.data?.pagination ?? null;
+  const registrantPagination = registrantsQuery.data?.data?.pagination ?? null;
 
   // ========================
   // INVALIDATION HELPERS
@@ -294,6 +323,16 @@ export const RecruitmentProvider = ({
       setStatusFilter,
       page,
       setPage,
+      recruitmentSort,
+      setRecruitmentSort: (s: string) => {
+        setRecruitmentSortRaw(s);
+        setPage(1);
+      },
+      recruitmentOrder,
+      setRecruitmentOrder: (o: "ASC" | "DESC") => {
+        setRecruitmentOrderRaw(o);
+        setPage(1);
+      },
       // Detail
       activeRecruitmentId,
       setActiveRecruitmentId,
@@ -310,6 +349,16 @@ export const RecruitmentProvider = ({
       setRegistrantPage,
       registrantStatusFilter,
       setRegistrantStatusFilter,
+      registrantSort,
+      setRegistrantSort: (s: string) => {
+        setRegistrantSortRaw(s);
+        setRegistrantPage(1);
+      },
+      registrantOrder,
+      setRegistrantOrder: (o: "ASC" | "DESC") => {
+        setRegistrantOrderRaw(o);
+        setRegistrantPage(1);
+      },
 
       // CRUD
       createRecruitment: createMut.mutateAsync,
@@ -333,6 +382,8 @@ export const RecruitmentProvider = ({
       searchQuery,
       statusFilter,
       page,
+      recruitmentSort,
+      recruitmentOrder,
       activeRecruitmentId,
       activeRecruitmentDetails,
       recruitmentDetailQuery.isFetching,
@@ -342,6 +393,8 @@ export const RecruitmentProvider = ({
       registrantSearch,
       registrantPage,
       registrantStatusFilter,
+      registrantSort,
+      registrantOrder,
       createMut,
       updateMut,
       deleteMut,
@@ -350,7 +403,7 @@ export const RecruitmentProvider = ({
       archiveMut,
       acceptMut,
       rejectMut,
-    ]
+    ],
   );
 
   return (

@@ -6,20 +6,28 @@ type Props = {
   status: string;
   division: string;
   angkatan?: number;
+  sort: string;
+  order: "ASC" | "DESC";
   onSearch: (v: string) => void;
   onStatusChange: (v: string) => void;
   onDivisionChange: (v: string) => void;
   onAngkatanChange: (v?: number) => void;
+  onSortChange: (v: string) => void;
+  onOrderChange: (v: "ASC" | "DESC") => void;
 };
 export const UsersFilters = ({
   search,
   status,
   division,
   angkatan,
+  sort,
+  order,
   onSearch,
   onStatusChange,
   onDivisionChange,
   onAngkatanChange,
+  onSortChange,
+  onOrderChange,
 }: Props) => {
   const { data: divisions = [] } = useDivisionsSelect();
   const currentYear = new Date().getFullYear();
@@ -33,6 +41,8 @@ export const UsersFilters = ({
     onStatusChange("");
     onDivisionChange("");
     onAngkatanChange(undefined);
+    onSortChange("created_at");
+    onOrderChange("DESC");
   };
 
   return (
@@ -94,6 +104,26 @@ export const UsersFilters = ({
             </option>
           ))}
         </select>
+
+        <select
+          value={sort}
+          onChange={(e) => onSortChange(e.target.value)}
+          className="bg-surface-container-lowest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-2 pl-3 pr-8 rounded-xl text-sm font-medium cursor-pointer outline-none transition-all appearance-none"
+        >
+          <option value="created_at">Urutkan: Dibuat</option>
+          <option value="nama">Urutkan: Nama</option>
+          <option value="email">Urutkan: Email</option>
+          <option value="angkatan">Urutkan: Angkatan</option>
+          <option value="status">Urutkan: Status</option>
+        </select>
+
+        <button
+          onClick={() => onOrderChange(order === "ASC" ? "DESC" : "ASC")}
+          className="px-3 py-2 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          title="Toggle urutan"
+        >
+          {order === "ASC" ? "Asc" : "Desc"}
+        </button>
 
         <button
           onClick={handleReset}

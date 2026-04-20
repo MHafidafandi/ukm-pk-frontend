@@ -7,6 +7,7 @@ import {
   Plus,
   Users,
   Calendar,
+  Search,
   Edit,
   Trash2,
   ArrowRight,
@@ -15,6 +16,8 @@ import {
   Archive,
   LayoutGrid,
   List,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import { useRecruitmentContext } from "@/features/recruitment/contexts/RecruitmentContext";
@@ -67,6 +70,17 @@ export const RecruitmentList = () => {
 
   const {
     recruitments,
+    recruitmentPagination,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    page,
+    setPage,
+    recruitmentSort,
+    setRecruitmentSort,
+    recruitmentOrder,
+    setRecruitmentOrder,
     createRecruitment,
     updateRecruitment,
     deleteRecruitment,
@@ -191,6 +205,7 @@ export const RecruitmentList = () => {
 
   const activeRecruitments = recruitments.filter((r) => r.status === "open");
   const pastRecruitments = recruitments.filter((r) => r.status !== "open");
+  const totalPages = recruitmentPagination?.total_pages ?? 1;
 
   const statCards = [
     {
@@ -249,7 +264,7 @@ export const RecruitmentList = () => {
               className="bg-surface-container-lowest rounded-2xl p-6 flex items-center gap-4 shadow-ambient"
             >
               <div
-                className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${card.bg}`}
+                className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${card.bg}`}
               >
                 <Icon className={`h-5 w-5 ${card.color}`} />
               </div>
@@ -284,7 +299,7 @@ export const RecruitmentList = () => {
                       {item.nama_recruitment}
                     </h3>
                     <div className="flex items-center gap-2 mt-1 text-on-surface-variant">
-                      <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
                       <span className="text-xs">
                         {format(new Date(item.tanggal_buka), "dd MMM", {
                           locale: idLocale,
@@ -296,7 +311,7 @@ export const RecruitmentList = () => {
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant flex-shrink-0 ml-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant shrink-0 ml-3">
                     Aktif
                   </span>
                 </div>
@@ -350,23 +365,65 @@ export const RecruitmentList = () => {
 
       {/* ── All Recruitments ── */}
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-['Manrope'] text-lg font-bold text-on-surface">
-            Semua Rekrutmen
-          </h2>
-          <div className="flex items-center gap-1 bg-surface-container rounded-lg p-1">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant"}`}
+        <div className="bg-surface-container-low rounded-2xl px-4 py-3 mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative w-full lg:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Cari rekrutmen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-surface-container-lowest rounded-full py-2 pl-10 pr-4 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-surface-container-lowest border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2 text-xs font-medium text-on-surface-variant outline-none focus:border-primary transition-colors"
             >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant"}`}
+              <option value="all">Semua Status</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+              <option value="draft">Draft</option>
+            </select>
+
+            <select
+              value={recruitmentSort}
+              onChange={(e) => setRecruitmentSort(e.target.value)}
+              className="bg-surface-container-lowest border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2 text-xs font-medium text-on-surface-variant outline-none focus:border-primary transition-colors"
             >
-              <List className="h-4 w-4" />
+              <option value="created_at">Urut: Dibuat</option>
+              <option value="nama_recruitment">Urut: Nama</option>
+              <option value="tanggal_buka">Urut: Tgl Buka</option>
+              <option value="tanggal_tutup">Urut: Tgl Tutup</option>
+              <option value="status">Urut: Status</option>
+            </select>
+
+            <button
+              onClick={() =>
+                setRecruitmentOrder(recruitmentOrder === "ASC" ? "DESC" : "ASC")
+              }
+              className="px-3 py-2 rounded-xl bg-surface-container-lowest text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors"
+            >
+              {recruitmentOrder === "ASC" ? "Asc" : "Desc"}
             </button>
+
+            <div className="flex items-center gap-1 bg-surface-container rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant"}`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -481,6 +538,30 @@ export const RecruitmentList = () => {
           </div>
         )}
       </section>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2 pt-2">
+          <p className="text-sm text-on-surface-variant">
+            Halaman {page} dari {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage(page + 1)}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <RecruitmentFormDialog
         open={formOpen}

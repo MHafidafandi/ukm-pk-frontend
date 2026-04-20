@@ -3,7 +3,7 @@
 
 import { useRef, useState, useMemo, useEffect } from "react";
 import { useAssetContext } from "../contexts/AssetContext";
-import { Asset } from "../services/assetService";
+import { Asset, type AssetFilters } from "../services/assetService";
 import { LoanTable } from "./loan-table";
 import { AssetTable } from "./asset-table";
 import { AssetFormDialog } from "./asset-form-dialog";
@@ -18,6 +18,7 @@ import { env } from "@/configs/env";
 import {
   Plus,
   Search,
+  ChevronLeft,
   ChevronRight,
   ImageOff,
   Pencil,
@@ -97,6 +98,12 @@ export const InventoryList = () => {
     assets,
     availableAssets,
     loans,
+    pagination,
+    filters,
+    setFilters,
+    loanFilters,
+    setLoanFilters,
+    loanPagination,
     isFetchingAssets,
     isFetchingLoans,
     createAsset,
@@ -110,6 +117,7 @@ export const InventoryList = () => {
     returnLoan,
     markLoanAsLost,
   } = useAssetContext();
+  const assetFilters: AssetFilters = filters ?? {};
 
   // ── Sync selectedAsset setelah refetch ───────────────────────────────────
   useEffect(() => {
@@ -259,6 +267,9 @@ export const InventoryList = () => {
     );
   }, [loans, activeLoans, overdueLoans, searchQuery, activeLoanFilter]);
 
+  const assetTotalPages = pagination?.total_pages ?? 1;
+  const loanTotalPages = loanPagination?.total_pages ?? 1;
+
   // ── Loading ───────────────────────────────────────────────────────────────
   if (isFetchingAssets || isFetchingLoans) {
     return (
@@ -298,7 +309,7 @@ export const InventoryList = () => {
             <PermissionGate permission={PERMISSIONS.CREATE_ASSETS}>
               <button
                 onClick={handleOpenAdd}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-primary-container text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-primary to-primary-container text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
               >
                 <Plus className="w-4 h-4" />
                 Tambah Aset
@@ -349,7 +360,16 @@ export const InventoryList = () => {
                   : "Cari aset atau peminjam..."
               }
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchQuery(value);
+                setFilters({ ...filters, search: value || undefined, page: 1 });
+                setLoanFilters({
+                  ...loanFilters,
+                  search: value || undefined,
+                  page: 1,
+                });
+              }}
               className="w-full bg-surface-container-low rounded-full py-2.5 pl-10 pr-4 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
@@ -384,6 +404,54 @@ export const InventoryList = () => {
                   onClick={() => setActiveLoanFilter(f.id)}
                 />
               ))}
+
+            <select
+              value={
+                activeTab === "assets"
+                  ? assetFilters.sort || "created_at"
+                  : loanFilters.sort || "created_at"
+              }
+              onChange={(e) => {
+                const value = e.target.value;
+                if (activeTab === "assets") {
+                  setFilters({ ...assetFilters, sort: value, page: 1 });
+                } else {
+                  setLoanFilters({ ...loanFilters, sort: value, page: 1 });
+                }
+              }}
+              className="bg-surface-container-lowest border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2 text-xs font-medium text-on-surface-variant outline-none focus:border-primary transition-colors"
+            >
+              <option value="created_at">Urut: Dibuat</option>
+              <option value="nama">Urut: Nama</option>
+              <option value="kode">Urut: Kode</option>
+              <option value="tanggal_pinjam">Urut: Tgl Pinjam</option>
+              <option value="status">Urut: Status</option>
+            </select>
+
+            <button
+              onClick={() => {
+                if (activeTab === "assets") {
+                  setFilters({
+                    ...assetFilters,
+                    order: assetFilters.order === "ASC" ? "DESC" : "ASC",
+                    page: 1,
+                  });
+                } else {
+                  setLoanFilters({
+                    ...loanFilters,
+                    order: loanFilters.order === "ASC" ? "DESC" : "ASC",
+                    page: 1,
+                  });
+                }
+              }}
+              className="px-3 py-2 rounded-xl bg-surface-container-lowest text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors"
+            >
+              {(activeTab === "assets"
+                ? assetFilters.order
+                : loanFilters.order) === "ASC"
+                ? "Asc"
+                : "Desc"}
+            </button>
           </div>
         </div>
 
@@ -397,14 +465,50 @@ export const InventoryList = () => {
               onReturn={handleReturn}
               onMarkLost={handleMarkLost}
             />
+            {activeLoanFilter === "all" && loanTotalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant/10">
+                <p className="text-xs text-on-surface-variant">
+                  Halaman {loanFilters.page ?? 1} dari {loanTotalPages}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={(loanFilters.page ?? 1) <= 1}
+                    onClick={() =>
+                      setLoanFilters({
+                        ...loanFilters,
+                        page: Math.max(1, (loanFilters.page ?? 1) - 1),
+                      })
+                    }
+                    className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    disabled={(loanFilters.page ?? 1) >= loanTotalPages}
+                    onClick={() =>
+                      setLoanFilters({
+                        ...loanFilters,
+                        page: Math.min(
+                          loanTotalPages,
+                          (loanFilters.page ?? 1) + 1,
+                        ),
+                      })
+                    }
+                    className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* ASSETS TAB — Split Screen */}
         {activeTab === "assets" && (
-          <div className="bg-surface-container-lowest flex flex-col md:flex-row min-h-[520px]">
+          <div className="bg-surface-container-lowest flex flex-col md:flex-row min-h-130">
             {/* Left: Asset List */}
-            <div className="w-full md:w-72 lg:w-80 shrink-0 border-r border-outline-variant/10 flex flex-col overflow-y-auto max-h-[600px]">
+            <div className="w-full md:w-72 lg:w-80 shrink-0 border-r border-outline-variant/10 flex flex-col overflow-y-auto max-h-150">
               {filteredAssets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center flex-1 p-8 text-on-surface-variant gap-3">
                   <Search className="w-8 h-8 opacity-40" />
@@ -672,6 +776,40 @@ export const InventoryList = () => {
           </div>
         )}
       </div>
+
+      {activeTab === "assets" && assetTotalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <p className="text-xs text-on-surface-variant">
+            Halaman {assetFilters.page ?? 1} dari {assetTotalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              disabled={(assetFilters.page ?? 1) <= 1}
+              onClick={() =>
+                setFilters({
+                  ...assetFilters,
+                  page: Math.max(1, (assetFilters.page ?? 1) - 1),
+                })
+              }
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              disabled={(assetFilters.page ?? 1) >= assetTotalPages}
+              onClick={() =>
+                setFilters({
+                  ...assetFilters,
+                  page: Math.min(assetTotalPages, (assetFilters.page ?? 1) + 1),
+                })
+              }
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Hidden photo input */}
       <input

@@ -173,16 +173,21 @@ export async function getAssetByCode(code: string): Promise<{ data: Asset }> {
 }
 
 /** GET /assets/available */
-export async function getAvailableAssets(): Promise<AssetsResponse> {
-  const data = await api.get(`/assets/available`);
+export async function getAvailableAssets(
+  filters?: AssetFilters,
+): Promise<AssetsResponse> {
+  const data = await api.get(`/assets/available${buildParams(filters)}`);
   return data as any;
 }
 
 /** GET /assets/condition/:condition */
 export async function getAssetsByCondition(
   condition: AssetCondition,
+  filters?: AssetFilters,
 ): Promise<AssetsResponse> {
-  const data = await api.get(`/assets/condition/${condition}`);
+  const data = await api.get(
+    `/assets/condition/${condition}${buildParams(filters)}`,
+  );
   return data as any;
 }
 
@@ -268,26 +273,36 @@ export async function markLoanAsLost(
 }
 
 /** GET /loans/user/:userId */
-export async function getUserLoans(userId: string): Promise<LoansResponse> {
-  const data = await api.get(`/loans/user/${userId}`);
+export async function getUserLoans(
+  userId: string,
+  filters?: LoanFilters,
+): Promise<LoansResponse> {
+  const data = await api.get(`/loans/user/${userId}${buildParams(filters)}`);
   return data as any;
 }
 
 /** GET /loans/asset/:assetId */
-export async function getAssetLoans(assetId: string): Promise<LoansResponse> {
-  const data = await api.get(`/loans/asset/${assetId}`);
+export async function getAssetLoans(
+  assetId: string,
+  filters?: LoanFilters,
+): Promise<LoansResponse> {
+  const data = await api.get(`/loans/asset/${assetId}${buildParams(filters)}`);
   return data as any;
 }
 
 /** GET /loans/active */
-export async function getActiveLoans(): Promise<LoansResponse> {
-  const data = await api.get(`/loans/active`);
+export async function getActiveLoans(
+  filters?: LoanFilters,
+): Promise<LoansResponse> {
+  const data = await api.get(`/loans/active${buildParams(filters)}`);
   return data as any;
 }
 
 /** GET /loans/overdue */
-export async function getOverdueLoans(): Promise<LoansResponse> {
-  const data = await api.get(`/loans/overdue`);
+export async function getOverdueLoans(
+  filters?: LoanFilters,
+): Promise<LoansResponse> {
+  const data = await api.get(`/loans/overdue${buildParams(filters)}`);
   return data as any;
 }
 

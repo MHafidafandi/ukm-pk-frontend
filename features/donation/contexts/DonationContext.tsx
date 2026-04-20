@@ -36,6 +36,10 @@ interface DonationContextType {
   pagination: PaginationMeta | null;
   page: number;
   setPage: (p: number) => void;
+  sort: string;
+  setSort: (s: string) => void;
+  order: "ASC" | "DESC";
+  setOrder: (o: "ASC" | "DESC") => void;
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   activeFilter: string;
@@ -89,6 +93,8 @@ export const DonationProvider = ({
   const [endDateFilter, setEndDateFilter] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
+  const [sort, setSortRaw] = useState("created_at");
+  const [order, setOrderRaw] = useState<"ASC" | "DESC">("DESC");
   const [debounceSearch] = useDebounce(searchQuery, 500);
 
   const handleSearchQueryChange = (value: string) => {
@@ -115,6 +121,14 @@ export const DonationProvider = ({
     setEndDateFilter(value);
     setPage(1);
   };
+  const handleSortChange = (value: string) => {
+    setSortRaw(value);
+    setPage(1);
+  };
+  const handleOrderChange = (value: "ASC" | "DESC") => {
+    setOrderRaw(value);
+    setPage(1);
+  };
 
   const { data: donationsData, isLoading: isLoadingDonations } = useQuery({
     queryKey: [
@@ -123,6 +137,8 @@ export const DonationProvider = ({
       page,
       limit,
       debounceSearch,
+      sort,
+      order,
       activeFilter,
       methodFilter,
       startDateFilter,
@@ -133,6 +149,8 @@ export const DonationProvider = ({
         page,
         limit,
         search: debounceSearch || undefined,
+        sort: sort || undefined,
+        order,
         status: activeFilter !== "all" ? activeFilter : undefined,
         metode: methodFilter !== "all" ? methodFilter : undefined,
         start_date: startDateFilter || undefined,
@@ -262,6 +280,10 @@ export const DonationProvider = ({
       page,
       setPage,
       limit,
+      sort,
+      setSort: handleSortChange,
+      order,
+      setOrder: handleOrderChange,
       searchQuery,
       setSearchQuery: handleSearchQueryChange,
       activeFilter,
@@ -292,7 +314,9 @@ export const DonationProvider = ({
       page,
       setPage,
       limit,
+      sort,
       searchQuery,
+      order,
       activeFilter,
       methodFilter,
       startDateFilter,

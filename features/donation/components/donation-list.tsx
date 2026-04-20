@@ -72,10 +72,11 @@ const FilterPill = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${active
-      ? "bg-primary text-on-primary shadow-sm"
-      : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
-      }`}
+    className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${
+      active
+        ? "bg-primary text-on-primary shadow-sm"
+        : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
+    }`}
   >
     {label === "all" ? "Semua" : label}
   </button>
@@ -95,6 +96,10 @@ export const DonationList = () => {
     page,
     setPage,
     pagination,
+    sort,
+    setSort,
+    order,
+    setOrder,
     createDonation,
     updateDonation,
     deleteDonation,
@@ -194,9 +199,9 @@ export const DonationList = () => {
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ??
-        err?.response?.data?.error ??
-        err?.message ??
-        "Gagal menyimpan donasi",
+          err?.response?.data?.error ??
+          err?.message ??
+          "Gagal menyimpan donasi",
       );
     }
   };
@@ -241,8 +246,8 @@ export const DonationList = () => {
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ??
-        err?.message ??
-        "Gagal membatalkan donasi",
+          err?.message ??
+          "Gagal membatalkan donasi",
       );
     }
   };
@@ -312,7 +317,7 @@ export const DonationList = () => {
           <PermissionGate permission={PERMISSIONS.CREATE_DONATIONS}>
             <button
               onClick={openAdd}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-primary-container text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-primary to-primary-container text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
             >
               <Plus className="w-4 h-4" />
               Catat Donasi
@@ -350,7 +355,7 @@ export const DonationList = () => {
       </div>
 
       {/* ── Table Workspace ── */}
-      <div className="bg-surface-container-low rounded-2xl overflow-hidden flex flex-col flex-1 min-h-[400px]">
+      <div className="bg-surface-container-low rounded-2xl overflow-hidden flex flex-col flex-1 min-h-100">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5">
           <div className="relative w-full sm:w-72">
@@ -379,13 +384,33 @@ export const DonationList = () => {
             </div>
             <button
               onClick={() => setFilterOpen((v) => !v)}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterOpen
-                ? "bg-primary text-on-primary"
-                : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
-                }`}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                filterOpen
+                  ? "bg-primary text-on-primary"
+                  : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
+              }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               Filter
+            </button>
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="bg-surface-container-lowest border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2 text-xs font-medium text-on-surface-variant outline-none focus:border-primary transition-colors"
+            >
+              <option value="created_at">Urut: Dibuat</option>
+              <option value="tanggal">Urut: Tanggal Donasi</option>
+              <option value="jumlah">Urut: Jumlah</option>
+              <option value="nama_donatur">Urut: Donatur</option>
+              <option value="status">Urut: Status</option>
+            </select>
+
+            <button
+              onClick={() => setOrder(order === "ASC" ? "DESC" : "ASC")}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high transition-all"
+            >
+              {order === "ASC" ? "Asc" : "Desc"}
             </button>
           </div>
         </div>
@@ -491,10 +516,11 @@ export const DonationList = () => {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${currentPage === p
-                      ? "bg-primary text-on-primary shadow-sm"
-                      : "text-on-surface-variant hover:bg-surface-container-highest"
-                      }`}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${
+                      currentPage === p
+                        ? "bg-primary text-on-primary shadow-sm"
+                        : "text-on-surface-variant hover:bg-surface-container-highest"
+                    }`}
                   >
                     {p}
                   </button>

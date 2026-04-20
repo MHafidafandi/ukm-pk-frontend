@@ -48,6 +48,10 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
     setRegistrantPage,
     registrantStatusFilter,
     setRegistrantStatusFilter,
+    registrantSort,
+    setRegistrantSort,
+    registrantOrder,
+    setRegistrantOrder,
     registrantPagination,
   } = useRecruitmentContext();
 
@@ -141,6 +145,10 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
         onSearchChange={setRegistrantSearch}
         statusFilter={registrantStatusFilter}
         onStatusFilterChange={setRegistrantStatusFilter}
+        sort={registrantSort}
+        onSortChange={setRegistrantSort}
+        order={registrantOrder}
+        onOrderChange={setRegistrantOrder}
         onAcceptRegistrant={handleAcceptClick}
         onRejectRegistrant={handleRejectRegistrant}
       />

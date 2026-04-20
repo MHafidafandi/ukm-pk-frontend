@@ -10,6 +10,9 @@ import {
   ExternalLink,
   Loader2,
   FileText,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -64,6 +67,15 @@ export const ProgressReportList = ({ activityId }: Props) => {
 
   const {
     progressReports: reports,
+    progressReportsPagination,
+    progressReportPage,
+    setProgressReportPage,
+    progressReportSearch,
+    setProgressReportSearch,
+    progressReportSort,
+    setProgressReportSort,
+    progressReportOrder,
+    setProgressReportOrder,
     isFetchingProgressReports: isLoading,
     createProgressReport: createReport,
     updateProgressReport: updateReport,
@@ -108,6 +120,10 @@ export const ProgressReportList = ({ activityId }: Props) => {
       mounted = false;
     };
   }, [reportIdsKey, getDocumentsByReport, reports]);
+
+  const totalPages = progressReportsPagination?.total_pages ?? 1;
+  const hasPrev = progressReportPage > 1;
+  const hasNext = progressReportPage < totalPages;
 
   const openAdd = () => {
     setEditing(null);
@@ -221,6 +237,42 @@ export const ProgressReportList = ({ activityId }: Props) => {
           <Plus className="w-3.5 h-3.5" />
           Tambah Laporan
         </button>
+      </div>
+
+      <div className="bg-surface-container-low rounded-2xl px-4 py-3 mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Cari judul/deskripsi laporan..."
+            value={progressReportSearch}
+            onChange={(e) => setProgressReportSearch(e.target.value)}
+            className="w-full bg-surface-container-lowest rounded-full py-2 pl-10 pr-4 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <select
+            value={progressReportSort}
+            onChange={(e) => setProgressReportSort(e.target.value)}
+            className="bg-surface-container-lowest border-0 border-b-2 border-outline-variant rounded-t-lg px-3 py-2 text-xs font-medium text-on-surface-variant outline-none focus:border-primary transition-colors"
+          >
+            <option value="created_at">Urut: Dibuat</option>
+            <option value="tanggal">Urut: Tanggal</option>
+            <option value="judul">Urut: Judul</option>
+            <option value="updated_at">Urut: Diperbarui</option>
+          </select>
+          <button
+            onClick={() =>
+              setProgressReportOrder(
+                progressReportOrder === "ASC" ? "DESC" : "ASC",
+              )
+            }
+            className="px-3 py-2 rounded-xl bg-surface-container-lowest text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors"
+          >
+            {progressReportOrder === "ASC" ? "Asc" : "Desc"}
+          </button>
+        </div>
       </div>
 
       {/* ── List ── */}
@@ -387,6 +439,30 @@ export const ProgressReportList = ({ activityId }: Props) => {
           </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <p className="text-xs text-on-surface-variant">
+            Halaman {progressReportPage} dari {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setProgressReportPage(progressReportPage - 1)}
+              disabled={!hasPrev}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setProgressReportPage(progressReportPage + 1)}
+              disabled={!hasNext}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Dialogs ── */}
       <ProgressReportFormDialog

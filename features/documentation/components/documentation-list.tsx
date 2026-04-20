@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import {
   Archive,
+  ChevronLeft,
+  ChevronRight,
   FolderOpen,
   Plus,
   Search,
@@ -30,10 +32,19 @@ export const DocumentationList = () => {
 
   const {
     documents,
+    pagination,
     isFetchingDocuments,
     statistics,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    sort,
+    setSort,
+    order,
+    setOrder,
     typeFilter,
     setTypeFilter,
     statusFilter,
@@ -93,6 +104,29 @@ export const DocumentationList = () => {
     },
   ];
 
+  const totalPages = pagination?.total_pages ?? 1;
+  const hasPrev = page > 1;
+  const hasNext = page < totalPages;
+
+  const getPageNumbers = (): (number | "ellipsis")[] => {
+    const pages: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("ellipsis");
+      for (
+        let i = Math.max(2, page - 1);
+        i <= Math.min(totalPages - 1, page + 1);
+        i++
+      )
+        pages.push(i);
+      if (page < totalPages - 2) pages.push("ellipsis");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   return (
     <>
       {/* ── Header ── */}
@@ -130,7 +164,7 @@ export const DocumentationList = () => {
                 className="bg-surface-container-lowest rounded-2xl p-6 flex items-center gap-4 shadow-ambient"
               >
                 <div
-                  className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${card.bg}`}
+                  className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${card.bg}`}
                 >
                   <Icon className={`h-5 w-5 ${card.color}`} />
                 </div>
@@ -236,9 +270,38 @@ export const DocumentationList = () => {
                 ))}
               </select>
             </div>
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="shrink-0 bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-2 pl-3 pr-8 rounded-xl text-sm cursor-pointer outline-none transition-all appearance-none"
+            >
+              <option value="created_at">Urutkan: Dibuat</option>
+              <option value="judul">Urutkan: Judul</option>
+              <option value="status">Urutkan: Status</option>
+              <option value="updated_at">Urutkan: Diperbarui</option>
+            </select>
+
+            <button
+              onClick={() => setOrder(order === "ASC" ? "DESC" : "ASC")}
+              className="shrink-0 bg-surface-container-low border-0 border-b-2 border-outline-variant hover:border-primary text-on-surface py-2 px-3 rounded-xl text-sm font-semibold transition-all"
+            >
+              {order === "ASC" ? "Asc" : "Desc"}
+            </button>
+
+            <select
+              value={String(limit)}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="shrink-0 bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-2 pl-3 pr-8 rounded-xl text-sm cursor-pointer outline-none transition-all appearance-none"
+            >
+              <option value="10">10 / halaman</option>
+              <option value="25">25 / halaman</option>
+              <option value="50">50 / halaman</option>
+              <option value="100">100 / halaman</option>
+            </select>
           </div>
         ) : (
-          <div className="px-6 py-4">
+          <div className="px-6 py-4 flex items-center gap-3 flex-wrap">
             <select
               value={statusFilter ?? ""}
               onChange={(e) =>
@@ -254,6 +317,35 @@ export const DocumentationList = () => {
               <option value="">Semua Status</option>
               <option value="aktif">Aktif</option>
               <option value="arsip">Arsip</option>
+            </select>
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-2 pl-3 pr-8 rounded-xl text-sm cursor-pointer outline-none transition-all appearance-none"
+            >
+              <option value="created_at">Urutkan: Dibuat</option>
+              <option value="judul">Urutkan: Judul</option>
+              <option value="status">Urutkan: Status</option>
+              <option value="updated_at">Urutkan: Diperbarui</option>
+            </select>
+
+            <button
+              onClick={() => setOrder(order === "ASC" ? "DESC" : "ASC")}
+              className="bg-surface-container-low border-0 border-b-2 border-outline-variant hover:border-primary text-on-surface py-2 px-3 rounded-xl text-sm font-semibold transition-all"
+            >
+              {order === "ASC" ? "Asc" : "Desc"}
+            </button>
+
+            <select
+              value={String(limit)}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-2 pl-3 pr-8 rounded-xl text-sm cursor-pointer outline-none transition-all appearance-none"
+            >
+              <option value="10">10 / halaman</option>
+              <option value="25">25 / halaman</option>
+              <option value="50">50 / halaman</option>
+              <option value="100">100 / halaman</option>
             </select>
           </div>
         )}
@@ -288,6 +380,55 @@ export const DocumentationList = () => {
           />
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2 mt-4">
+          <p className="text-xs text-on-surface-variant">
+            Halaman {page} dari {totalPages} · Total {pagination?.total ?? 0}{" "}
+            dokumen
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={!hasPrev}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {getPageNumbers().map((p, i) =>
+              p === "ellipsis" ? (
+                <span
+                  key={`e-${i}`}
+                  className="w-9 h-9 flex items-center justify-center text-sm text-on-surface-variant"
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${
+                    page === p
+                      ? "bg-primary text-on-primary shadow-sm"
+                      : "text-on-surface-variant hover:bg-surface-container-highest"
+                  }`}
+                >
+                  {p}
+                </button>
+              ),
+            )}
+
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={!hasNext}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Recent Added ── */}
       {canViewAll && statistics?.recent_added?.length ? (

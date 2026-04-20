@@ -19,8 +19,17 @@ export interface PublicActivitiesResponse {
   total: number;
 }
 
+export interface PublicActivityQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  sort?: string;
+  order?: "ASC" | "DESC";
+}
+
 export async function getPublicActivities(
-  params?: any,
+  params?: PublicActivityQueryParams,
 ): Promise<PublicActivitiesResponse> {
   const data = await api.get(`/activities`, { params });
 

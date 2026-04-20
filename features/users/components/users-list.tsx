@@ -47,6 +47,10 @@ export const UsersList = () => {
     page: currentPage,
     setPage: setCurrentPage,
     limit: pageSize,
+    sort,
+    setSort,
+    order,
+    setOrder,
     statusFilter: filterStatus,
     setStatusFilter: setFilterStatus,
     divisionFilter: filterDivision,
@@ -220,10 +224,14 @@ export const UsersList = () => {
           angkatan={filterAngkatan}
           search={search}
           status={filterStatus}
+          sort={sort}
+          order={order}
           onDivisionChange={setFilterDivision}
           onAngkatanChange={setFilterAngkatan}
           onSearch={setSearch}
           onStatusChange={setFilterStatus}
+          onSortChange={setSort}
+          onOrderChange={setOrder}
         />
         <div className="overflow-x-auto">
           <UsersTable
