@@ -82,7 +82,10 @@ const CONTENT_TYPES = [
 type KnownType = (typeof CONTENT_TYPES)[number]["value"];
 
 const TYPE_META = Object.fromEntries(
-  CONTENT_TYPES.map((t) => [t.value, { icon: t.icon, label: t.label, page: t.page }]),
+  CONTENT_TYPES.map((t) => [
+    t.value,
+    { icon: t.icon, label: t.label, page: t.page },
+  ]),
 ) as Record<string, { icon: string; label: string; page: string }>;
 
 // ── Dynamic Field Config ──────────────────────────────────────────────────────
@@ -94,9 +97,9 @@ const TYPE_FIELDS: Record<string, FieldName[]> = {
   misi: ["title", "description"],
   struktur_organisasi: ["title", "description", "image"],
   organization: ["title", "description", "image"],
-  donation_banner: ["title", "description", "image"],
+  donation_banner: ["title", "description"],
   donation_stories: ["title", "description", "image"],
-  recruitment_banner: ["title", "description", "image"],
+  recruitment_banner: ["title", "description"],
   login_headline: ["title", "description"],
   login_background: ["image"],
   login_stat_1: ["title", "description"],
@@ -141,14 +144,21 @@ interface ContentCardProps {
   content: LandingContent;
   onUpdate: (
     id: string,
-    body: Partial<Pick<LandingContent, "title" | "description" | "active" | "image">>,
+    body: Partial<
+      Pick<LandingContent, "title" | "description" | "active" | "image">
+    >,
     imageFile?: File,
   ) => Promise<any>;
   onDelete: (content: LandingContent) => void;
   isSaving: boolean;
 }
 
-function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps) {
+function ContentCard({
+  content,
+  onUpdate,
+  onDelete,
+  isSaving,
+}: ContentCardProps) {
   const meta = TYPE_META[content.type] ?? {
     icon: "article",
     label: content.type,
@@ -167,7 +177,8 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
   // Sync local state when content changes from server
   useEffect(() => {
     if (!focusedField || focusedField !== "title") setLocalTitle(content.title);
-    if (!focusedField || focusedField !== "description") setLocalDesc(content.description);
+    if (!focusedField || focusedField !== "description")
+      setLocalDesc(content.description);
   }, [content.title, content.description, focusedField]);
 
   // Debounced save for text fields
@@ -225,7 +236,9 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
         return (
           <div key="title" className="space-y-1.5">
             <label className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              <span className="material-symbols-outlined text-xs opacity-50">title</span>
+              <span className="material-symbols-outlined text-xs opacity-50">
+                title
+              </span>
               Judul
             </label>
             <input
@@ -247,7 +260,9 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
         return (
           <div key="description" className="space-y-1.5">
             <label className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              <span className="material-symbols-outlined text-xs opacity-50">notes</span>
+              <span className="material-symbols-outlined text-xs opacity-50">
+                notes
+              </span>
               Deskripsi
             </label>
             <textarea
@@ -275,7 +290,9 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
         return (
           <div key="image" className="space-y-1.5">
             <label className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              <span className="material-symbols-outlined text-xs opacity-50">image</span>
+              <span className="material-symbols-outlined text-xs opacity-50">
+                image
+              </span>
               Gambar
             </label>
             <div className="relative group/img">
@@ -295,7 +312,9 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
                         px-4 py-2 bg-white/90 backdrop-blur-sm text-on-surface text-xs font-bold rounded-lg shadow-lg
                         hover:bg-white flex items-center gap-1.5"
                     >
-                      <span className="material-symbols-outlined text-sm">swap_horiz</span>
+                      <span className="material-symbols-outlined text-sm">
+                        swap_horiz
+                      </span>
                       Ganti Gambar
                     </button>
                   </div>
@@ -336,9 +355,10 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
       className={`group relative rounded-2xl overflow-hidden transition-all duration-300
         border bg-surface-container-lowest
         hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5
-        ${!isActive
-          ? "opacity-70 border-dashed border-outline-variant/30"
-          : "border-outline-variant/10 hover:border-primary/20"
+        ${
+          !isActive
+            ? "opacity-70 border-dashed border-outline-variant/30"
+            : "border-outline-variant/10 hover:border-primary/20"
         }
         ${cardSaving ? "pointer-events-none" : ""}
       `}
@@ -350,7 +370,9 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
             <span className="material-symbols-outlined text-sm text-primary animate-spin">
               progress_activity
             </span>
-            <span className="text-xs font-bold text-on-surface-variant">Menyimpan…</span>
+            <span className="text-xs font-bold text-on-surface-variant">
+              Menyimpan…
+            </span>
           </div>
         </div>
       )}
@@ -367,12 +389,15 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
         <div className="flex items-center gap-3 min-w-0">
           <div
             className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors
-              ${isActive
-                ? "bg-primary/10 text-primary"
-                : "bg-surface-container-high text-on-surface-variant"
+              ${
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "bg-surface-container-high text-on-surface-variant"
               }`}
           >
-            <span className="material-symbols-outlined text-lg">{meta.icon}</span>
+            <span className="material-symbols-outlined text-lg">
+              {meta.icon}
+            </span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -389,9 +414,10 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
         {/* Status badge */}
         <span
           className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider transition-colors
-            ${isActive
-              ? "bg-[#dffff8] text-primary border border-primary/10"
-              : "bg-[#ffecd9] text-[#e67e22] border border-[#e67e22]/20"
+            ${
+              isActive
+                ? "bg-[#dffff8] text-primary border border-primary/10"
+                : "bg-[#ffecd9] text-[#e67e22] border border-[#e67e22]/20"
             }`}
         >
           {isActive ? "ACTIVE" : "DRAFT"}
@@ -441,10 +467,23 @@ function ContentCard({ content, onUpdate, onDelete, isSaving }: ContentCardProps
 // ── Create Content Card ───────────────────────────────────────────────────────
 interface CreateCardProps {
   onCreate: (
-    body: Omit<LandingContent, "id" | "created_at" | "updated_at" | "created_by" | "updated_by">,
+    body: Omit<
+      LandingContent,
+      "id" | "created_at" | "updated_at" | "created_by" | "updated_by"
+    >,
     imageFile?: File,
   ) => Promise<any>;
   isCreating: boolean;
+}
+
+function getTypeLabel(type: KnownType): string {
+  return CONTENT_TYPES.find((ct) => ct.value === type)?.label ?? type;
+}
+
+function buildHiddenDefault(type: KnownType, field: "title" | "description") {
+  const label = getTypeLabel(type);
+  if (field === "title") return `Auto ${label}`;
+  return `Konten default untuk ${label}`;
 }
 
 function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
@@ -463,8 +502,23 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
       toast.error("Judul tidak boleh kosong");
       return;
     }
+
+    const normalizedTitle = fields.includes("title")
+      ? title.trim()
+      : buildHiddenDefault(type, "title");
+    const normalizedDescription = fields.includes("description")
+      ? description.trim()
+      : buildHiddenDefault(type, "description");
+
     await onCreate(
-      { type, title, description, active, image: null },
+      {
+        type,
+        title: normalizedTitle || buildHiddenDefault(type, "title"),
+        description:
+          normalizedDescription || buildHiddenDefault(type, "description"),
+        active,
+        image: null,
+      },
       file ?? undefined,
     );
     // Reset
@@ -483,9 +537,13 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
           bg-surface-container-lowest hover:border-primary/40 hover:bg-primary/5 hover:shadow-md
           transition-all duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer group"
       >
-        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center
-          group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-          <span className="material-symbols-outlined text-2xl text-primary">add</span>
+        <div
+          className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center
+          group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300"
+        >
+          <span className="material-symbols-outlined text-2xl text-primary">
+            add
+          </span>
         </div>
         <span className="text-sm font-bold text-on-surface-variant group-hover:text-primary transition-colors">
           Tambah Konten Baru
@@ -495,18 +553,23 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
   }
 
   return (
-    <div className="rounded-2xl border-2 border-primary/30 bg-surface-container-lowest overflow-hidden shadow-lg shadow-primary/5
-      animate-in slide-in-from-top-2 duration-300">
+    <div
+      className="rounded-2xl border-2 border-primary/30 bg-surface-container-lowest overflow-hidden shadow-lg shadow-primary/5
+      animate-in slide-in-from-top-2 duration-300"
+    >
       {/* Header */}
       <div
         className="px-5 py-4 flex items-center justify-between"
         style={{
-          background: "linear-gradient(135deg, rgba(0,68,75,0.08) 0%, rgba(0,93,103,0.04) 100%)",
+          background:
+            "linear-gradient(135deg, rgba(0,68,75,0.08) 0%, rgba(0,93,103,0.04) 100%)",
         }}
       >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
-            <span className="material-symbols-outlined text-lg">add_circle</span>
+            <span className="material-symbols-outlined text-lg">
+              add_circle
+            </span>
           </div>
           <span className="text-sm font-bold text-on-surface">Konten Baru</span>
         </div>
@@ -514,7 +577,9 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
           onClick={() => setExpanded(false)}
           className="p-1.5 rounded-lg hover:bg-surface-container-high transition-colors"
         >
-          <span className="material-symbols-outlined text-on-surface-variant text-lg">close</span>
+          <span className="material-symbols-outlined text-on-surface-variant text-lg">
+            close
+          </span>
         </button>
       </div>
 
@@ -523,7 +588,9 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
         {/* Type selector */}
         <div className="space-y-1.5">
           <label className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-            <span className="material-symbols-outlined text-xs opacity-50">category</span>
+            <span className="material-symbols-outlined text-xs opacity-50">
+              category
+            </span>
             Tipe Konten
           </label>
           <select
@@ -545,7 +612,9 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
         {fields.includes("title") && (
           <div className="space-y-1.5">
             <label className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              <span className="material-symbols-outlined text-xs opacity-50">title</span>
+              <span className="material-symbols-outlined text-xs opacity-50">
+                title
+              </span>
               Judul
             </label>
             <input
@@ -563,7 +632,9 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
         {fields.includes("description") && (
           <div className="space-y-1.5">
             <label className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              <span className="material-symbols-outlined text-xs opacity-50">notes</span>
+              <span className="material-symbols-outlined text-xs opacity-50">
+                notes
+              </span>
               Deskripsi
             </label>
             <textarea
@@ -582,7 +653,9 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
         {fields.includes("image") && (
           <div className="space-y-1.5">
             <label className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              <span className="material-symbols-outlined text-xs opacity-50">image</span>
+              <span className="material-symbols-outlined text-xs opacity-50">
+                image
+              </span>
               Gambar
             </label>
             <label
@@ -689,10 +762,11 @@ export default function LandingPageManagerPage() {
     let result = [...contents];
     if (searchQuery.trim()) {
       const qs = searchQuery.toLowerCase();
-      result = result.filter(c => 
-        (c.title || "").toLowerCase().includes(qs) || 
-        (c.description || "").toLowerCase().includes(qs) ||
-        (TYPE_META[c.type]?.label || "").toLowerCase().includes(qs)
+      result = result.filter(
+        (c) =>
+          (c.title || "").toLowerCase().includes(qs) ||
+          (c.description || "").toLowerCase().includes(qs) ||
+          (TYPE_META[c.type]?.label || "").toLowerCase().includes(qs),
       );
     }
     result.sort((a, b) => {
@@ -736,16 +810,42 @@ export default function LandingPageManagerPage() {
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total", value: contents.length, icon: "article", color: "text-primary", bg: "bg-primary/5" },
-          { label: "Aktif", value: totalActive, icon: "check_circle", color: "text-secondary", bg: "bg-secondary/5" },
-          { label: "Nonaktif", value: totalInactive, icon: "cancel", color: "text-error", bg: "bg-error/5" },
-          { label: "Tipe", value: uniqueTypes, icon: "category", color: "text-tertiary", bg: "bg-tertiary/5" },
+          {
+            label: "Total",
+            value: contents.length,
+            icon: "article",
+            color: "text-primary",
+            bg: "bg-primary/5",
+          },
+          {
+            label: "Aktif",
+            value: totalActive,
+            icon: "check_circle",
+            color: "text-secondary",
+            bg: "bg-secondary/5",
+          },
+          {
+            label: "Nonaktif",
+            value: totalInactive,
+            icon: "cancel",
+            color: "text-error",
+            bg: "bg-error/5",
+          },
+          {
+            label: "Tipe",
+            value: uniqueTypes,
+            icon: "category",
+            color: "text-tertiary",
+            bg: "bg-tertiary/5",
+          },
         ].map((s) => (
           <div
             key={s.label}
             className={`${s.bg} p-5 rounded-2xl text-center border border-outline-variant/10 hover:shadow-md transition-all duration-300`}
           >
-            <span className={`material-symbols-outlined ${s.color} mb-1.5 block text-xl`}>
+            <span
+              className={`material-symbols-outlined ${s.color} mb-1.5 block text-xl`}
+            >
               {s.icon}
             </span>
             <p className="font-['Manrope'] text-2xl font-extrabold text-on-surface">
@@ -758,11 +858,11 @@ export default function LandingPageManagerPage() {
         ))}
       </div>
 
-
-
       {/* ── Search Bar ── */}
       <div className="flex items-center bg-surface-container-lowest rounded-2xl px-5 py-3.5 border border-outline-variant/20 shadow-sm hover:border-primary/40 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all duration-300">
-        <span className="material-symbols-outlined text-primary/70 mr-3 text-[22px]">search</span>
+        <span className="material-symbols-outlined text-primary/70 mr-3 text-[22px]">
+          search
+        </span>
         <input
           type="text"
           value={searchQuery}
@@ -771,8 +871,13 @@ export default function LandingPageManagerPage() {
           className="w-full bg-transparent text-[15px] font-medium text-on-surface focus:outline-none placeholder:text-on-surface-variant/40"
         />
         {searchQuery && (
-          <button onClick={() => setSearchQuery("")} className="p-1.5 hover:bg-surface-container rounded-lg transition-colors ml-2 flex items-center justify-center">
-            <span className="material-symbols-outlined text-on-surface-variant hover:text-on-surface text-sm">close</span>
+          <button
+            onClick={() => setSearchQuery("")}
+            className="p-1.5 hover:bg-surface-container rounded-lg transition-colors ml-2 flex items-center justify-center"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant hover:text-on-surface text-sm">
+              close
+            </span>
           </button>
         )}
       </div>
@@ -781,7 +886,9 @@ export default function LandingPageManagerPage() {
       <div>
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-['Manrope'] text-xl font-extrabold text-on-surface flex items-center">
-            <span className="material-symbols-outlined mr-3 text-secondary">layers</span>
+            <span className="material-symbols-outlined mr-3 text-secondary">
+              layers
+            </span>
             Content Cards
           </h3>
           <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
@@ -791,12 +898,13 @@ export default function LandingPageManagerPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start auto-rows-max grid-flow-dense">
           {/* Loading skeletons */}
-          {isFetching && contents.length === 0
-            ? Array.from({ length: 6 }).map((_, i) => (
+          {isFetching && contents.length === 0 ? (
+            Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={`skeleton-${i}`}
-                className={`animate-pulse rounded-2xl bg-surface-container-lowest border border-outline-variant/10 overflow-hidden ${i === 0 ? "col-span-1 md:col-span-2 xl:col-span-3" : ""
-                  }`}
+                className={`animate-pulse rounded-2xl bg-surface-container-lowest border border-outline-variant/10 overflow-hidden ${
+                  i === 0 ? "col-span-1 md:col-span-2 xl:col-span-3" : ""
+                }`}
               >
                 <div className="h-14 bg-surface-container-low" />
                 <div className="p-5 space-y-3">
@@ -808,54 +916,58 @@ export default function LandingPageManagerPage() {
                 <div className="h-12 bg-surface-container-low border-t border-outline-variant/10" />
               </div>
             ))
-            : processedContents.length === 0
-              ? (
-                <div className="col-span-full flex flex-col items-center py-16 text-on-surface-variant bg-surface-container-lowest rounded-3xl border border-dashed border-outline-variant/30">
-                  <span className="material-symbols-outlined text-5xl mb-3 opacity-20">
-                    search_off
-                  </span>
-                  <p className="font-bold">Tidak ada konten ditemukan</p>
-                  <p className="text-sm mt-1">
-                    Coba sesuaikan kata kunci pencarian Anda.
-                  </p>
-                </div>
-              )
-              : processedContents.map((content) => {
-                // Determine card layout span based on content type
-                let spanClass = "col-span-1";
-                if (content.type.includes("hero") || content.type.includes("banner")) {
-                  spanClass = "col-span-1 md:col-span-2 xl:col-span-3"; // Full width
-                } else if (content.type === "struktur_organisasi" || content.type === "organization") {
-                  spanClass = "col-span-1 md:col-span-2"; // Two columns wide
-                } else if (content.type.startsWith("donation_")) {
-                  spanClass = "col-span-1"; // Standard
-                }
+          ) : processedContents.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center py-16 text-on-surface-variant bg-surface-container-lowest rounded-3xl border border-dashed border-outline-variant/30">
+              <span className="material-symbols-outlined text-5xl mb-3 opacity-20">
+                search_off
+              </span>
+              <p className="font-bold">Tidak ada konten ditemukan</p>
+              <p className="text-sm mt-1">
+                Coba sesuaikan kata kunci pencarian Anda.
+              </p>
+            </div>
+          ) : (
+            processedContents.map((content) => {
+              // Determine card layout span based on content type
+              let spanClass = "col-span-1";
+              if (
+                content.type.includes("hero") ||
+                content.type.includes("banner")
+              ) {
+                spanClass = "col-span-1 md:col-span-2 xl:col-span-3"; // Full width
+              } else if (
+                content.type === "struktur_organisasi" ||
+                content.type === "organization"
+              ) {
+                spanClass = "col-span-1 md:col-span-2"; // Two columns wide
+              } else if (content.type.startsWith("donation_")) {
+                spanClass = "col-span-1"; // Standard
+              }
 
-                return (
-                  <div key={content.id} className={`${spanClass}`}>
-                    <ContentCard
-                      content={content}
-                      onUpdate={updateContent}
-                      onDelete={handleDelete}
-                      isSaving={isUpdating}
-                    />
-                  </div>
-                );
-              })
-          }
+              return (
+                <div key={content.id} className={`${spanClass}`}>
+                  <ContentCard
+                    content={content}
+                    onUpdate={updateContent}
+                    onDelete={handleDelete}
+                    isSaving={isUpdating}
+                  />
+                </div>
+              );
+            })
+          )}
 
           {/* Create new card */}
-          <CreateContentCard
-            onCreate={createContent}
-            isCreating={isCreating}
-          />
+          <CreateContentCard onCreate={createContent} isCreating={isCreating} />
         </div>
       </div>
 
       {/* ── Fixed Footer ── */}
       <div className="fixed bottom-0 left-0 right-0 sm:ml-64 bg-surface/90 backdrop-blur-xl px-8 py-4 border-t border-outline-variant/10 flex items-center justify-between z-40">
         <div className="flex items-center space-x-2 text-xs text-on-surface-variant font-medium font-['Inter']">
-          <span className="material-symbols-outlined text-sm text-secondary">history</span>
+          <span className="material-symbols-outlined text-sm text-secondary">
+            history
+          </span>
           <span>Auto-saved</span>
           <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
         </div>
