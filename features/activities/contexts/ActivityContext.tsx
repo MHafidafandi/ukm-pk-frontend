@@ -63,6 +63,12 @@ interface ActivityContextType {
   progressReportsPagination: any;
   progressReportPage: number;
   setProgressReportPage: (p: number) => void;
+  progressReportSearch: string;
+  setProgressReportSearch: (s: string) => void;
+  progressReportSort: string;
+  setProgressReportSort: (s: string) => void;
+  progressReportOrder: "ASC" | "DESC";
+  setProgressReportOrder: (o: "ASC" | "DESC") => void;
   getProgressReport: (id: string) => Promise<{ data: ProgressReport }>;
   createProgressReport: (data: any) => Promise<any>;
   updateProgressReport: (args: { id: string; data: any }) => Promise<any>;
@@ -120,6 +126,12 @@ export const ActivityProvider = ({
 
   // Progress Reports State
   const [progressReportPage, setProgressReportPage] = useState(1);
+  const [progressReportSearch, setProgressReportSearchRaw] = useState("");
+  const [progressReportSort, setProgressReportSortRaw] = useState("created_at");
+  const [progressReportOrder, setProgressReportOrderRaw] = useState<
+    "ASC" | "DESC"
+  >("DESC");
+  const [debounceProgressReportSearch] = useDebounce(progressReportSearch, 500);
 
   // -- Queries --
   const { data: activitiesData, isLoading: isFetchingActivities } = useQuery({
@@ -160,12 +172,18 @@ export const ActivityProvider = ({
         "progress-reports",
         progressReportPage,
         limit,
+        debounceProgressReportSearch,
+        progressReportSort,
+        progressReportOrder,
       ],
       queryFn: () =>
         getProgressReports({
           activity_id: activeActivityId!,
           page: progressReportPage,
           limit,
+          search: debounceProgressReportSearch || undefined,
+          sort: progressReportSort || undefined,
+          order: progressReportOrder,
         }),
       enabled: !!activeActivityId,
     });
@@ -441,6 +459,21 @@ export const ActivityProvider = ({
       progressReportsPagination,
       progressReportPage,
       setProgressReportPage,
+      progressReportSearch,
+      setProgressReportSearch: (s: string) => {
+        setProgressReportSearchRaw(s);
+        setProgressReportPage(1);
+      },
+      progressReportSort,
+      setProgressReportSort: (s: string) => {
+        setProgressReportSortRaw(s);
+        setProgressReportPage(1);
+      },
+      progressReportOrder,
+      setProgressReportOrder: (o: "ASC" | "DESC") => {
+        setProgressReportOrderRaw(o);
+        setProgressReportPage(1);
+      },
       getProgressReport,
       createProgressReport: createProgressReportMutation.mutateAsync,
       updateProgressReport: updateProgressReportMutation.mutateAsync,
@@ -479,6 +512,9 @@ export const ActivityProvider = ({
       progressReports,
       progressReportsPagination,
       progressReportPage,
+      progressReportSearch,
+      progressReportSort,
+      progressReportOrder,
       lpj, // ✅ ganti lpjList → lpj
       createActivityMutation,
       updateActivityMutation,

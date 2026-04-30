@@ -99,6 +99,10 @@ type PublicLandingContextType = {
   setActivityStatus: (s: string) => void;
   activityPage: number;
   setActivityPage: (p: number) => void;
+  activitySort: string;
+  setActivitySort: (s: string) => void;
+  activityOrder: "ASC" | "DESC";
+  setActivityOrder: (o: "ASC" | "DESC") => void;
 
   // ── Donation (/donation page) ──
   submitDonation: (payload: DonationPayload) => Promise<any>;
@@ -170,6 +174,8 @@ export const PublicLandingProvider = ({
   const [activityStatus, setActivityStatus] = useState("");
   const [activityPage, setActivityPage] = useState(1);
   const [activityLimit] = useState(9);
+  const [activitySort, setActivitySortRaw] = useState("created_at");
+  const [activityOrder, setActivityOrderRaw] = useState<"ASC" | "DESC">("DESC");
   const [debouncedSearch] = useDebounce(activitySearch, 500);
 
   // ── Reset page on search/filter change ──
@@ -179,6 +185,14 @@ export const PublicLandingProvider = ({
   };
   const handleSetActivityStatus = (s: string) => {
     setActivityStatus(s);
+    setActivityPage(1);
+  };
+  const handleSetActivitySort = (s: string) => {
+    setActivitySortRaw(s);
+    setActivityPage(1);
+  };
+  const handleSetActivityOrder = (o: "ASC" | "DESC") => {
+    setActivityOrderRaw(o);
     setActivityPage(1);
   };
 
@@ -198,6 +212,8 @@ export const PublicLandingProvider = ({
       limit: activityLimit,
       search: debouncedSearch,
       status: activityStatus,
+      sort: activitySort,
+      order: activityOrder,
     }),
     queryFn: () =>
       getPublicActivities({
@@ -205,8 +221,11 @@ export const PublicLandingProvider = ({
         limit: activityLimit,
         search: debouncedSearch,
         status: activityStatus,
+        sort: activitySort,
+        order: activityOrder,
       }),
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 
   // 3. Featured activities (untuk home page / PublicOverviewSection)
@@ -282,6 +301,10 @@ export const PublicLandingProvider = ({
       setActivityStatus: handleSetActivityStatus,
       activityPage,
       setActivityPage,
+      activitySort,
+      setActivitySort: handleSetActivitySort,
+      activityOrder,
+      setActivityOrder: handleSetActivityOrder,
 
       // Donation
       submitDonation: (p) => donationMut.mutateAsync(p),
@@ -304,6 +327,8 @@ export const PublicLandingProvider = ({
       activitySearch,
       activityStatus,
       activityPage,
+      activitySort,
+      activityOrder,
       donationMut,
       openRecruitments,
       recruitmentsQuery.isLoading,

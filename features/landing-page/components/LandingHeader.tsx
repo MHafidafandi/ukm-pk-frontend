@@ -87,12 +87,6 @@ export default function LandingHeader({ organization }: LandingHeaderProps) {
         {/* Right side */}
         <div className="flex items-center gap-3">
           <Link
-            href="/donation"
-            className="hidden sm:inline-block px-5 py-2 text-sm font-bold text-primary hover:bg-surface-container-low rounded-xl transition-all"
-          >
-            Donasi
-          </Link>
-          <Link
             href="/dashboard"
             className="hidden sm:inline-block px-6 py-2.5 text-sm font-bold text-white rounded-xl shadow-lg shadow-primary/20 transition-all hover:opacity-90"
             style={{

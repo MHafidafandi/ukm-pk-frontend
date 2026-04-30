@@ -32,6 +32,10 @@ type Props = {
   onSearchChange: (value: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
+  sort: string;
+  onSortChange: (value: string) => void;
+  order: "ASC" | "DESC";
+  onOrderChange: (value: "ASC" | "DESC") => void;
   onAcceptRegistrant?: (registrant: Registrant) => void;
   onRejectRegistrant?: (registrant: Registrant) => void;
 };
@@ -72,6 +76,10 @@ export const RegistrantsTable = ({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
+  sort,
+  onSortChange,
+  order,
+  onOrderChange,
   onAcceptRegistrant,
   onRejectRegistrant,
 }: Props) => {
@@ -108,6 +116,24 @@ export const RegistrantsTable = ({
               </option>
             ))}
           </select>
+
+          <select
+            value={sort}
+            onChange={(e) => onSortChange(e.target.value)}
+            className=" bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-2 pl-3 pr-8 rounded-xl text-sm font-medium cursor-pointer outline-none transition-all appearance-none"
+          >
+            <option value="created_at">Urut: Dibuat</option>
+            <option value="nama">Urut: Nama</option>
+            <option value="email">Urut: Email</option>
+            <option value="status">Urut: Status</option>
+          </select>
+
+          <button
+            onClick={() => onOrderChange(order === "ASC" ? "DESC" : "ASC")}
+            className="px-3 py-2 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            {order === "ASC" ? "Asc" : "Desc"}
+          </button>
         </div>
       </div>
 

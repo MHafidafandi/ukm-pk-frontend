@@ -20,6 +20,8 @@ import {
   AssetsResponse,
   AssetsStatsResponse,
   AssetFilters,
+  LoanFilters,
+  LoansResponse,
   getAvailableAssets,
   getLoanStats,
   getActiveLoans,
@@ -32,7 +34,7 @@ interface AssetContextType {
   isFetchingAssets: boolean;
   assets: AssetsResponse["data"]["assets"];
   pagination: AssetsResponse["data"]["pagination"] | null;
-  filters: AssetsResponse["data"]["filters"] | null;
+  filters: AssetFilters;
   stats: AssetsStatsResponse["data"] | null;
   setFilters: (filters: AssetFilters) => void;
   createAsset: (data: CreateAssetInput) => Promise<any>;
@@ -42,6 +44,9 @@ interface AssetContextType {
   }) => Promise<any>;
   deleteAsset: (id: string) => Promise<any>;
   loans: Loan[];
+  loanPagination: LoansResponse["data"]["pagination"] | null;
+  loanFilters: LoanFilters;
+  setLoanFilters: (filters: LoanFilters) => void;
   loanStatsData: any;
   isFetchingLoanStats: boolean;
   availableAssets: Asset[];
@@ -69,16 +74,25 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   const [filters, setFilters] = useState<AssetFilters>({
     page: 1,
     limit: 10,
+    sort: "created_at",
+    order: "DESC",
+  });
+  const [loanFilters, setLoanFilters] = useState<LoanFilters>({
+    page: 1,
+    limit: 10,
+    sort: "created_at",
+    order: "DESC",
   });
   const { data: assetsData, isLoading: isFetchingAssets } = useQuery({
     queryKey: ["inventory", "assets", filters],
     queryFn: () => getAssets(filters),
   });
 
-  const { data: availableAssetsData, isLoading: isFetchingAvailableAssets } = useQuery({
-    queryKey: ["inventory", "assets"],
-    queryFn: () => getAvailableAssets(),
-  });
+  const { data: availableAssetsData, isLoading: isFetchingAvailableAssets } =
+    useQuery({
+      queryKey: ["inventory", "assets"],
+      queryFn: () => getAvailableAssets(),
+    });
 
   const { data: statsData, isLoading: isFetchingStats } = useQuery({
     queryKey: ["inventory", "assets", "stats"],
@@ -91,55 +105,65 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   const { data: activeLoans } = useQuery({
-    queryKey: ["loans", "active"],
+    queryKey: ["loans", "active", loanFilters],
     queryFn: async () => {
-      const res = await getActiveLoans();
+      const res = await getActiveLoans(loanFilters);
       return await Promise.all(
         res.data.loans.map(async (loan) => {
           const [user, asset] = await Promise.all([
             getUserById(loan.user_id),
-            getAsset(loan.asset_id)
+            getAsset(loan.asset_id),
           ]);
           return { ...loan, user: user.data, asset: asset.data };
-        })
+        }),
       );
     },
   });
   const { data: overdueLoans } = useQuery({
-    queryKey: ["loans", "overdue"],
+    queryKey: ["loans", "overdue", loanFilters],
     queryFn: async () => {
-      const res = await getOverdueLoans();
+      const res = await getOverdueLoans(loanFilters);
       return await Promise.all(
         res.data.loans.map(async (loan) => {
           const [user, asset] = await Promise.all([
             getUserById(loan.user_id),
-            getAsset(loan.asset_id)
+            getAsset(loan.asset_id),
           ]);
           return { ...loan, user: user.data, asset: asset.data };
-        })
+        }),
       );
     },
   });
 
-  const { data: loans, isLoading: isFetchingLoans } = useQuery({
-    queryKey: ["inventory", "loans"],
+  const { data: loansData, isLoading: isFetchingLoans } = useQuery({
+    queryKey: ["inventory", "loans", loanFilters],
     queryFn: async () => {
-      const loansResponse = await getLoans();
-      return await Promise.all(
+      const loansResponse = await getLoans(loanFilters);
+      const loans = await Promise.all(
         loansResponse.data.loans.map(async (loan) => {
           const [user, asset] = await Promise.all([
             getUserById(loan.user_id),
-            getAsset(loan.asset_id)
+            getAsset(loan.asset_id),
           ]);
           return { ...loan, user: user.data, asset: asset.data };
-        })
+        }),
       );
+
+      return {
+        ...loansResponse,
+        data: {
+          ...loansResponse.data,
+          loans,
+        },
+      };
     },
   });
 
   const assets = assetsData?.data?.assets || [];
   const pagination = assetsData?.data?.pagination || null;
   const availableAssets = availableAssetsData?.data?.assets || [];
+  const loans = loansData?.data?.loans || [];
+  const loanPagination = loansData?.data?.pagination || null;
 
   const createAssetMutation = useMutation({
     mutationFn: createAsset,
@@ -153,13 +177,8 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   const updateAssetMutation = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: any;
-    }) => updateAsset(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      updateAsset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
       toast.success("Asset successfully updated");
@@ -202,7 +221,8 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   const markLoanAsLostMutation = useMutation({
-    mutationFn: ({ id, catatan }: { id: string; catatan: string }) => markLoanAsLost(id, { catatan }),
+    mutationFn: ({ id, catatan }: { id: string; catatan: string }) =>
+      markLoanAsLost(id, { catatan }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "loans"] });
       queryClient.invalidateQueries({ queryKey: ["inventory", "assets"] });
@@ -215,7 +235,7 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       assets: assetsData?.data?.assets ?? [],
       pagination: assetsData?.data?.pagination ?? null,
-      filters: assetsData?.data?.filters ?? null,
+      filters,
       stats: statsData?.data ?? null,
       loanStatsData: loanStatsData?.data ?? null,
       isFetchingLoanStats,
@@ -226,6 +246,9 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
       availableAssets: availableAssetsData?.data?.assets ?? [],
       isFetchingStats,
       setFilters,
+      loanFilters,
+      setLoanFilters,
+      loanPagination,
       createAsset: createAssetMutation.mutateAsync,
       updateAsset: updateAssetMutation.mutateAsync,
       deleteAsset: deleteAssetMutation.mutateAsync,
@@ -248,6 +271,8 @@ export const AssetProvider = ({ children }: { children: React.ReactNode }) => {
       filters,
       activeLoans,
       overdueLoans,
+      loanFilters,
+      loanPagination,
       createAssetMutation,
       updateAssetMutation,
       deleteAssetMutation,

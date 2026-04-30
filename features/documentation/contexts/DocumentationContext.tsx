@@ -23,6 +23,7 @@ import {
   DocumentationStatus,
   DocumentationQueryParams,
   DocumentationStatistics,
+  DocumentationPagination,
 } from "@/features/documentation/services/documentationService";
 import { getErrorMessage } from "@/lib/api/client";
 import { usePermission } from "@/hooks/usePermission";
@@ -30,6 +31,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 
 interface DocumentationContextType {
   documents: Documentation[];
+  pagination: DocumentationPagination | null;
   isFetchingDocuments: boolean;
   statistics: DocumentationStatistics | null;
   isFetchingStatistics: boolean;
@@ -37,6 +39,14 @@ interface DocumentationContextType {
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   search: string;
   setSearch: (search: string) => void;
+  page: number;
+  setPage: (page: number) => void;
+  limit: number;
+  setLimit: (limit: number) => void;
+  sort: string;
+  setSort: (sort: string) => void;
+  order: "ASC" | "DESC";
+  setOrder: (order: "ASC" | "DESC") => void;
   typeFilter: DocumentCategory | undefined;
   setTypeFilter: (type: DocumentCategory | undefined) => void;
   statusFilter: DocumentationStatus | undefined;
@@ -87,13 +97,18 @@ export const DocumentationProvider = ({
 }) => {
   const { can } = usePermission();
 
-  const extractDocuments = (payload: unknown): Documentation[] => {
+  const extractListPayload = (
+    payload: unknown,
+  ): {
+    documents: Documentation[];
+    pagination: DocumentationPagination | null;
+  } => {
     if (Array.isArray(payload)) {
-      return payload as Documentation[];
+      return { documents: payload as Documentation[], pagination: null };
     }
 
     if (!payload || typeof payload !== "object") {
-      return [];
+      return { documents: [], pagination: null };
     }
 
     const record = payload as Record<string, unknown>;
@@ -106,6 +121,13 @@ export const DocumentationProvider = ({
       nestedData,
     ];
 
+    let extractedPagination: DocumentationPagination | null = null;
+
+    const directPagination = record.pagination;
+    if (directPagination && typeof directPagination === "object") {
+      extractedPagination = directPagination as DocumentationPagination;
+    }
+
     if (nestedData && typeof nestedData === "object") {
       const nestedRecord = nestedData as Record<string, unknown>;
       candidates.push(
@@ -113,15 +135,22 @@ export const DocumentationProvider = ({
         nestedRecord.documentations,
         nestedRecord.items,
       );
+      if (!extractedPagination && nestedRecord.pagination) {
+        extractedPagination =
+          nestedRecord.pagination as DocumentationPagination;
+      }
     }
 
     for (const candidate of candidates) {
       if (Array.isArray(candidate)) {
-        return candidate as Documentation[];
+        return {
+          documents: candidate as Documentation[],
+          pagination: extractedPagination,
+        };
       }
     }
 
-    return [];
+    return { documents: [], pagination: extractedPagination };
   };
 
   const extractStatistics = (
@@ -159,28 +188,77 @@ export const DocumentationProvider = ({
   };
 
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
+  const [search, setSearchRaw] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sort, setSortRaw] = useState("created_at");
+  const [order, setOrderRaw] = useState<"ASC" | "DESC">("DESC");
   const [debounceSearch] = useDebounce(search, 500);
-  const [typeFilter, setTypeFilter] = useState<DocumentCategory | undefined>();
-  const [statusFilter, setStatusFilter] = useState<
+  const [typeFilter, setTypeFilterRaw] = useState<
+    DocumentCategory | undefined
+  >();
+  const [statusFilter, setStatusFilterRaw] = useState<
     DocumentationStatus | undefined
   >();
-  const [activityFilter, setActivityFilter] = useState("");
-  const [creatorFilter, setCreatorFilter] = useState("");
+  const [activityFilter, setActivityFilterRaw] = useState("");
+  const [creatorFilter, setCreatorFilterRaw] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const setSearch = (value: string) => {
+    setSearchRaw(value);
+    setPage(1);
+  };
+  const setTypeFilter = (value: DocumentCategory | undefined) => {
+    setTypeFilterRaw(value);
+    setPage(1);
+  };
+  const setStatusFilter = (value: DocumentationStatus | undefined) => {
+    setStatusFilterRaw(value);
+    setPage(1);
+  };
+  const setActivityFilter = (value: string) => {
+    setActivityFilterRaw(value);
+    setPage(1);
+  };
+  const setCreatorFilter = (value: string) => {
+    setCreatorFilterRaw(value);
+    setPage(1);
+  };
+  const setSort = (value: string) => {
+    setSortRaw(value);
+    setPage(1);
+  };
+  const setOrder = (value: "ASC" | "DESC") => {
+    setOrderRaw(value);
+    setPage(1);
+  };
 
   const canViewDocumentations = can(PERMISSIONS.VIEW_DOCUMENTATIONS);
   const canViewAllDocumentations = can(PERMISSIONS.VIEW_ALL_DOCUMENTATIONS);
 
   const queryParams = useMemo<DocumentationQueryParams>(() => {
     const params: DocumentationQueryParams = {};
+    params.page = page;
+    params.limit = limit;
+    params.sort = sort;
+    params.order = order;
     if (debounceSearch) params.search = debounceSearch;
     if (typeFilter) params.tipe_dokumen = typeFilter;
     if (statusFilter) params.status = statusFilter;
     if (activityFilter) params.activity_id = activityFilter;
     if (creatorFilter) params.dibuat_oleh = creatorFilter;
     return params;
-  }, [debounceSearch, typeFilter, statusFilter, activityFilter, creatorFilter]);
+  }, [
+    page,
+    limit,
+    sort,
+    order,
+    debounceSearch,
+    typeFilter,
+    statusFilter,
+    activityFilter,
+    creatorFilter,
+  ]);
 
   const {
     data: documentsData,
@@ -196,13 +274,14 @@ export const DocumentationProvider = ({
     queryFn: async () => {
       const response = canViewAllDocumentations
         ? await getAdminDocumentations(queryParams)
-        : await getDocumentations();
-      return extractDocuments(response);
+        : await getDocumentations(queryParams);
+      return extractListPayload(response);
     },
     enabled: canViewDocumentations || canViewAllDocumentations,
   });
 
-  const documents = documentsData ?? [];
+  const documents = documentsData?.documents ?? [];
+  const pagination = documentsData?.pagination ?? null;
 
   const { data: statisticsData, isLoading: isFetchingStatistics } = useQuery({
     queryKey: ["documentations", "statistics"],
@@ -314,11 +393,20 @@ export const DocumentationProvider = ({
 
   const contextValue = {
     documents,
+    pagination,
     isFetchingDocuments,
     statistics,
     isFetchingStatistics,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    sort,
+    setSort,
+    order,
+    setOrder,
     selectedIds,
     setSelectedIds,
     typeFilter,
