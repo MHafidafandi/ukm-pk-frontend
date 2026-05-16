@@ -215,7 +215,11 @@ export const LpjViewer = ({ activityId }: Props) => {
               <div className="flex items-center gap-3">
                 {lpj.file_url && (
                   <a
-                    href={MEDIA_BASE_URL + lpj.file_url}
+                    href={
+                      lpj.file_url.startsWith("http")
+                        ? lpj.file_url
+                        : `${MEDIA_BASE_URL}${lpj.file_url}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold hover:opacity-90 transition-opacity"

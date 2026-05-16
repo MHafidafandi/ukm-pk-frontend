@@ -203,7 +203,9 @@ export default function SettingsPage() {
 
   const profileUser = userInfo ?? currentUser;
   const avatarSrc = userInfo?.avatar_url
-    ? `${env.MEDIA_URL}${userInfo.avatar_url}`
+    ? userInfo.avatar_url.startsWith("http")
+      ? userInfo.avatar_url
+      : `${env.MEDIA_URL}${userInfo.avatar_url}`
     : "";
 
   const getAvatarInitials = () => {

@@ -85,8 +85,11 @@ export const ActivityGrid = ({
           featuredValue === "true";
 
         const imgUrl = item.thumbnail
-          ? `${env.MEDIA_URL}${item.thumbnail}`
+          ? item.thumbnail.startsWith("https")
+            ? item.thumbnail
+            : `${env.MEDIA_URL}${item.thumbnail}`
           : null;
+
         const showFallback = !imgUrl || imgErrors[item.id];
 
         return (
@@ -98,7 +101,7 @@ export const ActivityGrid = ({
             <div className="relative h-44 w-full overflow-hidden bg-surface-container shrink-0">
               {!showFallback ? (
                 <img
-                  src={imgUrl!}
+                  src={imgUrl as string}
                   alt={item.judul}
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={() =>
