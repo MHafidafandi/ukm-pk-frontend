@@ -340,7 +340,11 @@ export const AssetFormDialog = ({
                 <div className="relative w-full h-40 rounded-xl overflow-hidden bg-surface-container">
                   <img
                     src={
-                      fotoFile ? fotoPreview : `${MEDIA_BASE_URL}${fotoPreview}`
+                      fotoFile
+                        ? fotoPreview
+                        : fotoPreview!.startsWith("http")
+                          ? fotoPreview
+                          : `${MEDIA_BASE_URL}${fotoPreview}`
                     }
                     alt="Preview"
                     className="w-full h-full object-cover"

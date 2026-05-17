@@ -40,11 +40,10 @@ const FilterPill = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${
-      active
-        ? "bg-primary text-on-primary shadow-sm"
-        : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
-    }`}
+    className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${active
+      ? "bg-primary text-on-primary shadow-sm"
+      : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-high"
+      }`}
   >
     {label}
   </button>
@@ -336,11 +335,10 @@ export const InventoryList = () => {
                 setActiveTab(tab);
                 setSearchQuery("");
               }}
-              className={`px-6 py-2.5 rounded-t-xl text-sm font-bold transition-all ${
-                activeTab === tab
-                  ? "bg-surface-container-lowest text-primary shadow-sm"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
-              }`}
+              className={`px-6 py-2.5 rounded-t-xl text-sm font-bold transition-all ${activeTab === tab
+                ? "bg-surface-container-lowest text-primary shadow-sm"
+                : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
+                }`}
             >
               {tab === "assets" ? "Katalog Aset" : "Riwayat Peminjaman"}
             </button>
@@ -524,17 +522,20 @@ export const InventoryList = () => {
                     <button
                       key={asset.id}
                       onClick={() => setSelectedAsset(asset)}
-                      className={`w-full text-left px-5 py-4 flex items-center gap-4 transition-colors border-b border-outline-variant/5 ${
-                        isSelected
-                          ? "bg-primary-fixed/30"
-                          : "hover:bg-surface-container-low"
-                      }`}
+                      className={`w-full text-left px-5 py-4 flex items-center gap-4 transition-colors border-b border-outline-variant/5 ${isSelected
+                        ? "bg-primary-fixed/30"
+                        : "hover:bg-surface-container-low"
+                        }`}
                     >
                       {/* Thumbnail */}
                       <div className="w-10 h-10 rounded-xl bg-surface-container shrink-0 overflow-hidden">
                         {asset.foto_url ? (
                           <img
-                            src={`${MEDIA_BASE_URL}${asset.foto_url}`}
+                            src={
+                              asset.foto_url.startsWith("http")
+                                ? asset.foto_url
+                                : `${MEDIA_BASE_URL}${asset.foto_url}`
+                            }
                             alt={asset.nama}
                             className="w-full h-full object-cover"
                           />
@@ -584,7 +585,11 @@ export const InventoryList = () => {
                     <div className="w-full xl:w-52 h-44 rounded-2xl bg-surface-container shrink-0 relative overflow-hidden group">
                       {selectedAsset.foto_url ? (
                         <img
-                          src={`${MEDIA_BASE_URL}${selectedAsset.foto_url}`}
+                          src={
+                            selectedAsset.foto_url.startsWith("http")
+                              ? selectedAsset.foto_url
+                              : `${MEDIA_BASE_URL}${selectedAsset.foto_url}`
+                          }
                           alt={selectedAsset.nama}
                           className="w-full h-full object-cover"
                         />
@@ -658,13 +663,13 @@ export const InventoryList = () => {
                           { label: "Lokasi", value: selectedAsset.lokasi },
                           ...(selectedAsset.tanggal
                             ? [
-                                {
-                                  label: "Tgl Pengadaan",
-                                  value: new Date(
-                                    selectedAsset.tanggal,
-                                  ).toLocaleDateString("id-ID"),
-                                },
-                              ]
+                              {
+                                label: "Tgl Pengadaan",
+                                value: new Date(
+                                  selectedAsset.tanggal,
+                                ).toLocaleDateString("id-ID"),
+                              },
+                            ]
                             : []),
                         ].map((m) => (
                           <div key={m.label}>
@@ -686,11 +691,10 @@ export const InventoryList = () => {
                       <button
                         key={t}
                         onClick={() => setAssetDetailTab(t)}
-                        className={`px-5 py-4 text-sm border-b-2 transition-colors font-medium ${
-                          assetDetailTab === t
-                            ? "border-primary text-primary font-bold"
-                            : "border-transparent text-on-surface-variant hover:text-on-surface"
-                        }`}
+                        className={`px-5 py-4 text-sm border-b-2 transition-colors font-medium ${assetDetailTab === t
+                          ? "border-primary text-primary font-bold"
+                          : "border-transparent text-on-surface-variant hover:text-on-surface"
+                          }`}
                       >
                         {t === "specs" ? "Spesifikasi" : "Riwayat Pinjam"}
                       </button>
@@ -716,7 +720,7 @@ export const InventoryList = () => {
                           Riwayat Peminjaman
                         </p>
                         {selectedAsset.loans &&
-                        selectedAsset.loans.length > 0 ? (
+                          selectedAsset.loans.length > 0 ? (
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           selectedAsset.loans.map((loan: any) => (
                             <div
@@ -734,13 +738,12 @@ export const InventoryList = () => {
                                 </p>
                               </div>
                               <span
-                                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                                  loan.status === "dikembalikan"
-                                    ? "bg-secondary-fixed text-on-secondary-fixed-variant"
-                                    : loan.status === "hilang"
-                                      ? "bg-error-container text-on-error-container"
-                                      : "bg-primary-fixed text-on-primary-fixed-variant"
-                                }`}
+                                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${loan.status === "dikembalikan"
+                                  ? "bg-secondary-fixed text-on-secondary-fixed-variant"
+                                  : loan.status === "hilang"
+                                    ? "bg-error-container text-on-error-container"
+                                    : "bg-primary-fixed text-on-primary-fixed-variant"
+                                  }`}
                               >
                                 {loan.status}
                               </span>
