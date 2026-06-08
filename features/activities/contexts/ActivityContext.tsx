@@ -252,7 +252,11 @@ export const ActivityProvider = ({
       let updatedFields: any = {};
       if (data instanceof FormData) {
         for (const [key, value] of data.entries()) {
-          updatedFields[key] = value;
+          if (value instanceof File) {
+            updatedFields[key] = URL.createObjectURL(value);
+          } else {
+            updatedFields[key] = value;
+          }
         }
       } else {
         updatedFields = data;

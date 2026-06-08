@@ -112,9 +112,10 @@ export const ActivityDetail = ({ id }: Props) => {
         formData.append("thumbnail_url", "");
       }
 
+      setEditOpen(false);
       await updateActivity({ id, data: formData });
       toast.success("Kegiatan berhasil diperbarui");
-      setEditOpen(false);
+
     } catch (err: unknown) {
       console.error(err);
       toast.error("Gagal memperbarui kegiatan");

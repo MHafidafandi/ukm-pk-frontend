@@ -209,6 +209,11 @@ function ContentCard({
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file gambar maksimal 2MB");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     setCardSaving(true);
     try {
       await onUpdate(content.id, {}, file);
@@ -667,7 +672,19 @@ function CreateContentCard({ onCreate, isCreating }: CreateCardProps) {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast.error("Ukuran file gambar maksimal 2MB");
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                      return;
+                    }
+                    setFile(file);
+                  } else {
+                    setFile(null);
+                  }
+                }}
               />
               <span className="material-symbols-outlined text-xl text-on-surface-variant/40">
                 cloud_upload

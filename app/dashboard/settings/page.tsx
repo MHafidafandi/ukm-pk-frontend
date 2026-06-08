@@ -285,8 +285,8 @@ export default function SettingsPage() {
       toast.error("Hanya file gambar yang diperbolehkan");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file maksimal 5MB");
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file gambar maksimal 2MB");
       return;
     }
     try {

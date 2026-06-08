@@ -217,13 +217,25 @@ function DonationForm() {
             type="file"
             accept="image/jpeg,image/png,application/pdf"
             className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                  toast.error("Ukuran file bukti pembayaran maksimal 2MB");
+                  e.target.value = "";
+                  return;
+                }
+                setFile(file);
+              } else {
+                setFile(null);
+              }
+            }}
           />
           <span className="material-symbols-outlined text-on-surface-variant/40">
             upload_file
           </span>
           <span className="text-xs text-on-surface-variant">
-            {file ? file.name : "JPG, PNG, PDF – maks 5 MB"}
+            {file ? file.name : "JPG, PNG, PDF – maks 2 MB"}
           </span>
         </label>
       </div>

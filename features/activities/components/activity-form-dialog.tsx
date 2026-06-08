@@ -8,6 +8,7 @@ import { CreateActivityInput } from "@/lib/validations/activity-schema";
 import { useRef, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { ImagePlus, X, Loader2, CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -74,16 +75,25 @@ export const ActivityFormDialog = ({
 
   const previewUrl = !open
     ? null
-    : filePreviewUrl ||
-      (existingThumbnailUrl
-        ? existingThumbnailUrl.startsWith("http")
-          ? existingThumbnailUrl
-          : `${MEDIA_BASE_URL}${existingThumbnailUrl}`
-        : null);
+    : form.thumbnail === null
+      ? null
+      : filePreviewUrl ||
+        (existingThumbnailUrl
+          ? existingThumbnailUrl.startsWith("http")
+            ? existingThumbnailUrl
+            : `${MEDIA_BASE_URL}${existingThumbnailUrl}`
+          : null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setForm({ ...form, thumbnail: file });
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Ukuran file gambar maksimal 2MB");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+      setForm({ ...form, thumbnail: file });
+    }
   };
 
   const removeThumbnail = () => {
@@ -121,7 +131,7 @@ export const ActivityFormDialog = ({
                 <button
                   type="button"
                   onClick={removeThumbnail}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-error-container text-on-error-container flex items-center justify-center hover:opacity-90 transition-opacity"
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-error-container text-on-error-container bg-white border border-outline-variant flex items-center justify-center hover:opacity-90 transition-opacity"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -142,7 +152,7 @@ export const ActivityFormDialog = ({
                   Klik untuk unggah thumbnail
                 </span>
                 <span className="text-[10px] text-outline">
-                  PNG, JPG, WEBP (maks. 5MB)
+                  PNG, JPG, WEBP (maks. 2MB)
                 </span>
               </button>
             )}
