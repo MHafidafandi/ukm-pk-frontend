@@ -233,22 +233,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Simpan token ke memory
       setToken(token);
-      setHasToken(true);
 
-      // Fetch user data untuk redirect logic
+      // Fetch user data SEBELUM redirect, agar PermissionGuard
+      // langsung menemukan currentUser di cache saat halaman dashboard dimuat
       try {
         const user = (await getMe()) as User & { permissions?: string[] };
+        // Tulis user ke cache terlebih dahulu
         queryClient.setQueryData(["auth", "me"], user);
-
-        // Redirect berdasarkan permissions
-        const perms = user?.permissions ?? [];
-        if (perms.length > 0) {
-          router.replace("/dashboard");
-        } else {
-          router.replace("/dashboard");
-        }
+        // Baru update hasToken — React akan flush state + redirect dalam satu siklus
+        setHasToken(true);
+        // Sedikit delay agar React commit state sebelum navigasi
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        router.replace("/dashboard");
       } catch {
-        // Fallback redirect jika getMe gagal
+        // Fallback: token valid tapi /me gagal — tetap redirect
+        setHasToken(true);
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
         router.replace("/dashboard");
       }
     },
