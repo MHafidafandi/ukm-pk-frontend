@@ -3,7 +3,7 @@
 import { AppSidebar } from "@/components/layout/Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TopNavbar } from "@/components/layout/TopNavbar";
-import { PermissionGuard } from "@/components/PermissionGuard";
+import { Guard } from "@/components/guard";
 
 export default function DashboardLayout({
   children,
@@ -11,7 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <PermissionGuard permission="view-users" fallbackPath="/login">
+    <Guard redirectTo="/login">
       <SidebarProvider>
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden w-full relative">
@@ -23,6 +23,6 @@ export default function DashboardLayout({
           </main>
         </div>
       </SidebarProvider>
-    </PermissionGuard>
+    </Guard>
   );
 }

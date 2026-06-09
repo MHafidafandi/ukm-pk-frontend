@@ -20,6 +20,7 @@ import {
   Registrant,
   Pagination,
 } from "@/features/recruitment/services/recruitmentService";
+import { SelectOption } from "@/lib/services/selectService";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
@@ -38,6 +39,7 @@ type Props = {
   onOrderChange: (value: "ASC" | "DESC") => void;
   onAcceptRegistrant?: (registrant: Registrant) => void;
   onRejectRegistrant?: (registrant: Registrant) => void;
+  divisions?: SelectOption[];
 };
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -82,11 +84,16 @@ export const RegistrantsTable = ({
   onOrderChange,
   onAcceptRegistrant,
   onRejectRegistrant,
+  divisions = [],
 }: Props) => {
   const currentPage = pagination?.page ?? 1;
   const totalPages = pagination?.total_pages ?? 1;
   const totalItems = pagination?.total ?? registrants.length;
 
+  // Build a map from division id → name for fast lookup
+  const divisionMap = Object.fromEntries(divisions.map((d) => [d.id, d.name]));
+  const resolveDivision = (id?: string) =>
+    !id ? "–" : (divisionMap[id] ?? id);
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -142,16 +149,31 @@ export const RegistrantsTable = ({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-surface-container-high">
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                 Nama
               </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                 Email / Kontak
               </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Angkatan
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Jurusan
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Pilihan 1
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Pilihan 2
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                Pilihan 3
+              </th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                 Tanggal Daftar
               </th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant ">
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                 Status
               </th>
               <th className="px-6 py-4 w-16" />
@@ -160,7 +182,7 @@ export const RegistrantsTable = ({
           <tbody className="divide-y divide-outline-variant/10">
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
+                <td colSpan={9} className="px-6 py-12 text-center">
                   <div className="flex items-center justify-center gap-2 text-on-surface-variant">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span className=" text-sm">Memuat...</span>
@@ -170,8 +192,8 @@ export const RegistrantsTable = ({
             ) : registrants.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
-                  className="px-6 py-12 text-center  text-sm text-on-surface-variant"
+                  colSpan={9}
+                  className="px-6 py-12 text-center text-sm text-on-surface-variant"
                 >
                   {searchValue || statusFilter !== "all"
                     ? "Tidak ada pendaftar yang cocok."
@@ -190,20 +212,35 @@ export const RegistrantsTable = ({
                     className="group hover:bg-surface transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <p className=" font-semibold text-sm text-on-surface">
+                      <p className="font-semibold text-sm text-on-surface">
                         {item.nama}
                       </p>
-                      <p className=" text-xs text-on-surface-variant mt-0.5">
-                        {item.nim}
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        {item.nim || "–"}
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className=" text-sm text-on-surface">{item.email}</p>
-                      <p className=" text-xs text-on-surface-variant mt-0.5">
-                        {item.nomor_telepon || "-"}
+                      <p className="text-sm text-on-surface">{item.email}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        {item.nomor_telepon || "–"}
                       </p>
                     </td>
-                    <td className="px-6 py-4  text-sm text-on-surface-variant">
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">
+                      {item.angkatan || "–"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">
+                      {item.jurusan || "–"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">
+                      {resolveDivision(item.first_choice)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">
+                      {resolveDivision(item.second_choice)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">
+                      {resolveDivision(item.third_choice)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">
                       {format(
                         new Date(item.created_at || new Date()),
                         "dd MMM yyyy HH:mm",
