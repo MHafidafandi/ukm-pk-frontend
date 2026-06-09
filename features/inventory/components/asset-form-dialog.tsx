@@ -22,6 +22,7 @@ import { useAssetContext } from "@/features/inventory/contexts/AssetContext";
 import { Asset } from "@/features/inventory/services/assetService";
 import { env } from "@/configs/env";
 import { ImagePlus, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const MEDIA_BASE_URL = env.MEDIA_URL;
 
@@ -155,6 +156,11 @@ export const AssetFormDialog = ({
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file foto maksimal 2MB");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     setFotoFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setFotoPreview(reader.result as string);
@@ -368,7 +374,7 @@ export const AssetFormDialog = ({
                     Klik untuk unggah foto
                   </span>
                   <span className="text-[10px] text-outline">
-                    PNG, JPG hingga 5MB
+                    PNG, JPG hingga 2MB
                   </span>
                 </button>
               )}

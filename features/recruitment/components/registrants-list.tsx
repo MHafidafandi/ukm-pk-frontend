@@ -60,8 +60,9 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
   const [division, setDivision] = useState("");
   const [role, setRole] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Always fetch divisions (for table choice column resolution + modal)
   const { data: divisions = [], isLoading: loadingDivisions } =
-    useDivisionsSelect(isModalOpen);
+    useDivisionsSelect();
   const { data: roles = [], isLoading: loadingRoles } =
     useRolesSelect(isModalOpen);
   useEffect(() => {
@@ -151,6 +152,7 @@ export const RegistrantsList = ({ recruitmentId }: Props) => {
         onOrderChange={setRegistrantOrder}
         onAcceptRegistrant={handleAcceptClick}
         onRejectRegistrant={handleRejectRegistrant}
+        divisions={divisions}
       />
 
       {/* ── Accept Dialog ── */}

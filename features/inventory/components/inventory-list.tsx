@@ -181,6 +181,11 @@ export const InventoryList = () => {
   const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedAsset) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file foto maksimal 2MB");
+      if (photoInputRef.current) photoInputRef.current.value = "";
+      return;
+    }
     try {
       await updateAsset({ id: selectedAsset.id, data: { foto: file } });
       toast.success("Foto berhasil diperbarui");

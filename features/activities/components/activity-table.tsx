@@ -84,11 +84,14 @@ export const ActivityGrid = ({
           featuredValue === 1 ||
           featuredValue === "true";
 
-        const imgUrl = item.thumbnail
-          ? item.thumbnail.startsWith("https")
-            ? item.thumbnail
-            : `${env.MEDIA_URL}${item.thumbnail}`
-          : null;
+        const imgUrl =
+          item.thumbnail && typeof item.thumbnail === "string"
+            ? item.thumbnail.startsWith("http") || item.thumbnail.startsWith("blob:")
+              ? item.thumbnail
+              : `${env.MEDIA_URL}${item.thumbnail}`
+            : (item.thumbnail as any) instanceof File
+              ? URL.createObjectURL(item.thumbnail as any)
+              : null;
 
         const showFallback = !imgUrl || imgErrors[item.id];
 

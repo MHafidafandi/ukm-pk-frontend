@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -333,13 +334,20 @@ export const DonationFormDialog = ({
                       className="sr-only"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) setSelectedFile(file);
+                        if (file) {
+                          if (file.size > 2 * 1024 * 1024) {
+                            toast.error("Ukuran file bukti pembayaran maksimal 2MB");
+                            e.target.value = "";
+                            return;
+                          }
+                          setSelectedFile(file);
+                        }
                       }}
                     />
                   </label>
                 </FormControl>
                 <p className="text-xs text-on-surface-variant mt-1.5">
-                  Format PNG, JPG, atau PDF — maks. 5 MB
+                  Format PNG, JPG, atau PDF — maks. 2 MB
                 </p>
                 {form.formState.errors.bukti_pembayaran && (
                   <p className="text-xs text-error mt-1">
