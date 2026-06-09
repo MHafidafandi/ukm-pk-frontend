@@ -490,7 +490,7 @@ export const DonationList = () => {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {pagination && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant/10">
             <p className="text-xs text-on-surface-variant">
               Halaman {currentPage} dari {totalPages}
