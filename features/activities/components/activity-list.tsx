@@ -330,7 +330,7 @@ export const ActivityList = () => {
       )}
 
       {/* ── Pagination ── */}
-      {totalPages > 1 && (
+      {pagination && (
         <div className="flex items-center justify-between px-2">
           <p className="text-xs text-on-surface-variant">
             Halaman {currentPage} dari {totalPages} · Total{" "}

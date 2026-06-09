@@ -381,7 +381,7 @@ export const DocumentationList = () => {
         )}
       </div>
 
-      {totalPages > 1 && (
+      {pagination && (
         <div className="flex items-center justify-between px-2 mt-4">
           <p className="text-xs text-on-surface-variant">
             Halaman {page} dari {totalPages} · Total {pagination?.total ?? 0}{" "}
