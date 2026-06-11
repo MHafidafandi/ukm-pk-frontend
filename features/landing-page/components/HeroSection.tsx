@@ -9,7 +9,6 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ content }: HeroSectionProps) {
-  console.log(content);
   const title =
     content?.title ?? "UNIT KEGIATAN MAHASISWA PEDULI KEMANUSIAAN UNESA";
   const description =
@@ -46,7 +45,7 @@ export default function HeroSection({ content }: HeroSectionProps) {
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold font-['Manrope'] text-on-surface leading-[1.1] tracking-tight">
-            {title.length > 40 ? (
+            {title.length > 100 ? (
               <>
                 Aksi Nyata,{" "}
                 <span
